@@ -186,15 +186,15 @@ sufficient information, see the ChangeLog file or Redmine
 
 === Core classes updates (outstanding ones only)
 
-Array::
+[Array]
 
-  New method::
+  [New method]
 
     * Added Array#intersection. [Feature #16155]
 
-Comparable::
+[Comparable]
 
-  Modified method::
+  [Modified method]
 
     * Comparable#clamp now accepts a Range argument. [Feature #14784]
 
@@ -202,28 +202,28 @@ Comparable::
          1.clamp(0..2) #=> 1
          3.clamp(0..2) #=> 2
 
-Complex::
+[Complex]
 
-  New method::
+  [New method]
 
     * Added Complex#<=>. So 0 <=> 0i will not raise NoMethodError. [Bug #15857]
 
-Dir::
+[Dir]
 
-  Modified method::
+  [Modified method]
 
     * Dir#glob and Dir#[] no longer allow NUL-separated glob pattern.
       Use Array instead.  [Feature #14643]
 
-Encoding::
+[Encoding]
 
-  New method::
+  [New method]
 
     * Added new encoding CESU-8 [Feature #15931]
 
-Enumerable::
+[Enumerable]
 
-  New methods::
+  [New methods]
 
     * Added Enumerable#filter_map.  [Feature #15323]
 
@@ -233,9 +233,9 @@ Enumerable::
 
         ["A", "B", "C", "B", "A"].tally #=> {"A"=>2, "B"=>2, "C"=>1}
 
-Enumerator::
+[Enumerator]
 
-  New method::
+  [New method]
 
     * Added Enumerator::Lazy#eager that generates a non-lazy enumerator
       from a lazy enumerator.  [Feature #15901]
@@ -244,34 +244,34 @@ Enumerator::
       can be directly passed to another method as a block
       argument.  [Feature #15618]
 
-Fiber::
+[Fiber]
 
-  New method::
+  [New method]
 
     * Added Fiber#raise that behaves like Fiber#resume but raises an
       exception on the resumed fiber.  [Feature #10344]
 
-File::
+[File]
 
-  Modified method::
+  [Modified method]
 
     * File.extname now returns a dot string at a name ending with a dot on
       non-Windows platforms.  [Bug #15267]
 
           File.extname("foo.") #=> "."
 
-FrozenError::
+[FrozenError]
 
-  New method::
+  [New method]
 
     * Added FrozenError#receiver to return the frozen object that
       modification was attempted on.  To set this object when raising
       FrozenError in Ruby code, pass it as the second argument to
       FrozenError.new.
 
-GC::
+[GC]
 
-  New method::
+  [New method]
 
     * Added GC.compact method for compacting the heap.
       This function compacts live objects in the heap so that fewer pages may
@@ -280,16 +280,16 @@ GC::
       Details on the algorithm and caveats can be found here:
       https://bugs.ruby-lang.org/issues/15626
 
-IO::
+[IO]
 
-  New method::
+  [New method]
 
     * Added IO#set_encoding_by_bom to check the BOM and set the external
       encoding.  [Bug #15210]
 
-Integer::
+[Integer]
 
-  Modified method::
+  [Modified method]
 
     * Integer#[] now supports range operation.  [Feature #8842]
 
@@ -298,17 +298,17 @@ Integer::
          0b01001100[2...6] #=> 0b0011
              ^^^^
 
-NilClass / TrueClass / FalseClass::
+[NilClass / TrueClass / FalseClass]
 
-  Modified method::
+  [Modified method]
 
     * NilClass#to_s, TrueClass#to_s and FalseClass#to_s now always returns a
       frozen String. The returned String is always the same for each of these
       values. This change is experimental. [Feature #16150]
 
-Module::
+[Module]
 
-  New method::
+  [New method]
 
     * Added Module#const_source_location to retrieve the location where a
       constant is defined.  [Feature #10771]
@@ -318,7 +318,7 @@ Module::
       all arguments to another method in a way that can be backwards
       compatible with older Ruby versions.  [Bug #16154]
 
-  Modified method::
+  [Modified method]
 
     * Module#autoload? now takes an +inherit+ optional argument, like as
       Module#const_defined?.  [Feature #15777]
@@ -327,14 +327,14 @@ Module::
       always the same for a given Module. This change is
       experimental. [Feature #16150]
 
-ObjectSpace::WeakMap::
+[ObjectSpace::WeakMap]
 
-  Modified method::
+  [Modified method]
 
     * ObjectSpace::WeakMap#[]= now accepts special objects as either key or
       values.  [Feature #16035]
 
-Regexp / String::
+[Regexp / String]
 
     * Update Unicode version and Emoji version from 11.0.0 to
       12.0.0.  [Feature #15321]
@@ -342,37 +342,37 @@ Regexp / String::
     * Update Unicode version to 12.1.0, adding support for
       U+32FF SQUARE ERA NAME REIWA.  [Feature #15195]
 
-RubyVM::
+[RubyVM]
 
-  Removed method::
+  [Removed method]
 
     * +RubyVM.resolve_feature_path+ moved to
       <code>$LOAD_PATH.resolve_feature_path</code>.  [Feature #15903] [Feature #15230]
 
-Symbol::
+[Symbol]
 
-  Modified method::
+  [Modified method]
 
     * Symbol#to_s now always returns a frozen String. The returned String
       is always the same for a given Symbol.  This change is
       experimental.  [Feature #16150]
 
-Time::
+[Time]
 
-  New methods::
+  [New methods]
 
     * Added Time#ceil method.  [Feature #15772]
 
     * Added Time#floor method.  [Feature #15653]
 
-  Modified method::
+  [Modified method]
 
     * Time#inspect is separated from Time#to_s and it shows its sub
       second.  [Feature #15958]
 
-UnboundMethod::
+[UnboundMethod]
 
-  New method::
+  [New method]
 
     * Added UnboundMethod#bind_call method.  [Feature #15955]
 
@@ -399,43 +399,43 @@ UnboundMethod::
           p Foo.instance_method(:add_1).bind_call(obj, 1) #=> 2
 
 
-$LOAD_PATH::
+[$LOAD_PATH]
 
-  New method::
+  [New method]
 
     * Added <code>$LOAD_PATH.resolve_feature_path</code>.  [Feature #15903] [Feature #15230]
 
 === Stdlib updates (outstanding ones only)
 
-Bundler::
+[Bundler]
 
   * Upgrade to Bundler 2.1.0.pre.1
     Bundled from https://github.com/bundler/bundler/commit/a53709556b95a914e874b22ed2116a46b0528852
 
-CGI::
+[CGI]
 
   * CGI.escapeHTML becomes 2~5x faster when there's at least one escaped character.
 
-CSV::
+[CSV]
 
   * Upgrade to 3.1.2.
     See https://github.com/ruby/csv/blob/master/NEWS.md.
 
-Date::
+[Date]
 
   * Date.jisx0301, Date#jisx0301, and Date.parse support the new Japanese
     era.  [Feature #15742]
 
-Delegator::
+[Delegator]
 
   * Object#DelegateClass accepts a block and module_evals it in the context
     of the returned class, similar to Class.new and Struct.new.
 
-ERB::
+[ERB]
 
   * Prohibit marshaling ERB instance.
 
-IRB::
+[IRB]
 
   * Introduce syntax highlight inspired by pry.gem to Binding#irb source lines,
     REPL input, and inspect output of some core-class objects.
@@ -446,15 +446,15 @@ IRB::
 
   * Enable auto indent and save/load history by default.
 
-Net::FTP::
+[Net::FTP]
 
   * Add features and options.  [Feature #15964]
 
-Net::IMAP::
+[Net::IMAP]
 
   * Add Server Name Indication (SNI) support.  [Feature #15594]
 
-open-uri::
+[open-uri]
 
   * Warn open-uri's "open" method at Kernel.
     Use URI.open instead.  [Misc #15893]
@@ -462,7 +462,7 @@ open-uri::
   * The default charset of text/* media type is UTF-8 instead of
     ISO-8859-1.  [Bug #15933]
 
-OptionParser::
+[OptionParser]
 
   * Now show "Did you mean?" for unknown option.  [Feature #16256]
 
@@ -483,36 +483,36 @@ OptionParser::
       Did you mean?  baz
                      bar
 
-Pathname::
+[Pathname]
 
   * Delegates 3 arguments from Pathname.glob to Dir.glob to
     accept base: keyword.
 
-Racc::
+[Racc]
 
   * Merge 1.4.15 from upstream repository and added cli of racc.
 
-Reline::
+[Reline]
 
   * New stdlib that is compatible with readline stdlib by pure Ruby and also
     has a multiline mode.
 
-REXML::
+[REXML]
 
   * Upgrade to 3.2.3.
     See https://github.com/ruby/rexml/blob/master/NEWS.md.
 
-RSS::
+[RSS]
 
   * Upgrade to RSS 0.2.8.
     See https://github.com/ruby/rss/blob/master/NEWS.md.
 
-RubyGems::
+[RubyGems]
 
   * Upgrade to RubyGems 3.1.0.pre1
     Bundled from https://github.com/rubygems/rubygems/commit/97b264f0fa248c864b6ee9a23d3ff1cdd217dddb
 
-StringScanner::
+[StringScanner]
 
   * Upgrade to 1.0.3.
     See https://github.com/ruby/strscan/blob/master/NEWS.md.
@@ -528,14 +528,14 @@ StringScanner::
 
 === Stdlib compatibility issues (excluding feature bug fixes)
 
-pathname::
+[pathname]
 
   * Kernel#Pathname when called with a Pathname argument now returns
     the argument instead of creating a new Pathname. This is more
     similar to other Kernel methods, but can break code that modifies
     the return value and expects the argument not to be modified.
 
-profile.rb, Profiler__::
+[profile.rb, Profiler__]
 
   * Removed from standard library. No one maintains it from Ruby 2.0.0.
 
@@ -555,7 +555,7 @@ profile.rb, Profiler__::
 
 === Implementation improvements
 
-Fiber::
+[Fiber]
 
   * Allow selecting different coroutine implementation by using
     `--with-coroutine=`, e.g.
@@ -568,23 +568,23 @@ Fiber::
     becomes O(log N) and fiber creation is amortized O(1). Around 10x
     performance improvement was measured in micro-benchmarks.
 
-File::
+[File]
   * File.realpath now uses realpath(3) on many platforms, which can
     significantly improve performance.
 
-Hash::
+[Hash]
   * Change data structure of small Hash objects. [Feature #15602]
 
-Monitor::
+[Monitor]
   * Monitor class is written in C-extension. [Feature #16255]
 
-Thread::
+[Thread]
 
   * VM stack memory allocation is now combined with native thread stack,
     improving thread allocation performance and reducing allocation related
     failures. ~10x performance improvement was measured in micro-benchmarks.
 
-JIT::
+[JIT]
 
   * JIT-ed code is recompiled to less-optimized code when an optimization assumption is invalidated.
 
