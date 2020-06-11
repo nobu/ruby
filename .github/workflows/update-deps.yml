@@ -1,0 +1,50 @@
+name: "Check dependencies in makefiles"
+on: [push, pull_request]
+jobs:
+  Update-deps:
+
+    env:
+      GITPULLOPTIONS: --no-tags origin ${{github.ref}}
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install libraries
+        run: |
+          set -x
+          sudo apt-get update -q || :
+          sudo apt-get install --no-install-recommends -q -y build-essential libssl-dev libyaml-dev libreadline6-dev zlib1g-dev libncurses5-dev libffi-dev libgdbm-dev bison autoconf ruby
+
+      - name: git config
+        run: |
+          git config --global advice.detachedHead 0
+
+      - uses: actions/checkout@v2
+
+      - name: Add non-existent depend files
+        run: |
+          ruby -e 'new = []
+            Dir.glob("ext/**/extconf.rb") {|ex|
+              unless File.exist?(dep = File.dirname(ex)+"/depend")
+                puts "Adding "+dep
+                File.copy_stream("template/depend.tmpl", dep)
+                new << dep
+              end
+            }
+            exec("git", "add", *new) unless new.empty?'
+      - run: git diff --cached
+
+      - name: Set ENV
+        run: |
+          echo '::set-env name=JOBS::'-j$((1 + $(nproc --all)))
+
+      - run: autoconf
+
+      - name: Run configure
+        run: ./configure -C --disable-install-doc --disable-rubygems 'optflags=-O0' 'debugflags=-save-temps=obj -g'
+
+      - run: make $JOBS
+
+      - run: ruby tool/update-deps --fix
+
+      - run: git diff --no-ext-diff --ignore-submodules --exit-code
