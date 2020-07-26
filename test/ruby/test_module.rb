@@ -2722,18 +2722,6 @@ class TestModule < Test::Unit::TestCase
     assert_not_predicate m.clone(freeze: false), :frozen?
   end
 
-  def test_include_allocated
-    assert_raise(ArgumentError) do
-      Module.new {include Module.allocate}
-    end
-    assert_raise(ArgumentError) do
-      Module.new {prepend Module.allocate}
-    end
-    assert_raise(ArgumentError) do
-      Object.new.extend Module.allocate
-    end
-  end
-
   private
 
   def assert_top_method_is_private(method)
