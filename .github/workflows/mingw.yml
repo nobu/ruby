@@ -40,91 +40,48 @@ jobs:
           ruby-version: 2.6
           mingw: _upgrade_ gdbm gmp libffi libyaml openssl ragel readline
           msys2: automake1.16 bison
-      - name: set env
+      - name: Set ENV
         run: |
-          $build_jobs = [int](2 * $env:NUMBER_OF_PROCESSORS)
-          $test_jobs = [int](1.5 * $env:NUMBER_OF_PROCESSORS)
-          Write-Output "BUILD_JOBS=$build_jobs" >> $env:GITHUB_ENV
-          Write-Output "TEST_JOBS=$test_jobs" >> $env:GITHUB_ENV
+          echo "BUILD_JOBS=$((2 * NUMBER_OF_PROCESSORS))" >> $GITHUB_ENV
+          echo "TEST_JOBS=$((15 * NUMBER_OF_PROCESSORS / 10))" >> $GITHUB_ENV
+
       - name: where check
         run: |
           # show where
-          Write-Host
-          $where = 'gcc.exe', 'ragel.exe', 'make.exe', 'bison.exe', 'libcrypto-1_1-x64.dll', 'libssl-1_1-x64.dll'
-          foreach ($e in $where) {
-            $rslt = where.exe $e 2>&1 | Out-String
-            if ($rslt.contains($e)) { Write-Host $rslt }
-            else { Write-Host "`nCan't find $e" }
-          }
-      - name: misc setup, autoreconf
-        run: |
-          mkdir install
-          mkdir temp
-          cd src
-          sh -c "autoreconf -fi"
-        working-directory:
+          result=true
+          for e in gcc.exe ragel.exe make.exe bison.exe libcrypto-1_1-x64.dll libssl-1_1-x64.dll; do
+            echo
+            where $e || result=false
+          done
+          $result
 
-      - name: configure
-        run: |
-          # Actions uses UTF8, causes test failures, similar to normal OS setup
-          $PSDefaultParameterValues['*:Encoding'] = 'utf8'
-          [Console]::OutputEncoding = [System.Text.Encoding]::GetEncoding("IBM437")
-          [Console]::InputEncoding  = [System.Text.Encoding]::GetEncoding("IBM437")
-          $config_args = "--build=$env:CHOST --host=$env:CHOST --target=$env:CHOST"
-          Write-Host $config_args
-          sh -c "../src/configure --disable-install-doc --prefix=/install $config_args"
-          # Write-Host "-------------------------------------- config.log"
-          # Get-Content ./config.log | foreach {Write-Output $_}
+      - run: autoreconf -i
+        working-directory: src
 
-      - name: update
+      - name: Run configure
         run: |
-          make -j $env:BUILD_JOBS incs
+          config_args="--build=$CHOST --host=$CHOST --target=$CHOST"
+          echo $config_args
+          ../src/configure --disable-install-doc --prefix=/. $config_args
+          # echo "-------------------------------------- config.log"
+          # cat ./config.log
 
-      - name: download gems
-        run: |
-          make -j $env:BUILD_JOBS update-gems
-
-      - name: make all
+      - run: make $JOBS incs
+      - run: make $JOBS
         timeout-minutes: 40
-        run: |
-          make -j $env:BUILD_JOBS
 
       - run: make leaked-globals
+      - run: make prepare-gems
 
-      - name: make install
-        run: |
-          # Actions uses UTF8, causes test failures, similar to normal OS setup
-          $PSDefaultParameterValues['*:Encoding'] = 'utf8'
-          [Console]::OutputEncoding = [System.Text.Encoding]::GetEncoding("IBM437")
-          [Console]::InputEncoding  = [System.Text.Encoding]::GetEncoding("IBM437")
-          make DESTDIR=.. install-nodoc
-
-      - name: test
-        timeout-minutes: 5
-        run: |
-          make test
-
-      - name: test-all
+      - name: make ${{ matrix.test_task }}
         timeout-minutes: 60
         run: |
-          # Actions uses UTF8, causes test failures, similar to normal OS setup
-          $PSDefaultParameterValues['*:Encoding'] = 'utf8'
-          [Console]::OutputEncoding = [System.Text.Encoding]::GetEncoding("IBM437")
-          [Console]::InputEncoding  = [System.Text.Encoding]::GetEncoding("IBM437")
-          if ($env:BUNDLER_VERSION) { Remove-Item env:\BUNDLER_VERSION }
-          make test-all TESTOPTS="-j $env:TEST_JOBS --retry --job-status=normal --show-skip --timeout-scale=1.5"
-
-      - name: test-spec
-        timeout-minutes: 10
-        working-directory: src/spec/ruby
-        run: |
-          $env:Path = "$pwd/../../../install/bin;$env:Path"
-          # Actions uses UTF8, causes test failures, similar to normal OS setup
-          $PSDefaultParameterValues['*:Encoding'] = 'utf8'
-          [Console]::OutputEncoding = [System.Text.Encoding]::GetEncoding("IBM437")
-          [Console]::InputEncoding  = [System.Text.Encoding]::GetEncoding("IBM437")
-          ruby -v
-          ruby ../mspec/bin/mspec -I../../tool/lib -j
+          chcp.com 437
+          unset BUNDLER_VERSION
+          make ${{ matrix.test_task }}
+        env:
+          RUBY_TESTOPTS: "--retry --job-status=normal --show-skip --timeout-scale=1.5"
+          GNUMAKEFLAGS: "-j$TEST_JOBS"
 
       - uses: k0kubun/action-slack@v2.0.0
         with:
@@ -143,3 +100,4 @@ jobs:
 defaults:
   run:
     working-directory: build
+    shell: sh
