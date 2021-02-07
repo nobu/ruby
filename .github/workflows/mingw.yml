@@ -40,6 +40,12 @@ jobs:
           ruby-version: 2.6
           mingw: _upgrade_ gdbm gmp libffi libyaml openssl ragel readline
           msys2: automake1.16 bison
+      - name: set env
+        run: |
+          $build_jobs = [int](2 * $env:NUMBER_OF_PROCESSORS)
+          $test_jobs = [int](1.5 * $env:NUMBER_OF_PROCESSORS)
+          Write-Output "BUILD_JOBS=$build_jobs" >> $env:GITHUB_ENV
+          Write-Output "TEST_JOBS=$test_jobs" >> $env:GITHUB_ENV
       - name: where check
         run: |
           # show where
@@ -72,19 +78,16 @@ jobs:
 
       - name: update
         run: |
-          $jobs = [int](2 * $env:NUMBER_OF_PROCESSORS)
-          make -j $jobs incs
+          make -j $env:BUILD_JOBS incs
 
       - name: download gems
         run: |
-          $jobs = [int](2 * $env:NUMBER_OF_PROCESSORS)
-          make -j $jobs update-gems
+          make -j $env:BUILD_JOBS update-gems
 
       - name: make all
         timeout-minutes: 40
         run: |
-          $jobs = [int](2 * $env:NUMBER_OF_PROCESSORS)
-          make -j $jobs
+          make -j $env:BUILD_JOBS
 
       - run: make leaked-globals
 
@@ -108,9 +111,8 @@ jobs:
           $PSDefaultParameterValues['*:Encoding'] = 'utf8'
           [Console]::OutputEncoding = [System.Text.Encoding]::GetEncoding("IBM437")
           [Console]::InputEncoding  = [System.Text.Encoding]::GetEncoding("IBM437")
-          $jobs = [int](1.5 * $env:NUMBER_OF_PROCESSORS)
           if ($env:BUNDLER_VERSION) { Remove-Item env:\BUNDLER_VERSION }
-          make test-all TESTOPTS="-j $jobs --retry --job-status=normal --show-skip --timeout-scale=1.5"
+          make test-all TESTOPTS="-j $env:TEST_JOBS --retry --job-status=normal --show-skip --timeout-scale=1.5"
 
       - name: test-spec
         timeout-minutes: 10
