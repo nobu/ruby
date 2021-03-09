@@ -25,13 +25,13 @@ AS_IF([test "${rb_cv_type_$1}" != no], [
 	    echo "@%:@if defined SIZEOF_"$cond" && SIZEOF_"$cond" > 0" >> confdefs.h
 	], [cond=])
     ], [cond=])
-    AC_DEFINE([HAVE_]AS_TR_CPP($1), 1)
+    AC_DEFINE([HAVE_]AS_TR_CPP($1), 1, [type $1])
     AS_IF([test "${rb_cv_type_$1}" = yes], [
 	m4_bmatch([$2], [^[1-9][0-9]*$], [AC_CHECK_SIZEOF([$1], 0, [AC_INCLUDES_DEFAULT([$4])])],
 			[RUBY_CHECK_SIZEOF([$1], [$2], [], [AC_INCLUDES_DEFAULT([$4])])])
     ], [
-	AC_DEFINE_UNQUOTED($1, [$rb_cv_type_$1])
-	AC_DEFINE_UNQUOTED([SIZEOF_]AS_TR_CPP($1), [SIZEOF_]AS_TR_CPP([$type]))
+	AC_DEFINE_UNQUOTED($1, [$rb_cv_type_$1], [$1])
+	AC_DEFINE_UNQUOTED([SIZEOF_]AS_TR_CPP($1), [SIZEOF_]AS_TR_CPP([$type]), [sizeof($1)])
     ])
     test -n "$cond" && echo "@%:@endif /* $cond */" >> confdefs.h
 ])

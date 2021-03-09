@@ -13,5 +13,5 @@ AC_CACHE_CHECK([for ]$1[ as a macro or function], ac_cv_func_$1,
     ac_cv_func_$1=yes,
     ac_cv_func_$1=no)]
 )
-AS_IF([test "$ac_cv_func_]$1[" = yes], [AC_DEFINE([HAVE_]AS_TR_CPP($1), 1)])
+AS_IF([test "$ac_cv_func_]$1[" = yes], [AC_DEFINE([HAVE_]AS_TR_CPP($1), 1, [$1])])
 ])dnl

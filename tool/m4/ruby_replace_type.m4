@@ -49,10 +49,10 @@ AC_DEFUN([RUBY_REPLACE_TYPE], [dnl
 		[U*], [n="unsigned $n"])
     ])
     AS_CASE("${rb_cv_[$1]_convertible}", [U*], [u=+1], [u=-1])
-    AC_DEFINE_UNQUOTED(rb_[$1], $n)
-    AC_DEFINE_UNQUOTED([SIGNEDNESS_OF_]AS_TR_CPP($1), $u)
-    AC_DEFINE_UNQUOTED([$3]2NUM[(v)], [${rb_cv_[$1]_convertible}2NUM(v)])
-    AC_DEFINE_UNQUOTED(NUM2[$3][(v)], [NUM2${rb_cv_[$1]_convertible}(v)])
+    AC_DEFINE_UNQUOTED(rb_[$1], $n, [$1])
+    AC_DEFINE_UNQUOTED([SIGNEDNESS_OF_]AS_TR_CPP($1), $u, [signedness of $1])
+    AC_DEFINE_UNQUOTED([$3]2NUM[(v)], [${rb_cv_[$1]_convertible}2NUM(v)], [$3->NUM])
+    AC_DEFINE_UNQUOTED(NUM2[$3][(v)], [NUM2${rb_cv_[$1]_convertible}(v)], [NUM->$3])
     AC_DEFINE_UNQUOTED(PRI_[$3]_PREFIX,
-	[PRI_`echo ${rb_cv_[$1]_convertible} | sed ['s/^U//']`_PREFIX])
+	[PRI_`echo ${rb_cv_[$1]_convertible} | sed ['s/^U//']`_PREFIX], [qualifier $3])
 ])dnl

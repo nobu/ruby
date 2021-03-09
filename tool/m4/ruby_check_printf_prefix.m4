@@ -24,6 +24,6 @@ AC_CACHE_CHECK([for printf prefix for $1], [rb_cv_pri_prefix_]AS_TR_SH($1),[
     done)])
 AS_IF([test "[$rb_cv_pri_prefix_]AS_TR_SH($1)" != NONE], [
     AC_DEFINE_UNQUOTED([PRI_]m4_ifval($3,$3,AS_TR_CPP(m4_bpatsubst([$1],[_t$])))[_PREFIX],
-        "[$rb_cv_pri_prefix_]AS_TR_SH($1)")
+        "[$rb_cv_pri_prefix_]AS_TR_SH($1)", [$1 qualifier])
 ])
 ])dnl

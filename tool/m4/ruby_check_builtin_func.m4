@@ -6,5 +6,5 @@ AC_CACHE_CHECK([for $1], AS_TR_SH(rb_cv_builtin_$1),
     [AS_TR_SH(rb_cv_builtin_$1)=yes],
     [AS_TR_SH(rb_cv_builtin_$1)=no])])
 AS_IF([test "${AS_TR_SH(rb_cv_builtin_$1)}" != no], [
-  AC_DEFINE(AS_TR_CPP(HAVE_BUILTIN_$1))
+  AC_DEFINE(AS_TR_CPP(HAVE_BUILTIN_$1), 1, [builtin $1])
 ])])dnl
