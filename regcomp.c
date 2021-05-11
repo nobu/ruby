@@ -5930,6 +5930,8 @@ onig_compile(regex_t* reg, const UChar* pattern, const UChar* pattern_end,
   return r;
 }
 
+static unsigned int MaxBacktrackLimit = 0; /* unlimited */
+
 static int onig_inited = 0;
 
 extern int
@@ -5973,6 +5975,8 @@ onig_reg_init(regex_t* reg, OnigOptionType option,
   (reg)->name_table       = (void* )NULL;
 
   (reg)->case_fold_flag   = case_fold_flag;
+  (reg)->backtrack_limit  = MaxBacktrackLimit;
+
   return 0;
 }
 
@@ -6040,6 +6044,29 @@ onig_init(void)
   return 0;
 }
 
+extern void
+onig_set_backtrack_limit(OnigRegex reg, unsigned int limit)
+{
+  reg->backtrack_limit = limit;
+}
+
+extern unsigned int
+onig_get_backtrack_limit(OnigRegex reg)
+{
+  return reg->backtrack_limit;
+}
+
+extern void
+onig_set_default_backtrack_limit(unsigned int limit)
+{
+  MaxBacktrackLimit = limit;
+}
+
+extern unsigned int
+onig_get_default_backtrack_limit(void)
+{
+  return MaxBacktrackLimit;
+}
 
 static OnigEndCallListItemType* EndCallTop;
 

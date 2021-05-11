@@ -1336,6 +1336,27 @@ class TestRegexp < Test::Unit::TestCase
     end
   end
 
+  def test_backtrack_limit
+    limit = Regexp.backtrack_limit
+    assert_equal(0, limit)
+    Regexp.backtrack_limit = 10_000
+    assert_equal(10_000, Regexp.backtrack_limit)
+
+    re = Regexp.new("A(B|C+)+D")
+    str = "A" + "C" * 100 + "X"
+    Regexp.backtrack_limit = limit
+
+    assert_equal(10_000, re.backtrack_limit)
+    re.backtrack_limit = 100
+    assert_equal(100, re.backtrack_limit)
+
+    assert_raise(RegexpError) do
+      re.match?(str)
+    end
+  ensure
+    Regexp.backtrack_limit = limit
+  end
+
   # This assertion is for porting x2() tests in testpy.py of Onigmo.
   def assert_match_at(re, str, positions, msg = nil)
     re = Regexp.new(re) unless re.is_a?(Regexp)

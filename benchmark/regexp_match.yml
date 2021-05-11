@@ -1,0 +1,6 @@
+prelude: |
+  str = "abcabcabc"
+  re = /(abc)+/
+benchmark:
+  re.match?(str)
+loop_count: 10_000_000

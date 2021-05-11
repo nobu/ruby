@@ -841,6 +841,36 @@ rb_reg_named_captures(VALUE re)
     return hash;
 }
 
+static VALUE
+rb_reg_backtrack_limit_get(VALUE re)
+{
+    regex_t *reg = (rb_reg_check(re), RREGEXP_PTR(re));
+    unsigned int limit = onig_get_backtrack_limit(reg);
+    return UINT2NUM(limit);
+}
+
+static VALUE
+rb_reg_backtrack_limit_set(VALUE re, VALUE limit)
+{
+    regex_t *reg = (rb_reg_check(re), RREGEXP_PTR(re));
+    onig_set_backtrack_limit(reg, NUM2UINT(limit));
+    return limit;
+}
+
+static VALUE
+rb_reg_s_backtrack_limit_get(VALUE _)
+{
+    unsigned int limit = onig_get_default_backtrack_limit();
+    return UINT2NUM(limit);
+}
+
+static VALUE
+rb_reg_s_backtrack_limit_set(VALUE _, VALUE limit)
+{
+    onig_set_default_backtrack_limit(NUM2UINT(limit));
+    return limit;
+}
+
 static int
 onig_new_with_source(regex_t** reg, const UChar* pattern, const UChar* pattern_end,
 		     OnigOptionType option, OnigEncoding enc, const OnigSyntaxType* syntax,
@@ -4059,6 +4089,8 @@ Init_Regexp(void)
     rb_define_singleton_method(rb_cRegexp, "union", rb_reg_s_union_m, -2);
     rb_define_singleton_method(rb_cRegexp, "last_match", rb_reg_s_last_match, -1);
     rb_define_singleton_method(rb_cRegexp, "try_convert", rb_reg_s_try_convert, 1);
+    rb_define_singleton_method(rb_cRegexp, "backtrack_limit", rb_reg_s_backtrack_limit_get, 0);
+    rb_define_singleton_method(rb_cRegexp, "backtrack_limit=", rb_reg_s_backtrack_limit_set, 1);
 
     rb_define_method(rb_cRegexp, "initialize", rb_reg_initialize_m, -1);
     rb_define_method(rb_cRegexp, "initialize_copy", rb_reg_init_copy, 1);
@@ -4079,6 +4111,8 @@ Init_Regexp(void)
     rb_define_method(rb_cRegexp, "fixed_encoding?", rb_reg_fixed_encoding_p, 0);
     rb_define_method(rb_cRegexp, "names", rb_reg_names, 0);
     rb_define_method(rb_cRegexp, "named_captures", rb_reg_named_captures, 0);
+    rb_define_method(rb_cRegexp, "backtrack_limit", rb_reg_backtrack_limit_get, 0);
+    rb_define_method(rb_cRegexp, "backtrack_limit=", rb_reg_backtrack_limit_set, 1);
 
     /* see Regexp.options and Regexp.new */
     rb_define_const(rb_cRegexp, "IGNORECASE", INT2FIX(ONIG_OPTION_IGNORECASE));

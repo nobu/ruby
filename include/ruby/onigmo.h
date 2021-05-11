@@ -638,6 +638,7 @@ ONIG_EXTERN const OnigSyntaxType*   OnigDefaultSyntax;
 #define ONIGERR_SPECIFIED_ENCODING_CANT_CONVERT_TO_WIDE_CHAR  -22
 /* general error */
 #define ONIGERR_INVALID_ARGUMENT                              -30
+#define ONIGERR_BACKTRACK_OVER                                -31
 /* syntax error */
 #define ONIGERR_END_PATTERN_AT_LEFT_BRACE                    -100
 #define ONIGERR_END_PATTERN_AT_LEFT_BRACKET                  -101
@@ -785,6 +786,7 @@ typedef struct re_pattern_buffer {
   OnigDistance   anchor_dmin;       /* (SEMI_)END_BUF anchor distance */
   OnigDistance   anchor_dmax;       /* (SEMI_)END_BUF anchor distance */
   int            sub_anchor;        /* start-anchor for exact or map */
+  unsigned int   backtrack_limit;   /* backtrack limit: 0 == unlimited */
   unsigned char *exact;
   unsigned char *exact_end;
   unsigned char  map[ONIG_CHAR_TABLE_SIZE]; /* used as BM skip or char-map */
@@ -922,6 +924,14 @@ ONIG_EXTERN
 unsigned int onig_get_parse_depth_limit(void);
 ONIG_EXTERN
 int onig_set_parse_depth_limit(unsigned int depth);
+ONIG_EXTERN
+unsigned int onig_get_backtrack_limit(OnigRegex reg);
+ONIG_EXTERN
+void onig_set_backtrack_limit(OnigRegex reg, unsigned int limit);
+ONIG_EXTERN
+unsigned int onig_get_default_backtrack_limit(void);
+ONIG_EXTERN
+void onig_set_default_backtrack_limit(unsigned int limit);
 ONIG_EXTERN
 int onig_end(void);
 ONIG_EXTERN

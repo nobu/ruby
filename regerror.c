@@ -67,6 +67,8 @@ onig_error_code_to_format(OnigPosition code)
     p = "can't convert to wide-char on specified multibyte-encoding"; break;
   case ONIGERR_INVALID_ARGUMENT:
     p = "invalid argument"; break;
+  case ONIGERR_BACKTRACK_OVER:
+    p = "too many backtracks"; break;
   case ONIGERR_END_PATTERN_AT_LEFT_BRACE:
     p = "end pattern at left brace"; break;
   case ONIGERR_END_PATTERN_AT_LEFT_BRACKET:
