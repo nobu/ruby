@@ -723,6 +723,7 @@ struct re_registers {
   /* extended */
   OnigCaptureTreeNode* history_root;  /* capture history tree root */
 #endif
+  uint64_t backtrack_count;
 };
 
 /* capture tree traverse */

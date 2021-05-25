@@ -3141,6 +3141,24 @@ match_equal(VALUE match1, VALUE match2)
     return Qtrue;
 }
 
+/*
+ * call-seq:
+ *    mtch.backtrack_count   -> integer
+ *
+ * Return the number of backtracks which occurred before matched.
+ */
+
+static VALUE
+match_backtrack_count(VALUE match)
+{
+    const struct re_registers *regs;
+
+    if (!RMATCH(match)->regexp) return Qnil;
+    regs = RMATCH_REGS(match);
+    if (!regs) return Qnil;
+    return ULL2NUM(regs->backtrack_count);
+}
+
 static VALUE
 reg_operand(VALUE s, int check)
 {
@@ -4151,4 +4169,5 @@ Init_Regexp(void)
     rb_define_method(rb_cMatch, "hash", match_hash, 0);
     rb_define_method(rb_cMatch, "eql?", match_equal, 1);
     rb_define_method(rb_cMatch, "==", match_equal, 1);
+    rb_define_method(rb_cMatch, "backtrack_count", match_backtrack_count, 0);
 }

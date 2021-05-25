@@ -326,6 +326,7 @@ onig_region_init(OnigRegion* region)
 #ifdef USE_CAPTURE_HISTORY
   region->history_root = (OnigCaptureTreeNode* )0;
 #endif
+  region->backtrack_count = 0;
 }
 
 extern OnigRegion*
@@ -379,6 +380,7 @@ onig_region_copy(OnigRegion* to, const OnigRegion* from)
     to->history_root = history_tree_clone(from->history_root);
   }
 #endif
+  to->backtrack_count = from->backtrack_count;
 }
 
 
@@ -1792,6 +1794,7 @@ match_at(regex_t* reg, const UChar* str, const UChar* end,
 	    }
 	  }
 #endif /* USE_CAPTURE_HISTORY */
+          region->backtrack_count = backtrack_count;
 	} /* if (region) */
       } /* n > best_len */
 
@@ -3175,7 +3178,7 @@ match_at(regex_t* reg, const UChar* str, const UChar* end,
 	stk++;
       }
 #endif
-      if (backtrack_limit && backtrack_count++ > backtrack_limit) {
+      if (backtrack_count++ > backtrack_limit) {
           best_len = ONIGERR_BACKTRACK_OVER;
           goto finish;
       }
