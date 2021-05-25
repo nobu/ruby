@@ -845,29 +845,27 @@ static VALUE
 rb_reg_backtrack_limit_get(VALUE re)
 {
     regex_t *reg = (rb_reg_check(re), RREGEXP_PTR(re));
-    unsigned int limit = onig_get_backtrack_limit(reg);
-    return UINT2NUM(limit);
+    return ULL2NUM(onig_get_backtrack_limit(reg));
 }
 
 static VALUE
 rb_reg_backtrack_limit_set(VALUE re, VALUE limit)
 {
     regex_t *reg = (rb_reg_check(re), RREGEXP_PTR(re));
-    onig_set_backtrack_limit(reg, NUM2UINT(limit));
+    onig_set_backtrack_limit(reg, NUM2ULL(limit));
     return limit;
 }
 
 static VALUE
 rb_reg_s_backtrack_limit_get(VALUE _)
 {
-    unsigned int limit = onig_get_default_backtrack_limit();
-    return UINT2NUM(limit);
+    return ULL2NUM(onig_get_default_backtrack_limit());
 }
 
 static VALUE
 rb_reg_s_backtrack_limit_set(VALUE _, VALUE limit)
 {
-    onig_set_default_backtrack_limit(NUM2UINT(limit));
+    onig_set_default_backtrack_limit(NUM2ULL(limit));
     return limit;
 }
 

@@ -5930,7 +5930,7 @@ onig_compile(regex_t* reg, const UChar* pattern, const UChar* pattern_end,
   return r;
 }
 
-static unsigned int MaxBacktrackLimit = 0; /* unlimited */
+static uint64_t MaxBacktrackLimit = (uint64_t)-1;
 
 static int onig_inited = 0;
 
@@ -6045,24 +6045,24 @@ onig_init(void)
 }
 
 extern void
-onig_set_backtrack_limit(OnigRegex reg, unsigned int limit)
+onig_set_backtrack_limit(OnigRegex reg, uint64_t limit)
 {
   reg->backtrack_limit = limit;
 }
 
-extern unsigned int
+extern uint64_t
 onig_get_backtrack_limit(OnigRegex reg)
 {
   return reg->backtrack_limit;
 }
 
 extern void
-onig_set_default_backtrack_limit(unsigned int limit)
+onig_set_default_backtrack_limit(uint64_t limit)
 {
   MaxBacktrackLimit = limit;
 }
 
-extern unsigned int
+extern uint64_t
 onig_get_default_backtrack_limit(void)
 {
   return MaxBacktrackLimit;

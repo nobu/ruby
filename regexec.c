@@ -1455,8 +1455,8 @@ match_at(regex_t* reg, const UChar* str, const UChar* end,
   unsigned char* state_check_buff = msa->state_check_buff;
   int num_comb_exp_check = reg->num_comb_exp_check;
 #endif
-  const unsigned int backtrack_limit = reg->backtrack_limit;
-  unsigned int backtrack_count = 0;
+  const uint64_t backtrack_limit = reg->backtrack_limit;
+  uint64_t backtrack_count = 0;
 
 #if USE_TOKEN_THREADED_VM
 # define OP_OFFSET  1
