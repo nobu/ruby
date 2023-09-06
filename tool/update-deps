@@ -1,4 +1,5 @@
 #!/usr/bin/ruby
+# frozen-string-literal: trunk
 
 # tool/update-deps verify makefile dependencies.
 
@@ -190,6 +191,8 @@ UNSTABLE_FILES = %r{\Awin32/[^/]+\.o\z}
 
 # Other source files exist in the source directory.
 
+TOP_DEPEND = File.exist?(dep = "depend") ? dep : "common.mk"
+
 def in_makefile(target, source)
   target = target.to_s
   source = source.to_s
@@ -214,7 +217,7 @@ def in_makefile(target, source)
     when %r{\Acoroutine/} then source2 = "{$(VPATH)}$(COROUTINE_H)"
     else source2 = "$(top_srcdir)/#{source}"
     end
-    ["common.mk", target2, source2]
+    [TOP_DEPEND, target2, source2]
   when %r{\Aenc/}
     target2 = "#{target.sub(/\.o\z/, '.$(OBJEXT)')}"
     case source
