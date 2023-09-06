@@ -713,6 +713,7 @@ typedef struct rb_vm_struct {
     volatile int ubf_async_safe;
 
     unsigned int running: 1;
+    unsigned int finalizing: 1;
     unsigned int thread_abort_on_exception: 1;
     unsigned int thread_report_on_exception: 1;
     unsigned int thread_ignore_deadlock: 1;
@@ -2209,6 +2210,7 @@ void rb_vm_postponed_job_atfork(void); /* vm_trace.c */
 void rb_vm_postponed_job_free(void); /* vm_trace.c */
 size_t rb_vm_memsize_postponed_job_queue(void); /* vm_trace.c */
 void rb_vm_postponed_job_queue_init(rb_vm_t *vm); /* vm_trace.c */
+void rb_vm_clear_traps(rb_vm_t *vm);
 
 RUBY_SYMBOL_EXPORT_BEGIN
 

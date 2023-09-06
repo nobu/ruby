@@ -1055,6 +1055,15 @@ rb_vm_trap_exit(rb_vm_t *vm)
     }
 }
 
+void
+rb_vm_clear_traps(rb_vm_t *vm)
+{
+    vm->finalizing = TRUE;
+    for (int i = 0; i < numberof(vm->trap_list.cmd); ++i) {
+        vm->trap_list.cmd[i] = 0;
+    }
+}
+
 /* returns true if a trap handler was run, false otherwise */
 int
 rb_signal_exec(rb_thread_t *th, int sig)
@@ -1062,6 +1071,7 @@ rb_signal_exec(rb_thread_t *th, int sig)
     rb_vm_t *vm = GET_VM();
     VALUE cmd = vm->trap_list.cmd[sig];
 
+    if (vm->finalizing) return FALSE;
     if (cmd == 0) {
         switch (sig) {
           case SIGINT:
