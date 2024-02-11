@@ -32,6 +32,7 @@ i586-mswin32: -prologue- -i586- -epilogue-
 i686-mswin32: -prologue- -i686- -epilogue-
 alpha-mswin32: -prologue- -alpha- -epilogue-
 x64-mswin64: -prologue- -x64- -epilogue-
+arm64-mswin64: -prologue- -arm64- -epilogue-
 
 -prologue-: -basic-vars-
 -generic-: -osname-
@@ -203,6 +204,8 @@ del %0 & exit
 	@$(CPP) <<conftest.c 2>nul | findstr = >>$(MAKEFILE)
 #if defined _M_X64
 MACHINE = x64
+#elif defined _M_ARM64
+MACHINE = arm64
 #else
 MACHINE = x86
 #endif
