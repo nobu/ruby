@@ -31,6 +31,8 @@ class TestArithmeticSequence < Test::Unit::TestCase
     assert_equal(4, (4...).step(7).begin)
     assert_equal(nil, (..10).step(9).begin)
     assert_equal(nil, (...11).step(5).begin)
+
+    assert_instance_of(Integer, (3..).step(2).begin)
   end
 
   def test_end
@@ -176,6 +178,12 @@ class TestArithmeticSequence < Test::Unit::TestCase
     assert_equal(nil, seq.first)
     assert_raise(TypeError) { seq.first(1) }
     assert_raise(TypeError) { seq.first(3) }
+
+    seq = 0.step(Float::INFINITY, 10)
+    assert_equal(0, seq.first)
+    assert_instance_of(Integer, seq.first)
+    assert_equal([0], seq.first(1))
+    assert_instance_of(Integer, seq.first(1)[0])
   end
 
   def test_first_bug15518

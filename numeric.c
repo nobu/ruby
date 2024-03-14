@@ -2786,6 +2786,25 @@ ruby_float_step(VALUE from, VALUE to, VALUE step, int excl, int allow_endless)
             for (;;)
                 rb_yield(val);
         }
+        else if (isinf(end) && RB_INTEGER_TYPE_P(from) && RB_INTEGER_TYPE_P(step)) {
+            VALUE val = from;
+            if (FIXNUM_P(from) && FIXNUM_P(step)) {
+                long n = FIX2LONG(from), u = FIX2LONG(step);
+                if ((end > 0) != (u > 0)) return TRUE;
+                do {
+                    rb_yield(LONG2FIX(n));
+                    n += u;
+                } while (FIXABLE(n));
+                val = LONG2NUM(n);
+            }
+            else {
+                if ((end > 0) != !rb_int_negative_p(step)) return TRUE;
+            }
+            do {
+                rb_yield(val);
+                val = rb_big_plus(val, step);
+            } while (1);
+        }
         else {
             for (i=0; i<n; i++) {
                 double d = i*unit+beg;
