@@ -104,12 +104,6 @@ jobs:
             core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
             core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
 
-      - name: Install libraries with vcpkg
-        run: |
-          vcpkg --triplet x64-windows install gmp libffi libyaml openssl zlib
-        env:
-          VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
-
       - name: Install libraries with scoop
         run: |
           iex "& {$(irm get.scoop.sh)} -RunAsAdmin"
@@ -125,6 +119,13 @@ jobs:
         with:
           srcdir: src
           builddir: build
+
+      - name: Install libraries with vcpkg
+        run: |
+          vcpkg install --triplet x64-windows
+        working-directory: src
+        env:
+          VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
 
       - name: setup env
         # Available Ruby versions: https://github.com/actions/runner-images/blob/main/images/windows/Windows2019-Readme.md#ruby
