@@ -8,6 +8,9 @@
 
 ;; Incomplete implementation
 coroutine_transfer PROC
+	; paciasp (it also acts as BTI landing pad, so no need to insert BTI also)
+	hint #25
+
 	; Make space on the stack for caller registers
 	sub sp, sp, 0xa0
 
@@ -45,6 +48,9 @@ coroutine_transfer PROC
 
 	; Pop stack frame
 	add sp, sp, 0xa0
+
+	; autiasp: Authenticate x30 (LR) with SP and key A
+	hint #29
 
 	; Jump to return address (in x30)
 	ret
