@@ -919,7 +919,7 @@ rb_f_load(int argc, VALUE *argv, VALUE _)
     if (!path) {
         if (!rb_file_load_ok(RSTRING_PTR(fname)))
             load_failed(orig_fname);
-        path = fname;
+        path = rb_check_realpath(Qnil, fname, NULL);
     }
     rb_load_internal(path, wrap);
 
