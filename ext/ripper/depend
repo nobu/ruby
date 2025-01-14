@@ -3,10 +3,29 @@ SRC1 = $(top_srcdir)/parse.y
 SRC2 = $(srcdir)/eventids2.c
 LRAMA = $(BASERUBY) $(top_srcdir)/tool/lrama/exe/lrama
 
+generated_srcs = ripper.c ripper_init.c eventids1.c eventids1.h eventids2table.c
+
 .SUFFIXES: .y
 
-src: ripper.c ripper_init.c eventids1.c eventids1.h eventids2table.c
-ripper.c ripper_init.c eventids1.c eventids1.h eventids2table.c: depend
+src: $(generated_srcs)
+$(generated_srcs): depend
+
+clean: clean-srcs
+distclean: distclean-srcs
+realclean: realclean-srcs
+
+clean-.-srcs clean--srcs:
+	$(RM) $(generated_srcs)
+clean-$(srcdir)-srcs:
+
+clean-srcs:
+
+distclean-srcs: clean-$(srcdir)-srcs
+
+realclean-srcs: distclean-srcs
+	cd $(srcdir) && $(RM) $(generated_srcs)
+
+.PHONY: clean-srcs clean--srcs clean-$(srcdir)-srcs distclean-srcs realclean-srcs
 
 ripper.o: ripper.c
 
