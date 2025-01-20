@@ -130,6 +130,22 @@ jobs:
           steps.diff.outputs.update
           }}
 
+      - name: Development revision of bundled gems
+        run: |
+          #!ruby
+          week_ago = Time.now - 7*86400
+          IO.popen(%W"git blame --line-porcelain -- #{ARGV[0]}") do |blame|
+            while time = blame.gets("\nfilename ")&.slice(/^committer-time \K\d+/)&.to_i
+              gets
+              line = gets
+              next if /^\s*#/ =~ line
+              next unless (gem = line.split).size > 3
+              next if time >= week_ago
+              puts "Using development revision #{gem[0]} more than a week"
+            end
+          end
+        shell: ruby {0} gems/bundled_gems
+
       - uses: ./.github/actions/slack
         with:
           SLACK_WEBHOOK_URL: ${{ secrets.SIMPLER_ALERTS_URL }} # ruby-lang slack: ruby/simpler-alerts-bot
