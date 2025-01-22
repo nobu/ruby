@@ -2,7 +2,6 @@ name: bundled_gems
 
 on:
   push:
-    branches: ['master']
     paths:
       - '.github/workflows/bundled_gems.yml'
       - 'gems/bundled_gems'
@@ -102,18 +101,17 @@ jobs:
         id: cpr
         uses: peter-evans/create-pull-request@176fdd231e657da216eceed8531b9dbcfb867feb
         with:
-          token: ${{ secrets.MATZBOT_GITHUB_TOKEN }}
+          # token: ${{ secrets.MATZBOT_GITHUB_TOKEN }}
           commit-message: ${{ steps.commit.outputs.message }}
           title: update ${{ steps.commit.outputs.message }}
           body: ''
           labels: bundled-gems
-          branch: update/bundled-gems
+          branch: update-bundled-gems
           author: git[bot] <svn-admin@ruby-lang.org>
           committer: git[bot] <svn-admin@ruby-lang.org>
           delete-branch: true
         if: >-
           ${{
-          github.repository == 'ruby/ruby' &&
           !startsWith(github.event_name, 'pull') &&
           steps.commit.outcome == 'success'
           }}
@@ -121,7 +119,7 @@ jobs:
       - name: Auto merge
         uses: peter-evans/enable-pull-request-automerge@15cc64bb1afa41657d1325a39ade0bc0fa2d55d4
         with:
-          token: ${{ secrets.MATZBOT_GITHUB_TOKEN }}
+          # token: ${{ secrets.MATZBOT_GITHUB_TOKEN }}
           pull-request-number: ${{ steps.cpr.outputs.pull-request-number }}
         if: ${{ steps.cpr.outcome == 'success' }}
 
