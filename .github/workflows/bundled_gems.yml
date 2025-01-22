@@ -82,58 +82,48 @@ jobs:
           echo gems=$gems >> $GITHUB_OUTPUT
           echo update=${news:-$gems} >> $GITHUB_OUTPUT
 
-      - name: Install libraries
-        uses: ./.github/actions/setup/ubuntu
-        if: ${{ steps.diff.outputs.gems }}
-
-      - name: Build
-        run: |
-          ./autogen.sh
-          ./configure -C --disable-install-doc
-          make
-        if: ${{ steps.diff.outputs.gems }}
-
-      - name: Prepare bundled gems
-        run: |
-          make -s prepare-gems
-        if: ${{ steps.diff.outputs.gems }}
-
-      - name: Test bundled gems
-        run: |
-          make -s test-bundled-gems
-        timeout-minutes: 30
-        env:
-          RUBY_TESTOPTS: '-q --tty=no'
-          TEST_BUNDLED_GEMS_ALLOW_FAILURES: 'typeprof'
-        if: ${{ steps.diff.outputs.gems }}
-
       - name: Commit
         id: commit
         run: |
-          git pull --ff-only origin ${GITHUB_REF#refs/heads/}
           message="Update bundled gems list"
           if [ -z "${gems}" ]; then
-            git commit --message="${message} at ${GITHUB_SHA:0:30} [ci skip]"
+            # NEWS file only; almost all should be skipped
+            message="[DOC] ${message} at ${GITHUB_SHA:0:30}"
           else
-            git commit --message="${message} as of ${TODAY}"
+            message="${message} as of ${TODAY}"
           fi
+          echo message="${message}" >> $GITHUB_OUTPUT
         env:
           TODAY: ${{ steps.bundled_gems.outputs.latest_date || env.TODAY }}
-          EMAIL: svn-admin@ruby-lang.org
-          GIT_AUTHOR_NAME: git
-          GIT_COMMITTER_NAME: git
           gems: ${{ steps.diff.outputs.gems }}
         if: ${{ steps.diff.outputs.update }}
 
-      - name: Push
-        run: |
-          git push origin ${GITHUB_REF#refs/heads/}
+      - name: Create Pull Request
+        id: cpr
+        uses: peter-evans/create-pull-request@176fdd231e657da216eceed8531b9dbcfb867feb
+        with:
+          token: ${{ secrets.MATZBOT_GITHUB_TOKEN }}
+          commit-message: ${{ steps.commit.outputs.message }}
+          title: update ${{ steps.commit.outputs.message }}
+          body: ''
+          labels: bundled-gems
+          branch: update/bundled-gems
+          author: git[bot] <svn-admin@ruby-lang.org>
+          committer: git[bot] <svn-admin@ruby-lang.org>
+          delete-branch: true
         if: >-
           ${{
           github.repository == 'ruby/ruby' &&
           !startsWith(github.event_name, 'pull') &&
           steps.commit.outcome == 'success'
           }}
+
+      - name: Auto merge
+        uses: peter-evans/enable-pull-request-automerge@15cc64bb1afa41657d1325a39ade0bc0fa2d55d4
+        with:
+          token: ${{ secrets.MATZBOT_GITHUB_TOKEN }}
+          pull-request-number: ${{ steps.cpr.outputs.pull-request-number }}
+        if: ${{ steps.cpr.outcome == 'success' }}
 
       - uses: ./.github/actions/slack
         with:
