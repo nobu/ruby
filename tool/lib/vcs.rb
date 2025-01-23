@@ -283,15 +283,20 @@ class VCS
         opts[:chdir] ||= srcdir
       end
       VCS.dump(cmds, "cmds: ") if debug? and !$DEBUG
+      if cmds.first.kind_of?(Hash)
+        cmds[0] = env_without_gitconfig.merge(cmds.first)
+      else
+        cmds.unshift(env_without_gitconfig)
+      end
       cmds
     end
 
     def cmd_pipe_at(srcdir, cmds, &block)
-      without_gitconfig { IO.popen(*cmd_args(cmds, srcdir), &block) }
+      IO.popen(*cmd_args(cmds, srcdir), &block)
     end
 
     def cmd_read_at(srcdir, cmds)
-      result = without_gitconfig { IO.pread(*cmd_args(cmds, srcdir)) }
+      result = IO.pread(*cmd_args(cmds, srcdir))
       VCS.dump(result, "result: ") if debug?
       result
     end
@@ -377,15 +382,23 @@ class VCS
       rev[0, 10]
     end
 
-    def without_gitconfig
-      envs = (%w'HOME XDG_CONFIG_HOME' + ENV.keys.grep(/\AGIT_/)).each_with_object({}) do |v, h|
-        h[v] = ENV.delete(v)
+    def revision_handler(rev)
+      case rev
+      when Integer
+        SVN
+      else
+        super
       end
-      ENV['GIT_CONFIG_SYSTEM'] = NullDevice
-      ENV['GIT_CONFIG_GLOBAL'] = global_config
-      yield
-    ensure
-      ENV.update(envs)
+    end
+
+    def env_without_gitconfig
+      @env_without_gitconfig ||=
+        begin
+          envs = (%w'HOME XDG_CONFIG_HOME' + ENV.keys.grep(/\AGIT_/)).to_h {|v| [v, nil]}
+          envs['GIT_CONFIG_SYSTEM'] = NullDevice
+          envs['GIT_CONFIG_GLOBAL'] = global_config.freeze
+          envs.freeze
+        end
     end
 
     def global_config
@@ -393,11 +406,11 @@ class VCS
       unless @gitconfig
         @gitconfig = Tempfile.new(%w"vcs_ .gitconfig")
         @gitconfig.close
-        ENV['GIT_CONFIG_GLOBAL'] = @gitconfig.path
+        env = {'GIT_CONFIG_GLOBAL' => @gitconfig.path}
         SAFE_DIRECTORIES.each do |dir|
-          system(*%W[#{COMMAND} config --global --add safe.directory #{dir}])
+          system(env, *%W[#{COMMAND} config --global --add safe.directory #{dir}])
         end
-        VCS.dump(`#{COMMAND} config --global --get-all safe.directory`, "safe.directory: ") if debug?
+        VCS.dump(IO.popen(env, "#{COMMAND} config --global --get-all safe.directory", &:read), "safe.directory: ") if debug?
       end
       @gitconfig.path
     end
