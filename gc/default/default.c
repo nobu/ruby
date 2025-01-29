@@ -850,7 +850,7 @@ RVALUE_AGE_SET(VALUE obj, int age)
 #define stress_to_class         objspace->stress_to_class
 #define set_stress_to_class(c)  (stress_to_class = (c))
 #else
-#define stress_to_class         ((void)objspace, 0)
+#define stress_to_class         ((void)(objspace), 0)
 #define set_stress_to_class(c)  ((void)objspace, (c))
 #endif
 
@@ -1460,6 +1460,52 @@ rb_gc_impl_gc_disable(void *objspace_ptr, bool finish_current_gc)
     }
 
     dont_gc_on();
+}
+
+/* :nodoc:
+ *
+ *  call-seq:
+ *    GC.add_stress_to_class(class[, ...])
+ *
+ *  Raises NoMemoryError when allocating an instance of the given classes.
+ *
+ */
+static VALUE
+rb_gcdebug_add_stress_to_class(int argc, VALUE *argv, VALUE self)
+{
+    rb_objspace_t *objspace = rb_gc_get_objspace();
+
+    if (!stress_to_class) {
+        set_stress_to_class(rb_ary_hidden_new(argc));
+    }
+    rb_ary_cat(stress_to_class, argv, argc);
+    return self;
+}
+
+/* :nodoc:
+ *
+ *  call-seq:
+ *    GC.remove_stress_to_class(class[, ...])
+ *
+ *  No longer raises NoMemoryError when allocating an instance of the
+ *  given classes.
+ *
+ */
+static VALUE
+rb_gcdebug_remove_stress_to_class(int argc, VALUE *argv, VALUE self)
+{
+    rb_objspace_t *objspace = rb_gc_get_objspace();
+    int i;
+
+    if (stress_to_class) {
+        for (i = 0; i < argc; ++i) {
+            rb_ary_delete_same(stress_to_class, argv[i]);
+        }
+        if (RARRAY_LEN(stress_to_class) == 0) {
+            set_stress_to_class(0);
+        }
+    }
+    return Qnil;
 }
 
 /*
@@ -9427,6 +9473,11 @@ rb_gc_impl_init(void)
     rb_define_singleton_method(rb_mProfiler, "result", gc_profile_result, 0);
     rb_define_singleton_method(rb_mProfiler, "report", gc_profile_report, -1);
     rb_define_singleton_method(rb_mProfiler, "total_time", gc_profile_total_time, 0);
+
+    if (GC_DEBUG_STRESS_TO_CLASS) {
+        rb_define_singleton_method(rb_mGC, "add_stress_to_class", rb_gcdebug_add_stress_to_class, -1);
+        rb_define_singleton_method(rb_mGC, "remove_stress_to_class", rb_gcdebug_remove_stress_to_class, -1);
+    }
 
     {
         VALUE opts;
