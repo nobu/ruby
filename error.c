@@ -87,7 +87,7 @@ static ID id_deprecated;
 static ID id_experimental;
 static ID id_performance;
 static ID id_strict_unused_block;
-static VALUE sym_category;
+static VALUE sym_category, sym_all;
 static VALUE sym_highlight;
 static struct {
     st_table *id2enum, *enum2id;
@@ -157,13 +157,15 @@ rb_syntax_error_append(VALUE exc, VALUE file, int line, int column,
     return exc;
 }
 
-static unsigned int warning_disabled_categories = (
+static const unsigned int RB_WARN_CATEGORY_INITIAL_BITS = (
     (1U << RB_WARN_CATEGORY_DEPRECATED) |
     ~RB_WARN_CATEGORY_DEFAULT_BITS);
+static unsigned int warning_disabled_categories = RB_WARN_CATEGORY_INITIAL_BITS;
 
 static unsigned int
 rb_warning_category_mask(VALUE category)
 {
+    if (category == sym_all) return RB_WARN_CATEGORY_ALL_BITS;
     return 1U << rb_warning_category_from_name(category);
 }
 
@@ -244,10 +246,16 @@ rb_warning_s_aset(VALUE mod, VALUE category, VALUE flag)
 {
     unsigned int mask = rb_warning_category_mask(category);
     unsigned int disabled = warning_disabled_categories;
-    if (!RTEST(flag))
-        disabled |= mask;
-    else
+    if (flag == ID2SYM(idDefault)) {
         disabled &= ~mask;
+        disabled |= mask & RB_WARN_CATEGORY_INITIAL_BITS;
+    }
+    else if (!RTEST(flag)) {
+        disabled |= mask;
+    }
+    else {
+        disabled &= ~mask;
+    }
     warning_disabled_categories = disabled;
     return flag;
 }
@@ -3753,6 +3761,7 @@ Init_Exception(void)
     id_recv = rb_make_internal_id();
 
     sym_category = ID2SYM(id_category);
+    sym_all = ID2SYM(rb_intern_const("all"));
     sym_highlight = ID2SYM(rb_intern_const("highlight"));
 
     warning_categories.id2enum = rb_init_identtable();
