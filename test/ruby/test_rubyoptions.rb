@@ -975,6 +975,11 @@ class TestRubyOptions < Test::Unit::TestCase
     end
   end
 
+  def test_crash_report_no_dump
+    status, report = assert_crash_report("dump=no,dump.log")
+    assert_equal("dump.log", report)
+  end
+
   def test_DATA
     Tempfile.create(["test_ruby_test_rubyoption", ".rb"]) {|t|
       t.puts "puts DATA.read.inspect"

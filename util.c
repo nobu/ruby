@@ -609,6 +609,22 @@ ruby_each_words(const char *str, void (*func)(const char*, int, void*), void *ar
     }
 }
 
+void
+ruby_each_words_until(const char *str, int (*func)(const char*, int, void*), const char *sep, void *arg)
+{
+    const char *end;
+    if (!str) return;
+    for (; *str; str = end) {
+        while (ISSPACE(*str) || *str == ',') str++;
+        for (end = str; *end && !ISSPACE(*end); end++) {
+            if (*end == ',') break;
+            if (sep && strchr(sep, *end)) break;
+        }
+        int ret = (*func)(str, (int)(end - str), arg); /* assume no string exceeds INT_MAX */
+        if (ret) break;
+    }
+}
+
 #undef strtod
 #define strtod ruby_strtod
 #undef dtoa
