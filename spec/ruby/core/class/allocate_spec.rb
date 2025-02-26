@@ -16,7 +16,7 @@ describe "Class#allocate" do
     klass = Class.allocate
     -> do
       klass.new
-    end.should raise_error(Exception)
+    end.should raise_error(TypeError)
   end
 
   it "does not call initialize on the new instance" do

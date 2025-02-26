@@ -52,9 +52,10 @@ describe :hash_to_s, shared: true do
   it "does not swallow exceptions raised by #to_s" do
     obj = mock("Hash#inspect/to_s does not swallow #to_s exceptions")
     obj.should_receive(:inspect).and_return(obj)
-    obj.should_receive(:to_s).and_raise(Exception)
+    exception = Class.new(Exception)
+    obj.should_receive(:to_s).and_raise(exception)
 
-    -> { { a: obj }.send(@method) }.should raise_error(Exception)
+    -> { { a: obj }.send(@method) }.should raise_error(exception)
   end
 
   it "handles hashes with recursive values" do

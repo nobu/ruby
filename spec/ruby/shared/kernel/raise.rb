@@ -4,10 +4,11 @@ describe :kernel_raise, shared: true do
   end
 
   it "aborts execution" do
+    exception = Class.new(Exception)
     -> do
-      @object.raise Exception, "abort"
+      @object.raise exception, "abort"
       ScratchPad.record :no_abort
-    end.should raise_error(Exception, "abort")
+    end.should raise_error(exception, "abort")
 
     ScratchPad.recorded.should be_nil
   end

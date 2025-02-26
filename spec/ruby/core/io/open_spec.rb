@@ -38,28 +38,30 @@ describe "IO.open" do
   end
 
   it "propagate an exception in the block after calling #close" do
+    exception = Class.new(Exception)
     -> do
       IO.open(@fd, "w") do |io|
         IOSpecs.io_mock(io, :close) do
           super()
           ScratchPad.record :called
         end
-        raise Exception
+        raise exception
       end
-    end.should raise_error(Exception)
+    end.should raise_error(exception)
     ScratchPad.recorded.should == :called
   end
 
   it "propagates an exception raised by #close that is not a StandardError" do
+    exception = Class.new(Exception)
     -> do
       IO.open(@fd, "w") do |io|
         IOSpecs.io_mock(io, :close) do
           super()
           ScratchPad.record :called
-          raise Exception
+          raise exception
         end
       end
-    end.should raise_error(Exception)
+    end.should raise_error(exception)
     ScratchPad.recorded.should == :called
   end
 

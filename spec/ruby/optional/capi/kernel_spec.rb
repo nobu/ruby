@@ -430,7 +430,8 @@ describe "C-API Kernel function" do
     end
 
     it "raises an exception if passed function raises an exception other than StandardError" do
-      -> { @s.rb_rescue(@exc_error_proc, nil, @rescue_proc_returns_arg, nil) }.should raise_error(Exception)
+      exception = Class.new(Exception)
+      -> { @s.rb_rescue(@exc_error_proc, nil, @rescue_proc_returns_arg, nil) }.should raise_error(exception)
     end
 
     it "raises an exception if any exception is raised inside the 'rescue function'" do
@@ -472,12 +473,13 @@ describe "C-API Kernel function" do
       proc = -> x, _exc { x }
       arg_error_proc = -> *_ { raise ArgumentError, '' }
       run_error_proc = -> *_ { raise RuntimeError, '' }
-      type_error_proc = -> *_ { raise Exception, 'custom error' }
+      exception = Class.new(Exception)
+      type_error_proc = -> *_ { raise exception, 'custom error' }
       @s.rb_rescue2(arg_error_proc, :no_exc, proc, :exc, ArgumentError, RuntimeError).should == :exc
       @s.rb_rescue2(run_error_proc, :no_exc, proc, :exc, ArgumentError, RuntimeError).should == :exc
       -> {
         @s.rb_rescue2(type_error_proc, :no_exc, proc, :exc, ArgumentError, RuntimeError)
-      }.should raise_error(Exception, 'custom error')
+      }.should raise_error(exception, 'custom error')
     end
 
     it "raises TypeError if one of the passed exceptions is not a Module" do

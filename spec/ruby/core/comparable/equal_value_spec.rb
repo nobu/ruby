@@ -76,8 +76,9 @@ describe "Comparable#==" do
     end
 
     it "lets it go through if it is not a StandardError" do
-      a.should_receive(:<=>).once.and_raise(Exception)
-      -> { (a == b) }.should raise_error(Exception)
+      exception = Class.new(Exception)
+      a.should_receive(:<=>).once.and_raise(exception)
+      -> { (a == b) }.should raise_error(exception)
     end
   end
 

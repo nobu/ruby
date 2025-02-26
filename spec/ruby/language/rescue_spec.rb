@@ -598,9 +598,10 @@ describe "The rescue keyword" do
       a = raise(StandardError) rescue 1
       a.should == 1
 
+      exception = Class.new(Exception)
       -> {
-        a = raise(Exception) rescue 1
-      }.should raise_error(Exception)
+        a = raise(exception) rescue 1
+      }.should raise_error(exception)
     end
 
     it "rescues with multiple assignment" do

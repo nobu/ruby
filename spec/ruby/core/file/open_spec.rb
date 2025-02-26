@@ -38,9 +38,10 @@ describe "File.open" do
     end
 
     it "propagates non-StandardErrors produced by close" do
+      exception = Class.new(Exception)
       -> {
-        File.open(@file, 'r') { |f| FileSpecs.make_closer f, Exception }
-      }.should raise_error(Exception)
+        File.open(@file, 'r') { |f| FileSpecs.make_closer f, exception }
+      }.should raise_error(exception)
 
       ScratchPad.recorded.should == [:file_opened, :file_closed]
     end

@@ -132,8 +132,9 @@ describe "Integer#<=>" do
       end
 
       it "raises an exception if #coerce raises a non-StandardError exception" do
-        @num.should_receive(:coerce).with(@big).and_raise(Exception)
-        -> { @big <=> @num }.should raise_error(Exception)
+        exception = Class.new(Exception)
+        @num.should_receive(:coerce).with(@big).and_raise(exception)
+        -> { @big <=> @num }.should raise_error(exception)
       end
 
       it "returns nil if #coerce does not return an Array" do

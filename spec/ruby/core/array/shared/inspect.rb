@@ -53,9 +53,10 @@ describe :array_inspect, shared: true do
   it "does not swallow exceptions raised by #to_s" do
     obj = mock("Array#inspect/to_s does not swallow #to_s exceptions")
     obj.should_receive(:inspect).and_return(obj)
-    obj.should_receive(:to_s).and_raise(Exception)
+    exception = Class.new(Exception)
+    obj.should_receive(:to_s).and_raise(exception)
 
-    -> { [obj].send(@method) }.should raise_error(Exception)
+    -> { [obj].send(@method) }.should raise_error(exception)
   end
 
   it "represents a recursive element with '[...]'" do

@@ -47,14 +47,15 @@ with_feature :unix_socket do
     end
 
     it "can be interrupted by Thread#raise" do
+      exception = Class.new(Exception)
       t = Thread.new {
         -> {
           @server.accept
-        }.should raise_error(Exception, "interrupted")
+        }.should raise_error(exception, "interrupted")
       }
 
       Thread.pass while t.status and t.status != "sleep"
-      t.raise Exception, "interrupted"
+      t.raise exception, "interrupted"
       t.join
     end
   end

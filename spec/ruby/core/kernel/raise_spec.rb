@@ -10,9 +10,10 @@ describe "Kernel#raise" do
   it "re-raises the previously rescued exception if no exception is specified" do
     ScratchPad.record nil
 
+    exception = Class.new(Exception)
     -> do
       begin
-        raise Exception, "outer"
+        raise exception, "outer"
         ScratchPad.record :no_abort
       rescue Exception
         begin
@@ -23,7 +24,7 @@ describe "Kernel#raise" do
         raise
         ScratchPad.record :no_reraise
       end
-    end.should raise_error(Exception, "outer")
+    end.should raise_error(exception, "outer")
 
     ScratchPad.recorded.should be_nil
   end

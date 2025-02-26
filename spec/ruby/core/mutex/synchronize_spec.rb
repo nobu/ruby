@@ -6,15 +6,16 @@ describe "Mutex#synchronize" do
     m2 = Mutex.new
     m2.lock
     synchronized = false
+    exception = Class.new(Exception)
 
     th = Thread.new do
       -> do
         m1.synchronize do
           synchronized = true
           m2.lock
-          raise Exception
+          raise exception
         end
-      end.should raise_error(Exception)
+      end.should raise_error(exception)
     end
 
     Thread.pass until synchronized
