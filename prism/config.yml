@@ -288,6 +288,7 @@ errors:
   - WRITE_TARGET_READONLY
   - WRITE_TARGET_UNEXPECTED
   - XSTRING_TERM
+
 warnings:
   - AMBIGUOUS_BINARY_OPERATOR
   - AMBIGUOUS_FIRST_ARGUMENT_MINUS
@@ -319,6 +320,7 @@ warnings:
   - UNREACHABLE_STATEMENT
   - UNUSED_LOCAL_VARIABLE
   - VOID_STATEMENT
+
 tokens:
   - name: EOF
     value: 1
@@ -549,6 +551,8 @@ tokens:
     comment: "<="
   - name: LESS_EQUAL_GREATER
     comment: "<=>"
+  - name: LESS_GREATER
+    comment: "<>"
   - name: LESS_LESS
     comment: "<<"
   - name: LESS_LESS_EQUAL
@@ -649,6 +653,7 @@ tokens:
     comment: "a separator between words in a list"
   - name: __END__
     comment: "marker for the point in the file at which the parser should stop"
+
 flags:
   - name: ArgumentsNodeFlags
     values:
@@ -778,6 +783,7 @@ flags:
       - name: FORCED_US_ASCII_ENCODING
         comment: "internal bytes forced the encoding to US-ASCII"
     comment: Flags for symbol nodes.
+
 nodes:
   - name: AliasGlobalVariableNode
     fields:

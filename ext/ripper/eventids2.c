@@ -211,6 +211,7 @@ ripper_token2eventid(enum yytokentype tok)
         [tBACK_REF]		= O(backref),
         [tCHAR] 		= O(CHAR),
         [tCMP]			= O(op),
+        [tNCMP]			= O(op),
         [tCOLON2]		= O(op),
         [tCOLON3]		= O(op),
         [tCONSTANT]		= O(const),

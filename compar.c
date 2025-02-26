@@ -87,6 +87,13 @@ cmp_equal(VALUE x, VALUE y)
     return RBOOL(rb_cmpint(c, x, y) == 0);
 }
 
+static VALUE
+cmp_ne(VALUE x, VALUE y)
+{
+    VALUE c = rb_cmp(x, y);
+    return NIL_P(c) ? Qtrue : rb_cmpint(c, x, y) ? c : Qfalse;
+}
+
 static int
 cmpint(VALUE x, VALUE y)
 {
@@ -314,6 +321,7 @@ Init_Comparable(void)
 {
     rb_mComparable = rb_define_module("Comparable");
     rb_define_method(rb_mComparable, "==", cmp_equal, 1);
+    rb_define_method(rb_mComparable, "<>", cmp_ne, 1);
     rb_define_method(rb_mComparable, ">", cmp_gt, 1);
     rb_define_method(rb_mComparable, ">=", cmp_ge, 1);
     rb_define_method(rb_mComparable, "<", cmp_lt, 1);

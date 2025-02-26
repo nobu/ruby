@@ -948,6 +948,7 @@ parser_token2char(struct parser_params *p, enum yytokentype tok)
       TOKEN2CHAR(tNEQ);
       TOKEN2CHAR(tGEQ);
       TOKEN2CHAR(tLEQ);
+      TOKEN2CHAR(tNCMP);
       TOKEN2CHAR(tANDOP);
       TOKEN2CHAR(tOROP);
       TOKEN2CHAR(tMATCH);
@@ -2820,6 +2821,7 @@ rb_parser_ary_free(rb_parser_t *p, rb_parser_ary_t *ary)
 %token tUMINUS		RUBY_TOKEN(UMINUS) "unary-"
 %token tPOW		RUBY_TOKEN(POW)    "**"
 %token tCMP		RUBY_TOKEN(CMP)    "<=>"
+%token tNCMP		RUBY_TOKEN(NCMP)   "<>"
 %token tEQ		RUBY_TOKEN(EQ)     "=="
 %token tEQQ		RUBY_TOKEN(EQQ)    "==="
 %token tNEQ		RUBY_TOKEN(NEQ)    "!="
@@ -2884,7 +2886,7 @@ rb_parser_ary_free(rb_parser_t *p, rb_parser_ary_t *ary)
 %nonassoc tDOT2 tDOT3 tBDOT2 tBDOT3
 %left  tOROP
 %left  tANDOP
-%nonassoc  tCMP tEQ tEQQ tNEQ tMATCH tNMATCH
+%nonassoc  tCMP tEQ tEQQ tNEQ tMATCH tNMATCH tNCMP
 %left  '>' tGEQ '<' tLEQ
 %left  '|' '^'
 %left  '&'
@@ -3813,6 +3815,7 @@ op		: '|'		{ $$ = '|'; }
                 | '^'		{ $$ = '^'; }
                 | '&'		{ $$ = '&'; }
                 | tCMP		{ $$ = tCMP; }
+                | tNCMP		{ $$ = tNCMP; }
                 | tEQ		{ $$ = tEQ; }
                 | tEQQ		{ $$ = tEQQ; }
                 | tMATCH	{ $$ = tMATCH; }
@@ -3958,6 +3961,11 @@ arg		: asgn(lhs, arg_rhs)
                 | arg tCMP arg
                     {
                         $$ = call_bin_op(p, $1, idCmp, $3, &@2, &@$);
+                    /*% ripper: binary!($:1, ID2VAL(idCmp), $:3) %*/
+                    }
+                | arg tNCMP arg
+                    {
+                        $$ = call_bin_op(p, $1, idNcmp, $3, &@2, &@$);
                     /*% ripper: binary!($:1, ID2VAL(idCmp), $:3) %*/
                     }
                 | rel_expr   %prec tCMP
@@ -10766,6 +10774,9 @@ parser_yylex(struct parser_params *p)
             }
             pushback(p, c);
             return warn_balanced((enum ruby_method_ids)tLSHFT, "<<", "here document");
+        }
+        if (c == '>') {
+            return tNCMP;
         }
         pushback(p, c);
         return '<';

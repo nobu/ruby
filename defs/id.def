@@ -129,6 +129,7 @@ token_ops = %[\
   Eq            ==      EQ
   Eqq           ===     EQQ
   Neq           !=      NEQ
+  Ncmp          <>      NCMP
   Not           !
   And           &
   Or            |

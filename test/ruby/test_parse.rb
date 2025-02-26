@@ -1790,6 +1790,10 @@ x = __ENCODING__
     assert_syntax_error('"#$01234"', /not allowed/)
   end
 
+  def test_neq_cmp_operator
+    assert_valid_syntax("1 <> 2")
+  end
+
 =begin
   def test_past_scope_variable
     assert_warning(/past scope/) {catch {|tag| eval("BEGIN{throw tag}; tap {a = 1}; a")}}

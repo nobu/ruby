@@ -768,4 +768,11 @@ class TestInteger < Test::Unit::TestCase
     def o.coerce(other); [other, 10]; end
     assert_equal(124, 1234.ceildiv(o))
   end
+
+  def test_not_equal
+    assert_equal(-1, eval("1 <> 2"))
+    assert_equal(+1, eval("2 <> 1"))
+    assert_equal(false, eval("1 <> 1"))
+    assert_equal(true, eval("1 <> 'a'"))
+  end
 end

@@ -11259,6 +11259,10 @@ parser_lex(pm_parser_t *parser) {
                         LEX(PM_TOKEN_LESS_EQUAL);
                     }
 
+                    if (match(parser, '>')) {
+                        LEX(PM_TOKEN_LESS_GREATER);
+                    }
+
                     LEX(PM_TOKEN_LESS);
 
                 // > >> >>= >=
@@ -13031,6 +13035,7 @@ pm_binding_powers_t pm_binding_powers[PM_TOKEN_MAXIMUM] = {
     [PM_TOKEN_EQUAL_EQUAL_EQUAL] = NON_ASSOCIATIVE(PM_BINDING_POWER_EQUALITY),
     [PM_TOKEN_EQUAL_TILDE] = NON_ASSOCIATIVE(PM_BINDING_POWER_EQUALITY),
     [PM_TOKEN_LESS_EQUAL_GREATER] = NON_ASSOCIATIVE(PM_BINDING_POWER_EQUALITY),
+    [PM_TOKEN_LESS_GREATER] = NON_ASSOCIATIVE(PM_BINDING_POWER_EQUALITY),
 
     // > >= < <=
     [PM_TOKEN_GREATER] = LEFT_ASSOCIATIVE(PM_BINDING_POWER_COMPARISON),
@@ -15985,7 +15990,7 @@ parse_conditional(pm_parser_t *parser, pm_context_t context, size_t opening_newl
     case PM_TOKEN_LESS_EQUAL_GREATER: case PM_TOKEN_LESS_EQUAL: case PM_TOKEN_LESS_LESS: case PM_TOKEN_LESS: \
     case PM_TOKEN_MINUS: case PM_TOKEN_PERCENT: case PM_TOKEN_PIPE: case PM_TOKEN_PLUS: case PM_TOKEN_SLASH: \
     case PM_TOKEN_STAR_STAR: case PM_TOKEN_STAR: case PM_TOKEN_TILDE: case PM_TOKEN_UAMPERSAND: case PM_TOKEN_UMINUS: \
-    case PM_TOKEN_UMINUS_NUM: case PM_TOKEN_UPLUS: case PM_TOKEN_USTAR: case PM_TOKEN_USTAR_STAR
+    case PM_TOKEN_UMINUS_NUM: case PM_TOKEN_UPLUS: case PM_TOKEN_USTAR: case PM_TOKEN_USTAR_STAR: case PM_TOKEN_LESS_GREATER
 
 /**
  * This macro allows you to define a case statement for all of the token types
@@ -21665,6 +21670,7 @@ parse_expression_infix(pm_parser_t *parser, pm_node_t *node, pm_binding_power_t 
         case PM_TOKEN_EQUAL_EQUAL:
         case PM_TOKEN_EQUAL_EQUAL_EQUAL:
         case PM_TOKEN_LESS_EQUAL_GREATER:
+        case PM_TOKEN_LESS_GREATER:
         case PM_TOKEN_CARET:
         case PM_TOKEN_PIPE:
         case PM_TOKEN_AMPERSAND:
