@@ -806,46 +806,69 @@ class TestRubyOptions < Test::Unit::TestCase
 
     # The regexp list that should match the entire stderr output.
     # see assert_pattern_list
-    ExpectedStderrList = [
-      %r(
-        (?:-e:(?:1:)?\s)?\[BUG\]\sSegmentation\sfault.*\n
-      )x,
-      %r(
-        #{ Regexp.quote(RUBY_DESCRIPTION) }\n\n
-      )x,
-      %r(
-        (?:--\s(?:.+\n)*\n)?
-        --\sControl\sframe\sinformation\s-+\n
-        (?:(?:c:.*\n)|(?:^\s+.+\n))*
-        \n
-      )x,
-      %r(
-        (?:
-        --\sRuby\slevel\sbacktrace\sinformation\s----------------------------------------\n
-        (?:-e:1:in\s\'(?:block\sin\s)?<main>\'\n)*
-        -e:1:in\s\'kill\'\n
-        \n
-        )?
-      )x,
-      %r(
-        (?:--\sThreading(?:.+\n)*\n)?
-      )x,
-      %r(
-        (?:--\sMachine(?:.+\n)*\n)?
-      )x,
-      %r(
-        (?:
-          --\sC\slevel\sbacktrace\sinformation\s-------------------------------------------\n
-          (?:Un(?:expected|supported|known)\s.*\n)*
-          (?:(?:.*\s)?\[0x\h+\].*\n|.*:\d+\n)*\n
-        )?
-      )x,
-      %r(
-        (?:--\sOther\sruntime\sinformation\s-+\n
-          (?:.*\n)*
-        )?
-      )x,
-    ]
+    CrashReportList = {
+      dump: [
+        %r(
+          (?:-e:(?:1:)?\s)?\[BUG\]\sSegmentation\sfault.*\n
+        )x,
+        %r(
+          #{ Regexp.quote(RUBY_DESCRIPTION) }\n\n
+        )x,
+      ],
+      vmbt: [
+        %r(
+          (?:--\s(?:.+\n)*\n)?
+          --\sControl\sframe\sinformation\s-+\n
+          (?:(?:c:.*\n)|(?:^\s+.+\n))*
+          \n
+        )x,
+      ],
+      box: [
+        %r(
+          (?:--\sRuby\sBox\sdetection\sinformation\s-+\n)?
+        )x,
+      ],
+      bt: [
+        %r(
+          (?:
+          --\sRuby\slevel\sbacktrace\sinformation\s----------------------------------------\n
+          (?:-e:1:in\s\'(?:block\sin\s)?<main>\'\n)*
+          -e:1:in\s\'kill\'\n
+          \n
+          )?
+        )x,
+      ],
+      thread: [
+        %r(
+          (?:--\sThreading(?:.+\n)*\n)?
+        )x,
+      ],
+      regs: [
+        %r(
+          (?:--\sMachine(?:.+\n)*\n)?
+        )x,
+      ],
+      cbt: [
+        %r(
+          (?:
+            --\sC\slevel\sbacktrace\sinformation\s-------------------------------------------\n
+            (?:Un(?:expected|supported|known)\s.*\n)*
+            (?:(?:.*\s)?\[0x\h+\].*\n|.*:\d+\n)*\n
+          )?
+        )x,
+      ],
+      other: [
+        %r(
+          (?:--\sOther\sruntime\sinformation\s-+\n
+            (?:.*\n)*
+          )?
+        )x,
+      ],
+    }
+
+    # The regexp list that should match the entire stderr output.
+    # see assert_pattern_list
+    ExpectedStderrList = CrashReportList.values.flatten
 
     KILL_SELF = "Process.kill :SEGV, $$"
   end
@@ -898,9 +921,8 @@ class TestRubyOptions < Test::Unit::TestCase
     }
   end
 
-  def assert_crash_report(path, cmd = nil, &block)
+  def assert_crash_report(path, cmd = nil, list: SEGVTest::ExpectedStderrList, &block)
     Dir.mktmpdir("ruby_crash_report") do |dir|
-      list = SEGVTest::ExpectedStderrList
       if cmd
         FileUtils.mkpath(File.join(dir, File.dirname(cmd)))
         File.write(File.join(dir, cmd), SEGVTest::KILL_SELF+"\n")
@@ -971,6 +993,11 @@ class TestRubyOptions < Test::Unit::TestCase
         end
       end
     end
+  end
+
+  def test_crash_report_no_dump
+    status, report = assert_crash_report("dump=no,dump.log", list: SEGVTest::CrashReportList[:dump])
+    assert_equal("dump.log", report)
   end
 
   def test_DATA

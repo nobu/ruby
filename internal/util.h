@@ -19,6 +19,7 @@
 /* util.c */
 char *ruby_dtoa(double d_, int mode, int ndigits, int *decpt, int *sign, char **rve);
 char *ruby_hdtoa(double d, const char *xdigs, int ndigits, int *decpt, int *sign, char **rve);
+void ruby_each_words_until(const char *str, int (*func)(const char*, int, void*), const char *sep, void *arg);
 
 RUBY_SYMBOL_EXPORT_BEGIN
 /* util.c (export) */

@@ -31,6 +31,7 @@
 
 #include "addr2line.h"
 #include "internal.h"
+#include "internal/error.h"
 #include "internal/gc.h"
 #include "internal/variable.h"
 #include "internal/vm.h"
@@ -1378,9 +1379,9 @@ rb_dump_machine_register(FILE *errout, const ucontext_t *ctx)
 #endif /* dump_machine_register */
 
 bool
-rb_vm_bugreport(const void *ctx, FILE *errout)
+rb_vm_bugreport(const struct vm_dump_conf *cf, const void *ctx, FILE *errout)
 {
-    const char *box_env = getenv("RUBY_BUGREPORT_BOX_ENV");
+#define enabled(member) (!cf || cf->member)
     const char *cmd = getenv("RUBY_ON_BUG");
     if (cmd) {
         char buf[0x100];
@@ -1401,6 +1402,8 @@ rb_vm_bugreport(const void *ctx, FILE *errout)
         }
         crashing = true;
     }
+
+    if (!vm_dump_conf_enabled_any(cf)) return true;
 
 #ifdef __linux__
 # define PROC_MAPS_NAME "/proc/self/maps"
@@ -1423,12 +1426,12 @@ rb_vm_bugreport(const void *ctx, FILE *errout)
     }
 
     if (vm && ec) {
-        rb_vmdebug_stack_dump_raw(ec, ec->cfp, errout);
-        if (box_env) {
-            rb_vmdebug_box_env_dump_raw(ec, ec->cfp, errout);
-        }
-        rb_backtrace_print_as_bugreport(errout);
-        kputs("\n");
+        if (enabled(vmbt)) rb_vmdebug_stack_dump_raw(ec, ec->cfp, errout);
+        if (enabled(box)) rb_vmdebug_box_env_dump_raw(ec, ec->cfp, errout);
+        if (enabled(bt)) rb_backtrace_print_as_bugreport(errout);
+        if (enabled(vmbt) || enabled(box) || enabled(bt)) kputs("\n");
+    }
+    if (enabled(thread) && vm && ec) {
         // If we get here, hopefully things are intact enough that
         // we can read these two numbers. It is an estimate because
         // we are reading without synchronization.
@@ -1442,22 +1445,24 @@ rb_vm_bugreport(const void *ctx, FILE *errout)
         kputs("\n");
     }
 
-    rb_dump_machine_register(errout, ctx);
+    if (enabled(regs)) rb_dump_machine_register(errout, ctx);
 
 #if USE_BACKTRACE || defined(_WIN32)
-    kprintf("-- C level backtrace information "
-            "-------------------------------------------\n");
-    rb_print_backtrace(errout);
+    if (enabled(cbt)) {
+        kprintf("-- C level backtrace information "
+                "-------------------------------------------\n");
+        rb_print_backtrace(errout);
 
 
-    kprintf("\n");
+        kprintf("\n");
+    }
 #endif /* USE_BACKTRACE */
 
-    if (other_runtime_info || vm) {
+    if ((enabled(lf) || enabled(mm)) && (other_runtime_info || vm)) {
         kprintf("-- Other runtime information "
                 "-----------------------------------------------\n\n");
     }
-    if (vm && !rb_during_gc()) {
+    if (enabled(lf) && vm && !rb_during_gc()) {
         int i;
         VALUE name;
         long len;
@@ -1520,7 +1525,7 @@ rb_vm_bugreport(const void *ctx, FILE *errout)
         kprintf("\n");
     }
 
-    {
+    if (enabled(mm)) {
 #ifndef RUBY_ASAN_ENABLED
 # ifdef PROC_MAPS_NAME
         {
@@ -1602,6 +1607,7 @@ rb_vm_bugreport(const void *ctx, FILE *errout)
 
   error:
     return false;
+#undef enabled
 }
 
 bool
