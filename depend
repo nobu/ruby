@@ -5097,6 +5097,7 @@ error.$(OBJEXT): $(top_srcdir)/internal/static_assert.h
 error.$(OBJEXT): $(top_srcdir)/internal/string.h
 error.$(OBJEXT): $(top_srcdir)/internal/symbol.h
 error.$(OBJEXT): $(top_srcdir)/internal/thread.h
+error.$(OBJEXT): $(top_srcdir)/internal/util.h
 error.$(OBJEXT): $(top_srcdir)/internal/variable.h
 error.$(OBJEXT): $(top_srcdir)/internal/vm.h
 error.$(OBJEXT): $(top_srcdir)/internal/warnings.h
@@ -19103,12 +19104,14 @@ vm_dump.$(OBJEXT): $(top_srcdir)/internal/array.h
 vm_dump.$(OBJEXT): $(top_srcdir)/internal/basic_operators.h
 vm_dump.$(OBJEXT): $(top_srcdir)/internal/box.h
 vm_dump.$(OBJEXT): $(top_srcdir)/internal/compilers.h
+vm_dump.$(OBJEXT): $(top_srcdir)/internal/error.h
 vm_dump.$(OBJEXT): $(top_srcdir)/internal/gc.h
 vm_dump.$(OBJEXT): $(top_srcdir)/internal/imemo.h
 vm_dump.$(OBJEXT): $(top_srcdir)/internal/sanitizers.h
 vm_dump.$(OBJEXT): $(top_srcdir)/internal/serial.h
 vm_dump.$(OBJEXT): $(top_srcdir)/internal/set_table.h
 vm_dump.$(OBJEXT): $(top_srcdir)/internal/static_assert.h
+vm_dump.$(OBJEXT): $(top_srcdir)/internal/string.h
 vm_dump.$(OBJEXT): $(top_srcdir)/internal/variable.h
 vm_dump.$(OBJEXT): $(top_srcdir)/internal/vm.h
 vm_dump.$(OBJEXT): $(top_srcdir)/internal/warnings.h

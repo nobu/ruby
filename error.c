@@ -44,6 +44,7 @@
 #include "internal/symbol.h"
 #include "internal/thread.h"
 #include "internal/variable.h"
+#include "internal/util.h"
 #include "ruby/encoding.h"
 #include "ruby/st.h"
 #include "ruby/util.h"
@@ -866,20 +867,96 @@ expand_report_argument(const char **input_template, struct report_expansion *val
 
 FILE *ruby_popen_writer(char *const *argv, rb_pid_t *pid);
 
+struct crash_report_config {
+    struct vm_dump_conf dump;
+    const char *begin;
+    int len;
+    bool pipe;                  // write to pipe
+};
+
+static bool
+boolconv(const char *word, int len, bool *ret)
+{
+#define boolword(n, v) \
+    if (len == rb_strlen_lit(#n) && strncmp(word, #n, len) == 0) {*ret = v; return true;}
+    boolword(false, false);
+    boolword(true, true);
+    boolword(yes, true);
+    boolword(no, false);
+#undef boolword
+    if (len == 1) {
+        switch (*word) {
+          case 't': case 'y': case '1': *ret = true; return true;
+          case 'f': case 'n': case '0': *ret = false; return true;
+        }
+    }
+    return false;
+}
+
+static int
+handle_crash_report_word(const char *word, int len, void *arg)
+{
+    struct crash_report_config *cf = arg;
+#define isconfname(conf) \
+    (len > (int)sizeof(#conf) && strncmp(word, #conf "=", sizeof(#conf)) == 0 ? \
+     (word += sizeof(#conf), len -= sizeof(#conf), 1) : 0)
+#define boolconf(conf) \
+    if (isconfname(conf)) { \
+        bool v = cf->dump.conf; \
+        if (boolconv(word, len, &v)) cf->dump.conf = v; \
+        return 0; \
+    }
+    if (isconfname(dump)) {
+        bool v;
+        if (boolconv(word, len, &v)) {
+            cf->dump.bt = v;
+            cf->dump.vmbt = v;
+            cf->dump.cbt = v;
+            cf->dump.box = v;
+            cf->dump.thread = v;
+            cf->dump.regs = v;
+            cf->dump.lf = v;
+            cf->dump.mm = v;
+            cf->dump.additional = v;
+        }
+        return 0;
+    }
+    boolconf(bt);
+    boolconf(vmbt);
+    boolconf(cbt);
+    boolconf(box);
+    boolconf(thread);
+    boolconf(regs);
+    boolconf(lf);
+    boolconf(mm);
+    if (!cf->begin) {
+        if (word[0] == '|' || isconfname(pipe)) {
+            if (*++word) cf->begin = word;
+            cf->pipe = true;
+            return 1;
+        }
+        else {
+            isconfname(path); // skip "path="
+            cf->begin = word;
+            cf->len = len;
+            return 0;
+        }
+    }
+    return 0;
+}
+
 static FILE *
-open_report_path(const char *template, char *buf, size_t size, rb_pid_t *pid)
+open_report_path(struct crash_report_config *conf, char *buf, size_t size, rb_pid_t *pid)
 {
     struct report_expansion values = {{0}};
-
-    if (!template) return NULL;
-    if (0) fprintf(stderr, "RUBY_CRASH_REPORT=%s\n", buf);
-    if (*template == '|') {
+    const char *str = conf->begin;
+    if (!str) return NULL;
+    if (conf->pipe) {
         char *argv[16], *bufend = buf + size, *p;
         int argc;
-        template++;
         for (argc = 0; argc < numberof(argv) - 1; ++argc) {
-            while (*template && ISSPACE(*template)) template++;
-            p = expand_report_argument(&template, &values, buf, bufend-buf, true);
+            while (*str && ISSPACE(*str)) str++;
+            p = expand_report_argument(&str, &values, buf, bufend-buf, true);
             if (!p) break;
             argv[argc] = buf;
             buf = p;
@@ -887,14 +964,14 @@ open_report_path(const char *template, char *buf, size_t size, rb_pid_t *pid)
         argv[argc] = NULL;
         if (!p) return ruby_popen_writer(argv, pid);
     }
-    else if (*template) {
-        expand_report_argument(&template, &values, buf, size, false);
+    else if (*str) {
+        expand_report_argument(&str, &values, buf, size, false);
         return fopen(buf, "w");
     }
     return NULL;
 }
 
-static const char *crash_report;
+static struct crash_report_config crash_report = {VM_DUMP_CONF_DEFAULT};
 
 /* SIGSEGV handler might have a very small stack. Thus we need to use it carefully. */
 #define REPORT_BUG_BUFSIZ 256
@@ -902,9 +979,12 @@ static FILE *
 bug_report_file(const char *file, int line, rb_pid_t *pid)
 {
     char buf[REPORT_BUG_BUFSIZ];
-    const char *report = crash_report;
-    if (!report) report = getenv("RUBY_CRASH_REPORT");
-    FILE *out = open_report_path(report, buf, sizeof(buf), pid);
+    if (!crash_report.begin) {
+        const char *report = getenv("RUBY_CRASH_REPORT");
+        if (0) fprintf(stderr, "RUBY_CRASH_REPORT=%s\n", report);
+        if (report) ruby_set_crash_report(report);
+    }
+    FILE *out = open_report_path(&crash_report, buf, sizeof(buf), pid);
     int len = err_position_0(buf, sizeof(buf), file, line);
 
     if (out) {
@@ -1011,7 +1091,7 @@ bug_report_begin_valist(FILE *out, const char *fmt, va_list args)
     fputs(buf, out);
     snprintf(buf, sizeof(buf), "\n%s\n\n", rb_dynamic_description);
     fputs(buf, out);
-    preface_dump(out);
+    if (vm_dump_conf_enabled_any(&crash_report.dump)) preface_dump(out);
 }
 
 #define bug_report_begin(out, fmt) do { \
@@ -1025,14 +1105,14 @@ static void
 bug_report_end(FILE *out, rb_pid_t pid)
 {
     /* call additional bug reporters */
-    {
+    if (crash_report.dump.additional) {
         int i;
         for (i=0; i<bug_reporters_size; i++) {
             struct bug_reporters *reporter = &bug_reporters[i];
             (*reporter->func)(out, reporter->data);
         }
     }
-    postscript_dump(out);
+    if (vm_dump_conf_enabled_any(&crash_report.dump)) postscript_dump(out);
     finish_report(out, pid);
 }
 
@@ -1041,7 +1121,7 @@ bug_report_end(FILE *out, rb_pid_t pid)
     FILE *out = bug_report_file(file, line, &pid); \
     if (out) { \
         bug_report_begin(out, fmt); \
-        rb_vm_bugreport(ctx, out); \
+        rb_vm_bugreport(&crash_report.dump, ctx, out); \
         bug_report_end(out, pid); \
     } \
 } while (0) \
@@ -1051,7 +1131,7 @@ bug_report_end(FILE *out, rb_pid_t pid)
     FILE *out = bug_report_file(file, line, &pid); \
     if (out) { \
         bug_report_begin_valist(out, fmt, args); \
-        rb_vm_bugreport(ctx, out); \
+        rb_vm_bugreport(&crash_report.dump, ctx, out); \
         bug_report_end(out, pid); \
     } \
 } while (0) \
@@ -1059,17 +1139,7 @@ bug_report_end(FILE *out, rb_pid_t pid)
 void
 ruby_set_crash_report(const char *template)
 {
-    crash_report = template;
-#if RUBY_DEBUG
-    rb_pid_t pid = -1;
-    char buf[REPORT_BUG_BUFSIZ];
-    FILE *out = open_report_path(template, buf, sizeof(buf), &pid);
-    if (out) {
-        time_t t = time(NULL);
-        fprintf(out, "ruby_test_bug_report: %s", ctime(&t));
-        finish_report(out, pid);
-    }
-#endif
+    ruby_each_words_until(template, handle_crash_report_word, "|", &crash_report);
 }
 
 NORETURN(static void die(void));
@@ -1212,9 +1282,10 @@ rb_assert_failure_detail(const char *file, int line, const char *name, const cha
         }
         fprintf(out, "\n%s\n\n", rb_dynamic_description);
 
-        preface_dump(out);
-        rb_vm_bugreport(NULL, out);
-        bug_report_end(out, pid);
+        bool dump_any = vm_dump_conf_enabled_any(&crash_report.dump);
+        if (dump_any) preface_dump(out);
+        rb_vm_bugreport(&crash_report.dump, NULL, out);
+        if (dump_any) bug_report_end(out, pid);
     }
 
     die();

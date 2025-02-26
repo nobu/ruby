@@ -249,4 +249,34 @@ typedef enum {
 } ruby_stack_overflow_critical_level;
 NORETURN(void rb_ec_stack_overflow(struct rb_execution_context_struct *ec, ruby_stack_overflow_critical_level crit));
 
+struct vm_dump_conf {
+    unsigned int bt: 1;         // Ruby-level backtrace
+    unsigned int vmbt: 1;       // Ruby-level backtrace with VM information
+    unsigned int cbt: 1;        // C-level backtrace
+    unsigned int box: 1;        // Box information
+    unsigned int thread: 1;     // Threading information
+    unsigned int regs: 1;       // Register information
+    unsigned int lf: 1;         // loaded features
+    unsigned int mm: 1;         // memory maps
+    unsigned int additional: 1; // additional bug reporters
+};
+
+#define VM_DUMP_CONF_DEFAULT \
+    { \
+        .bt = 1, .vmbt = 1, .cbt = 1, .box = 1, \
+        .thread = 1, .regs = 1, .lf = 1, .mm = 1, \
+        .additional = 1, \
+    }
+
+static inline bool
+vm_dump_conf_enabled_any(const struct vm_dump_conf *dump)
+{
+    return dump->bt || dump->vmbt || dump->cbt || dump->box ||
+        dump->thread || dump->regs || dump->lf || dump->mm ||
+        dump->additional;
+}
+
+bool rb_vm_bugreport(const struct vm_dump_conf *cf, const void *ctx, FILE *errout);
+void ruby_set_crash_report(const char *template);
+
 #endif /* INTERNAL_ERROR_H */
