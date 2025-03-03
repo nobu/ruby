@@ -325,7 +325,8 @@ nlz_int32(uint32_t x)
 
 #elif MSC_VERSION_SINCE(1400) /* &&! defined(__AVX2__) */
     unsigned long r;
-    return _BitScanReverse(&r, x) ? (31 - (int)r) : 32;
+    if (_BitScanReverse(&r, x)) return (31 - (int)r);
+    return 32;
 
 #elif __has_builtin(__builtin_clz)
     STATIC_ASSERT(sizeof_int, sizeof(int) * CHAR_BIT == 32);
@@ -354,7 +355,8 @@ nlz_int64(uint64_t x)
 
 #elif defined(_WIN64) && MSC_VERSION_SINCE(1400) /* &&! defined(__AVX2__) */
     unsigned long r;
-    return _BitScanReverse64(&r, x) ? (63u - (unsigned int)r) : 64;
+    if (_BitScanReverse64(&r, x)) return (63u - (unsigned int)r);
+    return 64;
 
 #elif __has_builtin(__builtin_clzl)
     if (x == 0) {
@@ -542,7 +544,8 @@ ntz_int32(uint32_t x)
     /* :FIXME: Is there any way to issue TZCNT instead of BSF, apart from using
      *         assembly?  Because issuing LZCNT seems possible (see nlz.h). */
     unsigned long r;
-    return _BitScanForward(&r, x) ? (int)r : 32;
+    if (_BitScanForward(&r, x)) return (int)r;
+    return 32;
 
 #elif __has_builtin(__builtin_ctz)
     STATIC_ASSERT(sizeof_int, sizeof(int) * CHAR_BIT == 32);
@@ -562,7 +565,8 @@ ntz_int64(uint64_t x)
 
 #elif defined(_WIN64) && MSC_VERSION_SINCE(1400)
     unsigned long r;
-    return _BitScanForward64(&r, x) ? (int)r : 64;
+    if (_BitScanForward64(&r, x)) return (int)r;
+    return 64;
 
 #elif __has_builtin(__builtin_ctzl)
     if (x == 0) {
