@@ -599,4 +599,23 @@ p Foo::Bar
       RUBY
     end
   end
+
+  def test_autoload_recursive
+    Dir.mktmpdir('autoload') do |tmpdir|
+      File.write(File.join(tmpdir, "foo.rb"), "require 'm'\n")
+      File.write(File.join(tmpdir, "m.rb"), "#{<<-"begin;"}\n#{<<-'end;'}")
+      begin;
+        module M
+          autoload :Foo, 'foo'
+
+          assert_include(constants, :Foo)
+          assert_not_operator(self, :const_defined?, :Foo)
+          assert_raise_with_message(LoadError, /autoloding in progress/) {
+            autoload?(:Foo)
+          }
+        end
+      end;
+      assert_separately(%W[-I #{tmpdir}], "require 'foo'")
+    end
+  end
 end

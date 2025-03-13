@@ -3017,15 +3017,19 @@ rb_autoload_at_p(VALUE mod, ID id, int recur)
 {
     VALUE load;
     struct autoload_data *ele;
+    const char *loading = 0;
 
     while (!autoload_defined_p(mod, id)) {
         if (!recur) return Qnil;
         mod = RCLASS_SUPER(mod);
         if (!mod) return Qnil;
     }
-    load = check_autoload_required(mod, id, 0);
+    load = check_autoload_required(mod, id, &loading);
     if (!load) return Qnil;
-    return (ele = get_autoload_data(load, 0)) ? ele->feature : Qnil;
+    if (!(ele = get_autoload_data(load, 0)))
+    return Qnil;
+    if (loading) rb_loaderror_with_path(ele->feature, "autoloding in progress");
+    return ele->feature;
 }
 
 void
