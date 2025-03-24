@@ -5,6 +5,80 @@ require '-test-/marshal/usr'
 module Bug end
 
 module Bug::Marshal
+  class TestUserDef < Test::Unit::TestCase
+    def test_undumpable_data
+      name = "T\u{23F0 23F3}"
+      c = eval("class #{name}<Bug::Marshal::UserDef;self;end")
+      c.class_eval { undef _dump }
+      assert_raise_with_message(TypeError, /#{name}/) {
+        Marshal.dump(c.new(42))
+      }
+
+    ensure
+      self.class.class_eval do
+        remove_const name
+      end if c
+    end
+
+    def test_unloadable_data
+      name = "Unloadable\u{23F0 23F3}"
+      c = eval("class #{name} < Bug::Marshal::UserDef;self;end")
+      c.class_eval {
+        alias _dump_data _dump
+        undef _dump
+      }
+      d = Marshal.dump(c.new(42))
+      assert_raise_with_message(TypeError, /Unloadable\u{23F0 23F3}/) {
+        Marshal.load(d)
+      }
+
+    ensure
+      self.class.class_eval do
+        remove_const name
+      end if c
+    end
+
+    def test_unloadable_userdef
+      name = "Userdef\u{23F0 23F3}"
+      c = eval("class #{name} < Bug::Marshal::UserDef;self;end")
+      class << c
+        undef _load
+      end
+      d = Marshal.dump(c.new(42))
+      assert_raise_with_message(TypeError, /#{name}/) {
+        Marshal.load(d)
+      }
+    ensure
+      self.class.class_eval do
+        remove_const name
+      end if c
+    end
+
+    def test_recursive_userdef
+      t = Bug::Marshal::UserDef.new(42)
+      t.instance_eval {@v = t}
+      assert_raise_with_message(RuntimeError, /recursive\b.*\b_dump/) do
+        Marshal.dump(t)
+      end
+    end
+
+    def test_unloadable_usrmarshal
+      name = "Userdef\u{23F0 23F3}"
+      c = eval("class #{name} < Bug::Marshal::UserDef;self;end")
+      c.class_eval {
+        alias marshal_dump _dump
+      }
+      d = Marshal.dump(c.new(42))
+      assert_raise_with_message(TypeError, /#{name}/) {
+        Marshal.load(d)
+      }
+    ensure
+      self.class.class_eval do
+        remove_const name
+      end if c
+    end
+  end
+
   class TestUsrMarshal < Test::Unit::TestCase
     def old_dump
       @old_dump ||=

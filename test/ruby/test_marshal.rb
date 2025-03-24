@@ -634,68 +634,6 @@ class TestMarshal < Test::Unit::TestCase
     }
   end
 
-  def test_undumpable_data
-    c = Module.new {break module_eval("class T\u{23F0 23F3}<Time;undef _dump;self;end")}
-    assert_raise_with_message(TypeError, /T\u{23F0 23F3}/) {
-      Marshal.dump(c.new)
-    }
-  end
-
-  def test_unloadable_data
-    name = "Unloadable\u{23F0 23F3}"
-    c = eval("class #{name} < Time;;self;end")
-    c.class_eval {
-      alias _dump_data _dump
-      undef _dump
-    }
-    d = Marshal.dump(c.new)
-    assert_raise_with_message(TypeError, /Unloadable\u{23F0 23F3}/) {
-      Marshal.load(d)
-    }
-
-  ensure
-    self.class.class_eval do
-      remove_const name
-    end if c
-  end
-
-  def test_unloadable_userdef
-    name = "Userdef\u{23F0 23F3}"
-    c = eval("class #{name} < Time;self;end")
-    class << c
-      undef _load
-    end
-    d = Marshal.dump(c.new)
-    assert_raise_with_message(TypeError, /Userdef\u{23F0 23F3}/) {
-      Marshal.load(d)
-    }
-
-  ensure
-    self.class.class_eval do
-      remove_const name
-    end if c
-  end
-
-  def test_recursive_userdef
-    t = Time.utc(0)
-    str = "b".b
-    t.instance_eval {@v = t}
-    assert_raise_with_message(RuntimeError, /recursive\b.*\b_dump/) do
-      Marshal.dump(t)
-    end
-  end
-
-  def test_unloadable_usrmarshal
-    c = eval("class UsrMarshal\u{23F0 23F3}<Time;self;end")
-    c.class_eval {
-      alias marshal_dump _dump
-    }
-    d = Marshal.dump(c.new)
-    assert_raise_with_message(TypeError, /UsrMarshal\u{23F0 23F3}/) {
-      Marshal.load(d)
-    }
-  end
-
   def test_no_internal_ids
     opt = %w[--disable=gems]
     args = [opt, 'Marshal.dump("",STDOUT)', true, true]
