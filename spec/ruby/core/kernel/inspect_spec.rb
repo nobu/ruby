@@ -28,4 +28,22 @@ describe "Kernel#inspect" do
     end
     obj.inspect.should be_kind_of(String)
   end
+
+  ruby_version_is "3.5" do
+    it "calls #inspect_instance_variables method" do
+      obj = Object.new
+      obj.instance_eval do
+        @host = "localhost"
+        @user = "root"
+        @password = "hunter2"
+        def inspect_instance_variables
+          %i[@host @user]
+        end
+      end
+      inspected = obj.inspect
+      inspected.should include('@host="localhost"')
+      inspected.should include('@user="root"')
+      inspected.should_not include('@password=')
+    end
+  end
 end

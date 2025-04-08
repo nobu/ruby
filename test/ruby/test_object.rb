@@ -950,6 +950,16 @@ class TestObject < Test::Unit::TestCase
     assert_match(/\bInspect\u{3042}:.* @\u{3044}=42\b/, x.inspect)
     x.instance_variable_set("@\u{3046}".encode(Encoding::EUC_JP), 6)
     assert_match(/@\u{3046}=6\b/, x.inspect)
+
+    x = Object.new
+    def x.inspect_instance_variables; [:@host, :@user] end
+    x.instance_variable_set(:@host, "localhost")
+    x.instance_variable_set(:@user, "root")
+    x.instance_variable_set(:@password, "hunter2")
+    s = x.inspect
+    assert_include(s, "@host=\"localhost\"")
+    assert_include(s, "@user=\"root\"")
+    assert_not_include(s, "@password=")
   end
 
   def test_singleton_methods
