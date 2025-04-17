@@ -134,6 +134,12 @@ jobs:
         run: Get-Volume
         shell: pwsh
 
+      - run: |
+          git rev-parse HEAD
+          ruby tool/file2lastrev.rb --revision.h
+          ruby tool/file2lastrev.rb --revision.h --output=revision.h
+        working-directory: src
+
       - name: Install libraries with vcpkg
         run: |
           vcpkg install
