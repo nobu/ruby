@@ -135,8 +135,15 @@ jobs:
         shell: pwsh
 
       - run: |
+          git config --global --add safe.directory %cd%
+          git config --global --get-all safe.directory
           git rev-parse HEAD
+          dir
+          del NUL
+          git clean -fxd
+          ruby tool/file2lastrev.rb --revision.h --debug
           ruby tool/file2lastrev.rb --revision.h
+          ruby tool/file2lastrev.rb --revision.h --output=revision.h --debug
           ruby tool/file2lastrev.rb --revision.h --output=revision.h
         working-directory: src
 

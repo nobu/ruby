@@ -66,7 +66,7 @@ module DebugSystem
       args.pop if opts.empty?
     end
     ret = super(*args)
-    raise "Command failed with status (#$?): #{args[0]}" if exception and !ret
+    raise "Command failed with status (#$?): #{args.join(' ')}" if exception and !ret
     ret
   end
 end
@@ -167,18 +167,9 @@ class VCS
     end
     last, changed, modified, *rest = (
       begin
-        if NullDevice and !debug?
-          save_stderr = STDERR.dup
-          STDERR.reopen NullDevice, 'w'
-        end
         _get_revisions(path, @srcdir)
       rescue Errno::ENOENT => e
         raise VCS::NotFoundError, e.message
-      ensure
-        if save_stderr
-          STDERR.reopen save_stderr
-          save_stderr.close
-        end
       end
     )
     last or raise VCS::NotFoundError, "last revision not found"
@@ -425,6 +416,7 @@ class VCS
       SAFE_DIRECTORIES ||=
         begin
           command = ENV["GIT"] || 'git'
+          puts command
           dirs = IO.popen(%W"#{command} config --global --get-all safe.directory", &:read).split("\n")
         rescue
           command = nil
@@ -476,6 +468,8 @@ class VCS
       gitcmd = [COMMAND]
       last = nil
       IO.pipe do |r, w|
+        puts gitcmd
+        puts ref
         last = cmd_read_at(srcdir, [[*gitcmd, 'rev-parse', ref, err: w]]).rstrip
         w.close
         unless r.eof?
