@@ -1835,15 +1835,13 @@ UNICODE_TABLES_DATA_FILES = \
 UNICODE_TABLES_DEPENDENTS_1 = none$(ALWAYS_UPDATE_UNICODE)
 UNICODE_TABLES_DEPENDENTS = $(UNICODE_TABLES_DEPENDENTS_1:noneyes=force)
 UNICODE_TABLES_TIMESTAMP = yes
-$(UNICODE_SRC_DATA_DIR)/.unicode-tables.$(UNICODE_TABLES_DEPENDENTS:none=time):
-	$(Q) $(MAKEDIRS) $(@D)
-	$(Q) exit > $(@) || $(NULLCMD)
 $(UNICODE_SRC_DATA_DIR)/.unicode-tables.$(UNICODE_TABLES_DEPENDENTS:force=time): \
-		$(tooldir)/generic_erb.rb \
-		$(srcdir)/template/unicode_norm_gen.tmpl \
 		$(UNICODE_TABLES_DATA_FILES) \
 	$(order_only) \
 		$(UNICODE_SRC_DATA_DIR)
+$(UNICODE_SRC_DATA_DIR)/.unicode-tables.time: \
+		$(tooldir)/generic_erb.rb \
+		$(srcdir)/template/unicode_norm_gen.tmpl
 	$(Q) $(BASERUBY) $(tooldir)/generic_erb.rb \
 		-c $(UNICODE_TABLES_TIMESTAMP:yes=-t$@) \
 		-o $(srcdir)/lib/unicode_normalize/tables.rb \
