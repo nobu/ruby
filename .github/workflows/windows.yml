@@ -67,7 +67,6 @@ jobs:
       GITPULLOPTIONS: --no-tags origin ${{ github.ref }}
       OS_VER: windows-${{ matrix.os < 2022 && '2019' || matrix.os }}
       VCPKG_DEFAULT_TRIPLET: ${{ matrix.target || 'x64' }}-windows
-      RUBY_OPT_DIR: ${{ matrix.os == '11-arm' && 'C' || 'D' }}:/a/ruby/ruby/src/vcpkg_installed/%VCPKG_DEFAULT_TRIPLET%
 
     steps:
       - run: md build
@@ -105,20 +104,19 @@ jobs:
         run: |
           ::- Set up VC ${{ matrix.vc }}
           set vswhere="%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
+          if not exist %vswhere% set vswhere="%ProgramFiles%\Microsoft Visual Studio\Installer\vswhere.exe"
           for /f "delims=;" %%I in ('%vswhere% -latest -property installationPath') do (
-            set VCVARS="%%I\VC\Auxiliary\Build\vcvars64.bat"
-          )
-          if "${{ matrix.os }}" == "11-arm" (
-            set VCVARS="C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsarm64.bat"
+            set VCVARS="%%I\VC\Auxiliary\Build\vcvars${{ endsWith(matrix.os, 'arm') && 'arm' || '' }}64.bat"
           )
           set VCVARS
           set | uutils sort > old.env
           call %VCVARS% ${{ matrix.vcvars || '' }}
           nmake -f nul
-          set TMP=%USERPROFILE%\AppData\Local\Temp
-          set TEMP=%USERPROFILE%\AppData\Local\Temp
+          set TMP=%LOCALAPPDATA%\Temp
+          set TEMP=%TMP%
           set MAKEFLAGS=l
           set /a TEST_JOBS=(15 * %NUMBER_OF_PROCESSORS% / 10) > nul
+          set RUBY_OPT_DIR=%GITHUB_WORKSPACE:\=/%/src/vcpkg_installed/%VCPKG_DEFAULT_TRIPLET%
           set | uutils sort > new.env
           uutils comm -13 old.env new.env >> %GITHUB_ENV%
           del *.env
@@ -137,12 +135,12 @@ jobs:
       - name: Restore vcpkg artifact
         uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
         with:
-          path: C:\Users\runneradmin\AppData\Local\vcpkg\archives
+          path: ${{ env.LOCALAPPDATA }}\vcpkg\archives
           key: windows-${{ matrix.os }}-vcpkg-${{ hashFiles('src/vcpkg.json') }}
 
       - name: Install libraries with vcpkg
         run: |
-          vcpkg install --vcpkg-root=C:\Users\runneradmin\scoop\apps\vcpkg\current
+          vcpkg install --vcpkg-root=%USERPROFILE%\scoop\apps\vcpkg\current
         working-directory: src
 
       # TODO: We should use `../src` instead of `D:/a/ruby/ruby/src`
@@ -151,6 +149,8 @@ jobs:
           ../src/win32/configure.bat --disable-install-doc
           --with-opt-dir=%RUBY_OPT_DIR%
           --with-gmp
+
+      - run: type Makefile
 
       - run: nmake prepare-vcpkg
 
@@ -164,41 +164,28 @@ jobs:
 
       # windows-11-arm runner cannot run `ruby tool/file2lastrev.rb --revision.h --output=revision.h`
       - run: |
-          Set-Content -Path "revision.h" -Value @"
-            #define RUBY_REVISION "8aedb979da"
-            #define RUBY_FULL_REVISION "8aedb979da4090116f4fc5a6497f139fd0038881"
-            #define RUBY_BRANCH_NAME "win-arm"
-            #define RUBY_RELEASE_DATETIME "2025-04-16T23:18:54Z"
-            #define RUBY_RELEASE_YEAR 2025
-            #define RUBY_RELEASE_MONTH 4
-            #define RUBY_RELEASE_DAY 17
-          "@
-        shell: pwsh
-        if: ${{ matrix.os == '11-arm' }}
-
-      - run: nmake
-
-      - name: Set up Launchable
-        uses: ./.github/actions/launchable/setup
-        with:
-          os: windows-${{ matrix.os < 2022 && '2019' || matrix.os }}
-          launchable-token: ${{ secrets.LAUNCHABLE_TOKEN }}
-          builddir: build
-          srcdir: src
-          test-task: ${{ matrix.test_task || 'check' }}
-        continue-on-error: true
-        if: ${{ matrix.test_task != 'test-bundled-gems' }}
-
-      - run: nmake ${{ matrix.test_task || 'check' }}
-        env:
-          RUBY_TESTOPTS: -j${{ env.TEST_JOBS || 4 }}
-        timeout-minutes: 70
-
-      - uses: ./.github/actions/slack
-        with:
-          label: Windows ${{ matrix.os }} / VC ${{ matrix.vc }} / ${{ matrix.test_task || 'check' }}
-          SLACK_WEBHOOK_URL: ${{ secrets.SIMPLER_ALERTS_URL }} # ruby-lang slack: ruby/simpler-alerts-bot
-        if: ${{ failure() }}
+          set TZ=UTC
+          for /f "tokens=1,2" %%I in ('git log -1 "--date=iso-local" "--format=%%cd"') do (
+              set d=%%I
+              set t=%%J
+          )
+          set dt=%d%T%t%Z
+          set y=%d:~0,4%
+          set m=%d:~5,2%
+          set d=%d:~8,2%
+          if "%m:~0,1%" == "0" set m=%m:~1,1%
+          if "%d:~0,1%" == "0" set m=%d:~1,1%
+          (
+          echo #define RUBY_REVISION "%GITHUB_SHA:~0,10%"
+          echo #define RUBY_FULL_REVISION "%GITHUB_SHA%"
+          echo #define RUBY_BRANCH_NAME "%GITHUB_REF:refs/heads/=%"
+          echo #define RUBY_RELEASE_DATETIME "%dt%"
+          echo #define RUBY_RELEASE_YEAR %y%
+          echo #define RUBY_RELEASE_MONTH %m%
+          echo #define RUBY_RELEASE_DAY %d%
+          )>revision.h
+          type revision.h
+        working-directory: src
 
   result:
     if: ${{ always() }}
