@@ -1987,7 +1987,8 @@ rb_current_execution_context(bool expect_ec)
      * To avoid accidents, `GET_EC()` should be called once on the frame.
      * Note that inlining can produce the problem.
      */
-    VM_ASSERT(ec == rb_current_ec_noinline());
+    VM_ASSERT(ec == rb_current_ec_noinline(),
+              "%d:%p:%p", expect_ec, ec,  rb_current_ec_noinline());
 #else
     rb_execution_context_t *ec = native_tls_get(ruby_current_ec_key);
 #endif
