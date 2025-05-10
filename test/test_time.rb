@@ -64,11 +64,14 @@ class TestTimeExtension < Test::Unit::TestCase # :nodoc:
 
   def test_rfc2822_nonlinear
     pre = ->(n) {"0 Feb 00 00 :00" + " " * n}
+    $DEBUG = true
     assert_linear_performance([100, 500, 5000, 50_000], pre: pre) do |s|
       assert_raise(ArgumentError) do
         Time.rfc2822(s)
       end
     end
+  ensure
+    $DEBUG = false
   end
 
   if defined?(Ractor)
