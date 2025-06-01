@@ -45,6 +45,7 @@ $topdir = "."
 $top_srcdir = srcdir
 inplace = File.identical?($top_srcdir, $topdir)
 
+$extmk = true
 $" << "mkmf.rb"
 load File.expand_path("lib/mkmf.rb", srcdir)
 require 'optparse/shellwords'
