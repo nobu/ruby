@@ -395,9 +395,10 @@ rbimpl_rstring_getmem(VALUE str)
     }
     else {
         /* Expecting compilers to optimize this on-stack struct away. */
-        struct RString retval;
-        retval.len = RSTRING_LEN(str);
-        retval.as.heap.ptr = RSTRING(str)->as.embed.ary;
+        struct RString retval = {
+            .len = RSTRING_LEN(str),
+            .as.heap.ptr = RSTRING(str)->as.embed.ary,
+        };
         return retval;
     }
 }
