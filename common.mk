@@ -1563,12 +1563,15 @@ extract-gems$(sequential): PHONY
 extract-gems$(sequential): $(HAVE_GIT:yes=clone-bundled-gems-src)
 
 clone-bundled-gems-src: PHONY
-	$(Q) $(BASERUBY) -C "$(srcdir)" \
+	$(MAKEDIRS) "$(srcdir)/gems/src"
+	dir $(srcdir:/=\)\gems\src
+	$(BASERUBY) -C "$(srcdir)" \
 	    -Itool/lib -rbundled_gem -answ \
 	    -e 'BEGIN {git = $$git}' \
 	    -e 'gem, _, repo, rev = *$$F' \
 	    -e 'next if !rev or /^#/=~gem' \
 	    -e 'gemdir = "gems/src/#{gem}"' \
+	    -e 'p((Dir.children(gemdir) rescue nil))' \
 	    -e 'BundledGem.checkout(gemdir, repo, rev, git: git)' \
 	    -e 'BundledGem.dummy_gemspec("#{gemdir}/#{gem}.gemspec")' \
 	    -- -git="$(GIT)" \
