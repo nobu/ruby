@@ -73,19 +73,37 @@ AC_ARG_VAR([cxxflags], [additional CXXFLAGS (ignored when CXXFLAGS is given)])dn
 [begin]_group "environment section" && {
 HAVE_BASERUBY=yes
 BASERUBY_VERSION=
+AC_DEFUN([RUBY_BASERUBY_CHECK], [
+    AS_IF([RUBYOPT=- $1 --disable=gems \
+	   -rerb -rfileutils -rtempfile \
+	   "${tooldir}/missing-baseruby.bat"], [
+	BASERUBY=$1
+	HAVE_BASERUBY=yes
+	$2
+    ], [
+	BASERUBY=
+	HAVE_BASERUBY=no
+	$3
+    ])
+]) dnl
 AC_ARG_WITH(baseruby,
 	AS_HELP_STRING([--with-baseruby=RUBY], [use RUBY as baseruby; RUBY is the pathname of ruby]),
 	[AS_CASE(["$withval"],
-	    [*ruby*],[BASERUBY=$withval],
+	    [*ruby*],[
+		RUBY_BASERUBY_CHECK([$withval], [], [AC_MSG_ERROR([$withval is not usable])])
+	    ],
 	    [no],[HAVE_BASERUBY=no],
 	    [AC_MSG_ERROR(need ruby)])
 	],
 	[
-		AC_PATH_PROG([BASERUBY], [ruby], [false])
+	    AS_IF([test ${ac_cv_path_BASERUBY:+set}], [
+		RUBY_BASERUBY_CHECK([$ac_cv_path_BASERUBY], [], [unset ac_cv_path_BASERUBY])
+	    ])
+	    AC_PATH_PROG([BASERUBY], [ruby], [false])
+	    AS_IF([test "$BASERUBY" != false], [
+		RUBY_BASERUBY_CHECK([$ac_cv_path_BASERUBY], [], [BASERUBY=false ac_cv_path_BASERUBY=])
+	    ])
 	])
-AS_IF([test "$HAVE_BASERUBY" != no], [
-    RUBYOPT=- $BASERUBY --disable=gems -rerb -rfileutils -rtempfile "${tooldir}/missing-baseruby.bat" || HAVE_BASERUBY=no
-])
 AS_IF([test "${HAVE_BASERUBY:=no}" != no], [
     AS_CASE(["$build_os"], [mingw*], [
         # Can MSys shell run a command with a drive letter?
