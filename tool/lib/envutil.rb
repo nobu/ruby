@@ -79,6 +79,56 @@ module EnvUtil
   end
   module_function :timeout
 
+  class Debugger
+    @list = {}
+    attr_accessor :name
+
+    def self.register(name, &block)
+      dbg = Class.new(self, &block)
+      @list[dbg.name = name] = dbg
+    end
+
+    def dump(pid, timeout: 60, reprieve: timeout&.div(4))
+      dpid = start(pid, *command_file(File.join(__dir__, "dump.#{name}")))
+    rescue Errno::ENOENT
+      return
+    else
+      return unless dpid
+      [[timeout, :TERM], [reprieve, :KILL]].find do |t, sig|
+        return EnvUtil.timeout(t) {Process.wait(dpid)}
+      rescue Timeout::Error
+        Process.kill(sig, dpid)
+      end
+      true
+    end
+
+    def spawn(*args, **opts)
+      super(*PREFIX, *args, **opts)
+    end
+
+    PREFIX = (%[sudo -n] if /darwin/ =~ RUBY_PLATFORM)
+
+    register("gdb") do
+      def usable?; system(%w[gdb --batch --quiet --nx -ex exit]); end
+      def start(pid, *args)
+        spawn(*%w[gdb --batch --quiet --pid #{pid}], *args)
+      end
+      def command_file(file) "--command=#{file}"; end
+    end
+
+    register("lldb") do
+      def usable?; system(%w[lldb -Q --no-lldbinit -o exit]); end
+      def start(pid, *args)
+        spawn(*%w[lldb --batch -Q --attach-pid #{pid}])
+      end
+      def command_file(file) ["--source", file]; end
+    end
+
+    def self.search
+      @debugger ||= @list.find {|dbg| dbg.usable?}
+    end
+  end
+
   def terminate(pid, signal = :TERM, pgroup = nil, reprieve = 1)
     reprieve = apply_timeout_scale(reprieve) if reprieve
 
@@ -94,17 +144,10 @@ module EnvUtil
       pgroup = pid
     end
 
-    lldb = true if /darwin/ =~ RUBY_PLATFORM
-
     while signal = signals.shift
 
-      if lldb and [:ABRT, :KILL].include?(signal)
-        lldb = false
-        # sudo -n: --non-interactive
-        # lldb -p: attach
-        #      -o: run command
-        system(*%W[sudo -n lldb -p #{pid} --batch -o bt\ all -o call\ rb_vmdebug_stack_dump_all_threads() -o quit])
-        true
+      if (dbg = Debugger.search) and [:ABRT, :KILL].include?(signal)
+        dbg.dump(pid)
       end
 
       begin
