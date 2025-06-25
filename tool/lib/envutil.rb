@@ -161,7 +161,7 @@ module EnvUtil
     dumped = false
     while signal = signals.shift
 
-      if !dumped and [:ABRT, :KILL].include?(signal)
+      if !dumped and [:SEGV, :ABRT, :KILL].include?(signal)
         Debugger.search&.dump(pid)
         dumped = true
       end
