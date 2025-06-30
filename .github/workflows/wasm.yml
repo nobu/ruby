@@ -112,7 +112,7 @@ jobs:
           pushd ../baseruby
           ../src/configure --prefix=$PWD/install
           make
-          make install
+          make -j1 install
 
       - name: Download config.guess with wasi version
         run: |
