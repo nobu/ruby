@@ -54,16 +54,78 @@ module CLITest
       re_version = '(\d{1,2}\.\d{1,2}\.\d{1,2}(\.[a-z0-9.]+)?)'
       @error = 0
       puts '', "#{DASH * 5} CLI Test ".ljust(32, DASH)
-      chk_cli("bundle -v",      /\ABundler version #{re_version}/, &print)
-      chk_cli("gem --version",  /\A#{re_version}/, &print)
-      chk_cli("irb --version",  /\Airb +#{re_version}/, &print)
-      chk_cli("racc --version", /\Aracc version #{re_version}/, &print)
-      chk_cli("rake -V", /\Arake, version #{re_version}/, &print)
-      chk_cli("rbs -v",  /\Arbs #{re_version}\z/, &print)
-      chk_cli("rdbg -v", /\Ardbg #{re_version}\z/, &print)
-      chk_cli("rdoc -v", /\A#{re_version}/, &print)
-      chk_cli("typeprof --version", /\Atypeprof #{re_version}/, &print)
+      bundle = chk_cli("bundle -v",      /\ABundler version #{re_version}/, &print)
+      gem = chk_cli("gem --version",  /\A#{re_version}/, &print)
+      irb = chk_cli("irb --version",  /\Airb +#{re_version}/, &print)
+      racc = chk_cli("racc --version", /\Aracc version #{re_version}/, &print)
+      rake = chk_cli("rake -V", /\Arake, version #{re_version}/, &print)
+      rbs = chk_cli("rbs -v",  /\Arbs #{re_version}\z/, &print)
+      rdbg = chk_cli("rdbg -v", /\Ardbg #{re_version}\z/, &print)
+      rdoc = chk_cli("rdoc -v", /\A#{re_version}/, &print)
+      typeprof = chk_cli("typeprof --version", /\Atypeprof #{re_version}/, &print)
       puts ''
+
+      if @error.zero?
+        dash_item = DASH * 7
+        puts '', "#{DASH * 5} Run Tools ".ljust(32, DASH)
+        require "tmpdir"
+        Dir.mktmpdir do |dir|
+          if bundle
+            puts "#{dash_item} #{bundle}"
+            File.write(dir + "/Gemfile", "")
+            system(bundle, chdir: dir, exception: false) or @error += 1
+          end
+          if gem
+            puts "#{dash_item} #{gem}"
+            system(gem, "list", chdir: dir, exception: false) or @error += 1
+          end
+          if irb
+            puts "#{dash_item} #{irb}"
+            File.write(dir + "/irb_input", "IRB::VERSION\n")
+            system(irb, "irb_input", chdir: dir, exception: false) or @error += 1
+          end
+          if racc
+            puts "#{dash_item} #{racc}"
+          end
+          if rake
+            puts "#{dash_item} #{rake}"
+            File.write(dir + "/Rakefile", <<~RUBY)
+            task :default => :version do
+              puts 'OK'
+            end
+            task :version do
+              print Rake::VERSION, " "
+            end
+            RUBY
+            system(rake, chdir: dir, exception: false) or @error += 1
+          end
+          if rbs
+            puts "#{dash_item} #{rbs}"
+          end
+          if rdbg
+            puts "#{dash_item} #{rdbg}"
+          end
+          if rdoc
+            puts "#{dash_item} #{rdoc}"
+            File.write(dir + "/main.rb", <<~RUBY)
+              # Class for test
+              class Test
+              end
+            RUBY
+            File.write(dir + "/.document", "main.rb\n")
+            File.write(dir + "/.rdoc_options", <<~YAML)
+              ---
+              main_page: main.rb
+            YAML
+            system(rdoc, "-C", ".", chdir: dir, exception: false) or @error += 1
+          end
+          if typeprof
+            puts "#{dash_item} #{typeprof}"
+            File.write(dir + "/typeprof-target.rb", "p __FILE__\n")
+            system(typeprof, "typeprof-target.rb", chdir: dir, exception: false) or @error += 1
+          end
+        end
+      end
 
       cli_desc =  %x[#{RUBY_INSTALL_NAME} -v][/\A.*/]
       if cli_desc == RUBY_DESCRIPTION
