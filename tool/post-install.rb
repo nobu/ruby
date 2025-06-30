@@ -26,40 +26,43 @@ module CLITest
 
     def chk_cli(cmd, regex)
       cmd_name, args = cmd.split(" ", 2)
-      cmd_str = cmd_name.ljust(10)
       exec_name = executable_name(cmd_name)
       cmd = [exec_name, args].compact.join(" ")
       if EXECUTABLE_EXTS.any? {|ext| File.executable? exec_name+ext}
         ret = IO.popen(cmd, in: IO::NULL, err: IO::NULL, &:gets).chomp
         ret.sub!(exec_name, cmd_name)
         if ret[regex]
-          "#{cmd_str}#{PASSED}   #{$1}"
+          yield cmd_name, true, $1
         else
           @error += 1
-          "#{cmd_str}#{FAILED}   version? (#{ret})"
+          yield cmd_name, false, "version? (#{ret})"
         end
       else
         @error += 1
-        "#{cmd_str}#{FAILED}   missing binstub"
+        yield cmd_name, false, "missing binstub"
       end
+      return File.basename(exec_name)
     rescue => e
       @error += 1
-      "#{cmd_str}#{FAILED}   #{e.class}"
+      yield cmd_name, false, e.class
     end
 
     def run
+      print = ->(cmd, succ, mesg) {
+        printf "%-10s%s   %s\n", cmd, (succ ? PASSED : FAILED), mesg
+      }
       re_version = '(\d{1,2}\.\d{1,2}\.\d{1,2}(\.[a-z0-9.]+)?)'
       @error = 0
       puts '', "#{DASH * 5} CLI Test ".ljust(32, DASH)
-      puts chk_cli("bundle -v",      /\ABundler version #{re_version}/)
-      puts chk_cli("gem --version",  /\A#{re_version}/)
-      puts chk_cli("irb --version",  /\Airb +#{re_version}/)
-      puts chk_cli("racc --version", /\Aracc version #{re_version}/)
-      puts chk_cli("rake -V", /\Arake, version #{re_version}/)
-      puts chk_cli("rbs -v",  /\Arbs #{re_version}\z/)
-      puts chk_cli("rdbg -v", /\Ardbg #{re_version}\z/)
-      puts chk_cli("rdoc -v", /\A#{re_version}/)
-      puts chk_cli("typeprof --version", /\Atypeprof #{re_version}/)
+      chk_cli("bundle -v",      /\ABundler version #{re_version}/, &print)
+      chk_cli("gem --version",  /\A#{re_version}/, &print)
+      chk_cli("irb --version",  /\Airb +#{re_version}/, &print)
+      chk_cli("racc --version", /\Aracc version #{re_version}/, &print)
+      chk_cli("rake -V", /\Arake, version #{re_version}/, &print)
+      chk_cli("rbs -v",  /\Arbs #{re_version}\z/, &print)
+      chk_cli("rdbg -v", /\Ardbg #{re_version}\z/, &print)
+      chk_cli("rdoc -v", /\A#{re_version}/, &print)
+      chk_cli("typeprof --version", /\Atypeprof #{re_version}/, &print)
       puts ''
 
       cli_desc =  %x[#{RUBY_INSTALL_NAME} -v][/\A.*/]
