@@ -103,6 +103,9 @@ jobs:
         run: |
           echo IRB::VERSION | $SETARCH make runirb RUNOPT="-- -f"
 
+      - name: make install
+        run: make -j1 DESTDIR=../install install-nodoc
+
       - name: Set test options for skipped tests
         run: |
           set -x

@@ -408,6 +408,8 @@ ifneq ($(DOT_WAIT),)
 up:: $(DOT_WAIT) after-update
 endif
 
+yes-post-install-check: $(addprefix do-,$(filter install-%,$(MAKECMDGOALS)))
+
 ifneq ($(filter update-bundled_gems refresh-gems,$(MAKECMDGOALS)),)
 update-gems: update-bundled_gems
 endif

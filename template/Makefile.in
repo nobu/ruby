@@ -716,6 +716,12 @@ yes-test-syntax-suggest: $(PREPARE_SYNTAX_SUGGEST)
 	$(ACTIONS_ENDGROUP)
 no-test-syntax-suggest:
 
+yes-post-install-check:
+	$(DESTDIR)$(bindir)/$(PROGRAM) -C $(srcdir) tool/post-install.rb
+
+no-post-install-check:
+	[ -n "$(DESTDIR)" ] || $(bindir)/$(PROGRAM) -C $(srcdir) tool/post-install.rb
+
 yesterday:
 	$(GIT) -C $(srcdir) reset --hard \
 	    `$(GIT) -C $(srcdir) log -1 --before=00:00+0900 --format=%H`
