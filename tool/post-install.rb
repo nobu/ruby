@@ -59,6 +59,7 @@ module CLITest
       puts chk_cli("rbs -v",  /\Arbs #{re_version}\z/)
       puts chk_cli("rdbg -v", /\Ardbg #{re_version}\z/)
       puts chk_cli("rdoc -v", /\A#{re_version}/)
+      puts chk_cli("typeprof --version", /\Atypeprof #{re_version}/)
       puts ''
 
       cli_desc =  %x[#{RUBY_INSTALL_NAME} -v][/\A.*/]
