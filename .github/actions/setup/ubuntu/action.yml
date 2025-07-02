@@ -12,6 +12,31 @@ inputs:
       Architecture.  Because we run this on a GitHub-hosted runner
       acceptable value for this input is very limited.
 
+  corelibs:
+    required: false
+    default: 'libgmp'
+    description: >-
+      Libraries for ruby core.
+
+  extlibs:
+    required: false
+    default: 'libffi libssl libyaml zlib1g'
+    description: >-
+      Libraries for extensions.
+
+  excludes:
+    required: false
+    default: ''
+    description: >-
+      Libraries to be excluded from corelibs and extlibs.
+
+  extopts:
+    required: false
+    default: ''
+    description: >-
+      Additional options to be added to the CONFIGURE_ARGS environment
+      variable for extensions.
+
 outputs:
   arch:
     value: ${{ steps.uname.outputs.uname }}
@@ -37,17 +62,46 @@ runs:
         echo uname=`${SETARCH} uname -m` >> "$GITHUB_OUTPUT"
         echo dpkg=`${SETARCH} uname -m | sed s/686/386/` >> "$GITHUB_OUTPUT"
 
+    - id: libs
+      name: libs
+      shell: bash
+      run: |
+        set -x
+        excluded() {
+          declare list=() excludes="$1"; shift 1
+          for x in "$@"; do
+            [[ " $excludes ${list[*]} " == *" $x "* ]] || list+=("$x")
+          done
+          echo "${list[*]}"
+        }
+        {
+          echo -n libs=; excluded "${excludes}" ${corelibs} ${extlibs};
+        } >> $GITHUB_OUTPUT
+      env:
+        corelibs: libgmp ${{ inputs.corelibs }}
+        extlibs: libffi libssl libyaml zlib1g ${{ inputs.extlibs }}
+        excludes: ${{ inputs.excludes }}
+
     - name: apt-get
       shell: bash
       env:
         arch: ${{ inputs.arch && format(':{0}', steps.uname.outputs.dpkg) || '' }}
       run: |
         set -x
+        libs=(${{ steps.libs.outputs.libs }})
         ${arch:+sudo dpkg --add-architecture ${arch#:}}
         sudo apt-get update -qq || :
         sudo apt-get install --no-install-recommends -qq -y -o=Dpkg::Use-Pty=0 \
         ${arch:+cross}build-essential${arch/:/-} \
-        libssl-dev${arch} libyaml-dev${arch} libreadline6-dev${arch} \
-        zlib1g-dev${arch} libncurses5-dev${arch} libffi-dev${arch} \
+        "${libs[@]/%/-dev${arch}}" \
         autoconf ruby
         sudo apt-get install -qq -y pkg-config${arch} || :
+
+    - name: Set ENV
+      shell: bash
+      run: |
+        {
+          echo "CONFIGURE_ARGS=${CONFIGURE_ARGS}"
+        } >> $GITHUB_ENV
+      env:
+        CONFIGURE_ARGS: ${{ inputs.extopts }}

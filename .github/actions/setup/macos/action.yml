@@ -2,7 +2,31 @@ name: Setup macOS environment
 description: >-
   Installs necessary packages via Homebrew.
 
-inputs: {} # nothing?
+inputs:
+  corelibs:
+    required: false
+    default: 'gmp'
+    description: >-
+      Libraries for ruby core.
+
+  extlibs:
+    required: false
+    default: 'libffi openssl@3 zlib'
+    description: >-
+      Libraries for extensions.
+
+  excludes:
+    required: false
+    default: ''
+    description: >-
+      Libraries to be excluded from corelibs and extlibs.
+
+  extopts:
+    required: false
+    default: ''
+    description: >-
+      Additional options to be added to the CONFIGURE_ARGS environment
+      variable for extensions.
 
 outputs: {} # nothing?
 
@@ -10,20 +34,74 @@ runs:
   using: composite
 
   steps:
-    - name: brew
+    - id: libs
+      name: libs
       shell: bash
       run: |
-        brew install --quiet jemalloc gmp libffi openssl@3 zlib autoconf automake libtool
+        set -x
+        uniquefy() {
+          declare list=() x i
+          for x in "$@"; do
+            case " $x " in
+            " no-"*)
+              local i=0
+              x=${x#no-}
+              while [ ${list[$i]+set} ]; do
+                if [[ "${list[$i]}" == $x ]]; then
+                  unset list[$i]
+                fi
+                (( ++i ))
+              done
+              ;;
+            *)
+              [[ " ${list[*]} " == *" $x "* ]] || list+=("$x")
+              ;;
+            esac
+          done
+          echo "${list[*]}"
+        }
+        {
+          echo -n core=; excluded ${corelibs}
+          echo -n exts=; excluded "${excludes}" ${extlibs}
+        } >> $GITHUB_OUTPUT
+      env:
+        corelibs: gmp ${{ inputs.corelibs }}
+        extlibs: libffi openssl@3 zlib ${{ inputs.extlibs }}
+        excludes: ${{ inputs.excludes }}
+
+    - name: brew
+      shell: bash
+      run: >-
+        brew install --quiet
+        ${{ steps.libs.outputs.core }}
+        ${{ steps.libs.outputs.exts }}
+        autoconf automake libtool
 
     - name: Set ENV
       shell: bash
       run: |
+        set -x
         dir_config() {
-          local args=() lib var="$1"; shift
-          for lib in "$@"; do
-            args+=("--with-${lib%@*}-dir=$(brew --prefix $lib)")
+          local _var=$1 _args _optdir _opt _dir; shift
+          eval : '${'$_var':+_args+=("${'$_var'}")}'
+          for _opt in "$@"; do
+            _dir="$(brew --prefix ${_opt})"
+            if [ $with ]; then
+              _optdir+=("${_dir}")
+            else
+              _args+=("--with-${_opt%@*}-dir=${_dir}")
+            fi
           done
-          echo "$var=${args[*]}" >> $GITHUB_ENV
+          if [ ${#_optdir[@]} != 0 ]; then
+            local save_IFS="$IFS" IFS=:
+            _args+=("--with-$with-dir=${_optdir[*]}")
+            IFS="$save_IFS"
+          fi
+          echo $_var="${_args[@]}"
         }
-        dir_config ruby_configure_args gmp
-        dir_config CONFIGURE_ARGS openssl@3
+        {
+          with=opt dir_config ruby_configure_args ${{ steps.libs.outputs.core }}
+          with= dir_config CONFIGURE_ARGS ${{ steps.libs.outputs.exts }}
+        } >> $GITHUB_ENV
+      env:
+        CONFIGURE_ARGS: ${{ inputs.extopts }}
