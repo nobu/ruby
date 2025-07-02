@@ -37,6 +37,10 @@ jobs:
           - test_task: check
             os: macos-14
             excludes: 'gmp'
+          - test_task: check
+            os: macos-14
+            extlibs: dante
+            extopts: '--enable-socks --with-socks5lib=socks'
           - test_task: test-all
             test_opts: --repeat-count=2
             os: macos-14

@@ -30,6 +30,9 @@ jobs:
           - test_task: check
             arch: i686
           - test_task: check
+            extlibs: libsocksd0
+            extopts: '--enable-socks --with-socks5lib=socksd'
+          - test_task: check
             configure: '--disable-yjit'
           - test_task: check
             configure: '--enable-shared --enable-load-relative'
