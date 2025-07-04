@@ -69,6 +69,7 @@ jobs:
           arch: ${{ matrix.arch }}
           corelibs: ${{ matrix.corelibs }}
           extlibs: ${{ matrix.extlibs }}
+          excludes: ${{ matrix.excludes }}
           extopts: ${{ matrix.extopts }}
 
       - uses: ruby/setup-ruby@a4effe49ee8ee5b8b5091268c473a4628afb5651 # v1.245.0

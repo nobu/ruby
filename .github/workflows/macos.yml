@@ -34,6 +34,9 @@ jobs:
             os: macos-14
             configure_args: '--with-jemalloc'
             corelibs: jemalloc
+          - test_task: check
+            os: macos-14
+            excludes: 'gmp'
           - test_task: test-all
             test_opts: --repeat-count=2
             os: macos-14
@@ -73,6 +76,7 @@ jobs:
         with:
           corelibs: ${{ matrix.corelibs }}
           extlibs: ${{ matrix.extlibs }}
+          excludes: ${{ matrix.excludes }}
           extopts: ${{ matrix.extopts }}
 
       - uses: ./.github/actions/setup/directories
