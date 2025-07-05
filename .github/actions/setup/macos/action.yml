@@ -15,12 +15,6 @@ inputs:
     description: >-
       Libraries for extensions.
 
-  excludes:
-    required: false
-    default: ''
-    description: >-
-      Libraries to be excluded from corelibs and extlibs.
-
   extopts:
     required: false
     default: ''
@@ -28,7 +22,16 @@ inputs:
       Additional options to be added to the CONFIGURE_ARGS environment
       variable for extensions.
 
-outputs: {} # nothing?
+outputs:
+  coreopts:
+    value: ${{ steps.libs.outputs.coreopts }}
+    description: >-
+      Options for configure.
+
+  extopts:
+    value: ${{ steps.libs.outputs.extopts }}
+    description: >-
+      Options for extensions.
 
 runs:
   using: composite
@@ -36,72 +39,38 @@ runs:
   steps:
     - id: libs
       name: libs
-      shell: bash
       run: |
-        set -x
-        uniquefy() {
-          declare list=() x i
-          for x in "$@"; do
-            case " $x " in
-            " no-"*)
-              local i=0
-              x=${x#no-}
-              while [ ${list[$i]+set} ]; do
-                if [[ "${list[$i]}" == $x ]]; then
-                  unset list[$i]
-                fi
-                (( ++i ))
-              done
-              ;;
-            *)
-              [[ " ${list[*]} " == *" $x "* ]] || list+=("$x")
-              ;;
-            esac
-          done
-          echo "${list[*]}"
-        }
-        {
-          echo -n core=; excluded ${corelibs}
-          echo -n exts=; excluded "${excludes}" ${extlibs}
-        } >> $GITHUB_OUTPUT
+        #!ruby
+        corelibs, extlibs = ENV.values_at(*%w"corelibs extlibs").map do |libs|
+          libs.split(" ").each_with_object([]) do |l, list|
+            if l.start_with?("no-")
+              list.delete {|n| File.fnmatch?(l[3..-1], n)}
+            else
+              list << l
+            end
+          end
+        end
+
+        brew = [*%w"brew install --quiet autoconf automake libtool", *corelibs, *extlibs]
+        puts "::group::\e[93m#{brew.join(" ")}\e[m"
+        system(*brew)
+        puts "::endgroup::"
+
+        brewed = ->(lib) {%x(brew --prefix #{lib}).chomp}
+        File.open($GITHUB_OUTPUT, "a") do |f|
+          coreopts = "coreopts=" + corelibs.map(brewed).uniq.join(":")
+
+          extopts = "extopts=" + [
+            ENV["extopts"],
+            corelibs.map {|lib| "--with-#{lib.sub(/@.*/, "")}-dir=#{brewed[lib]}"}
+          ].compact.join(" ")
+          [coreopts, extopts].each do |opts|
+            puts "\e[96m#{opts}\e[m"
+            f.puts opts
+          end
+        end
+      shell: ruby -S {0} -GITHUB_OUTPUT=${{ env.GITHUB_OUTPUT }}
       env:
         corelibs: gmp ${{ inputs.corelibs }}
         extlibs: libffi openssl@3 zlib ${{ inputs.extlibs }}
-        excludes: ${{ inputs.excludes }}
-
-    - name: brew
-      shell: bash
-      run: >-
-        brew install --quiet
-        ${{ steps.libs.outputs.core }}
-        ${{ steps.libs.outputs.exts }}
-        autoconf automake libtool
-
-    - name: Set ENV
-      shell: bash
-      run: |
-        set -x
-        dir_config() {
-          local _var=$1 _args _optdir _opt _dir; shift
-          eval : '${'$_var':+_args+=("${'$_var'}")}'
-          for _opt in "$@"; do
-            _dir="$(brew --prefix ${_opt})"
-            if [ $with ]; then
-              _optdir+=("${_dir}")
-            else
-              _args+=("--with-${_opt%@*}-dir=${_dir}")
-            fi
-          done
-          if [ ${#_optdir[@]} != 0 ]; then
-            local save_IFS="$IFS" IFS=:
-            _args+=("--with-$with-dir=${_optdir[*]}")
-            IFS="$save_IFS"
-          fi
-          echo $_var="${_args[@]}"
-        }
-        {
-          with=opt dir_config ruby_configure_args ${{ steps.libs.outputs.core }}
-          with= dir_config CONFIGURE_ARGS ${{ steps.libs.outputs.exts }}
-        } >> $GITHUB_ENV
-      env:
-        CONFIGURE_ARGS: ${{ inputs.extopts }}
+        extopts: ${{ inputs.extopts }}

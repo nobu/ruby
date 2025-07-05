@@ -33,10 +33,10 @@ jobs:
           - test_task: check
             os: macos-14
             configure_args: '--with-jemalloc'
-            corelibs: jemalloc
+            corelibs: 'jemalloc'
           - test_task: check
             os: macos-14
-            excludes: 'gmp'
+            corelibs: 'no-gmp'
           - test_task: check
             os: macos-14
             extlibs: dante
@@ -76,11 +76,11 @@ jobs:
           sparse-checkout: /.github
 
       - name: Install libraries
+        id: libraries
         uses: ./.github/actions/setup/macos
         with:
           corelibs: ${{ matrix.corelibs }}
           extlibs: ${{ matrix.extlibs }}
-          excludes: ${{ matrix.excludes }}
           extopts: ${{ matrix.extopts }}
 
       - uses: ./.github/actions/setup/directories
@@ -108,12 +108,17 @@ jobs:
         continue-on-error: true
 
       - name: Run configure
-        run: ../src/configure -C --disable-install-doc ${ruby_configure_args} ${{ matrix.configure_args }}
+        run: >-
+          ../src/configure -C --disable-install-doc
+          ${{ steps.setup.outputs.coreopts }}
+          ${{ matrix.configure_args }}
 
       - run: make prepare-gems
         if: ${{ matrix.test_task == 'test-bundled-gems' }}
 
       - run: make
+        env:
+          CONFIGURE_ARGS: ${{ steps.libraries.outputs.extopts }}
 
       - run: make hello
 
