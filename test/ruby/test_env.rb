@@ -1379,23 +1379,23 @@ class TestEnv < Test::Unit::TestCase
       Ractor.new port = Ractor::Port.new do |port|
         ENV["#{PATH_ENV}"] = "/"
         ENV.each do |k, v|
-          port.send [k.frozen?]
-          port.send [v.frozen?]
+          port.send [[k, :frozen?]]
+          port.send [[v, :frozen?]]
         end
         ENV.each_key do |k|
-          port.send [k.frozen?]
+          port.send [[k, :frozen?]]
         end
         ENV.each_value do |v|
-          port.send [v.frozen?]
+          port.send [[v, :frozen?]]
         end
         ENV.each_key do |k|
-          port.send [ENV[k].frozen?, "[\#{k.dump}]"]
-          port.send [ENV.fetch(k).frozen?, "fetch(\#{k.dump})"]
+          port.send [[ENV[k], :frozen?], "[\#{k.dump}]"]
+          port.send [[ENV.fetch(k), :frozen?], "fetch(\#{k.dump})"]
         end
         port.send "finished"
       end
       while((params=port.receive) != "finished")
-        assert(*params)
+        assert_send(*params)
       end
     end;
   end

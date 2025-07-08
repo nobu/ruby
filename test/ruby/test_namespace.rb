@@ -22,7 +22,7 @@ class TestNamespace < Test::Unit::TestCase
     pend unless Namespace.enabled?
 
     main = Namespace.current
-    assert main.inspect.include?("main")
+    assert_include(main.inspect, "main")
 
     @n.require_relative('namespace/current')
 
@@ -135,7 +135,7 @@ class TestNamespace < Test::Unit::TestCase
     pend unless Namespace.enabled?
 
     assert_raise(RuntimeError, "Yay!") { @n.require(File.join(__dir__, 'namespace', 'raise')) }
-    assert Namespace.current.inspect.include?("main")
+    assert_include(Namespace.current.inspect, "main")
   end
 
   def test_autoload_in_namespace
@@ -494,7 +494,7 @@ class TestNamespace < Test::Unit::TestCase
     assert_equal nil, $,
 
     # used only in ns
-    assert !global_variables.include?(:$used_only_in_ns)
+    assert_not_include(global_variables, :$used_only_in_ns)
     @n::UniqueGvar.write(123)
     assert_equal 123, @n::UniqueGvar.read
     assert_nil $used_only_in_ns
@@ -515,7 +515,7 @@ class TestNamespace < Test::Unit::TestCase
   def test_load_path_and_loaded_features
     pend unless Namespace.enabled?
 
-    assert $LOAD_PATH.respond_to?(:resolve_feature_path)
+    assert_operator($LOAD_PATH, :respond_to?, :resolve_feature_path)
 
     @n.require_relative('namespace/load_path')
 
@@ -525,13 +525,13 @@ class TestNamespace < Test::Unit::TestCase
 
     namespace_dir = File.join(__dir__, 'namespace')
     # TODO: $LOADED_FEATURES in method calls should refer the current namespace in addition to the loading namespace.
-    # assert @n::LoadPathCheck.current_loaded_features.include?(File.join(namespace_dir, 'blank1.rb'))
-    # assert !@n::LoadPathCheck.current_loaded_features.include?(File.join(namespace_dir, 'blank2.rb'))
+    # assert_include(@n::LoadPathCheck.current_loaded_features, File.join(namespace_dir, 'blank1.rb'))
+    # assert_not_include(@n::LoadPathCheck.current_loaded_features, File.join(namespace_dir, 'blank2.rb'))
     # assert @n::LoadPathCheck.require_blank2
-    # assert @n::LoadPathCheck.current_loaded_features.include?(File.join(namespace_dir, 'blank2.rb'))
+    # assert_include(@n::LoadPathCheck.current_loaded_features, File.join(namespace_dir, 'blank2.rb'))
 
-    assert !$LOADED_FEATURES.include?(File.join(namespace_dir, 'blank1.rb'))
-    assert !$LOADED_FEATURES.include?(File.join(namespace_dir, 'blank2.rb'))
+    assert_not_include($LOADED_FEATURES, File.join(namespace_dir, 'blank1.rb'))
+    assert_not_include($LOADED_FEATURES, File.join(namespace_dir, 'blank2.rb'))
   end
 
   def test_eval_basic
