@@ -4685,7 +4685,7 @@ AC_CONFIG_FILES(Makefile:template/Makefile.in, [
         done
 	sed '/^MISSING/s/\$U\././g;/^VCS *=/s#@VCS@#'"$VCS"'#;/^VCSUP *=/s#@VCSUP@#'"$VCSUP"'#' Makefile
 	echo; test x"$EXEEXT" = x || echo 'miniruby: miniruby$(EXEEXT)'
-	depends=`grep '^-include' ${srcdir}/common.mk | sed 's:^.* :$(srcdir)/:'`
+	depends=`grep '^!include' ${srcdir}/common.mk | sed 's:^.* :$(srcdir)/:'`
 	AS_IF([test "$gnumake" != yes], [
 	    echo ['$(MKFILES): $(srcdir)/common.mk'${depends:+" $depends"}]
 	    sed ['s/{\$([^(){}]*)[^{}]*}//g'] ${srcdir}/common.mk `echo "$depends" | sed 's|\$(srcdir)|'"$(srcdir)|g"`

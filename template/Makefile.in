@@ -397,7 +397,7 @@ $(MKFILES): config.status $(srcdir)/version.h $(ABI_VERSION_HDR)
 		{ echo "$@ updated, restart."; exit 1; }
 
 uncommon.mk: $(srcdir)/common.mk
-		sed 's/{\$$([^(){}]*)[^{}]*}//g' $< > $@
+		sed -e 's/{\$$([^(){}]*)[^{}]*}//g' -e 's/^!/-/' $< > $@
 
 .PHONY: reconfig
 reconfig-args = $(srcdir)/$(CONFIGURE) $(yes_silence:yes=--silent) $(configure_args)
