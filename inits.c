@@ -77,6 +77,7 @@ rb_call_inits(void)
     CALL(Prism);
     CALL(unicode_version);
     CALL(Set);
+    CALL(pathname);
     CALL(Namespace);
 
     // enable builtin loading
@@ -107,6 +108,7 @@ rb_call_builtin_inits(void)
     BUILTIN(nilclass);
     BUILTIN(marshal);
     BUILTIN(zjit);
+    BUILTIN(pathname);
     Init_builtin_prelude();
 }
 #undef CALL
