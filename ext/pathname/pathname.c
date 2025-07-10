@@ -1666,3 +1666,5 @@ InitVM_pathname(void)
     id_write = rb_intern("write");
     id_zero_p = rb_intern("zero?");
 }
+
+#include "pathname.rbinc"

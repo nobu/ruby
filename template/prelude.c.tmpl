@@ -12,7 +12,7 @@ class Prelude
   LINE_LIMIT = 509 # by C89
 
   def prelude_base(filename)
-    filename.chomp(".rb")
+    File.basename(filename, ".rb")
   end
   def prelude_name(filename)
     "<internal:" + prelude_base(filename) + ">"
