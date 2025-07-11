@@ -137,7 +137,6 @@ fs.o: $(hdrdir)/ruby/internal/intern/re.h
 fs.o: $(hdrdir)/ruby/internal/intern/ruby.h
 fs.o: $(hdrdir)/ruby/internal/intern/select.h
 fs.o: $(hdrdir)/ruby/internal/intern/select/largesize.h
-fs.o: $(hdrdir)/ruby/internal/intern/set.h
 fs.o: $(hdrdir)/ruby/internal/intern/signal.h
 fs.o: $(hdrdir)/ruby/internal/intern/sprintf.h
 fs.o: $(hdrdir)/ruby/internal/intern/string.h
@@ -301,7 +300,6 @@ init.o: $(hdrdir)/ruby/internal/intern/re.h
 init.o: $(hdrdir)/ruby/internal/intern/ruby.h
 init.o: $(hdrdir)/ruby/internal/intern/select.h
 init.o: $(hdrdir)/ruby/internal/intern/select/largesize.h
-init.o: $(hdrdir)/ruby/internal/intern/set.h
 init.o: $(hdrdir)/ruby/internal/intern/signal.h
 init.o: $(hdrdir)/ruby/internal/intern/sprintf.h
 init.o: $(hdrdir)/ruby/internal/intern/string.h
@@ -471,7 +469,6 @@ newline_conv.o: $(hdrdir)/ruby/internal/intern/re.h
 newline_conv.o: $(hdrdir)/ruby/internal/intern/ruby.h
 newline_conv.o: $(hdrdir)/ruby/internal/intern/select.h
 newline_conv.o: $(hdrdir)/ruby/internal/intern/select/largesize.h
-newline_conv.o: $(hdrdir)/ruby/internal/intern/set.h
 newline_conv.o: $(hdrdir)/ruby/internal/intern/signal.h
 newline_conv.o: $(hdrdir)/ruby/internal/intern/sprintf.h
 newline_conv.o: $(hdrdir)/ruby/internal/intern/string.h
@@ -644,7 +641,6 @@ stat.o: $(hdrdir)/ruby/internal/intern/re.h
 stat.o: $(hdrdir)/ruby/internal/intern/ruby.h
 stat.o: $(hdrdir)/ruby/internal/intern/select.h
 stat.o: $(hdrdir)/ruby/internal/intern/select/largesize.h
-stat.o: $(hdrdir)/ruby/internal/intern/set.h
 stat.o: $(hdrdir)/ruby/internal/intern/signal.h
 stat.o: $(hdrdir)/ruby/internal/intern/sprintf.h
 stat.o: $(hdrdir)/ruby/internal/intern/string.h

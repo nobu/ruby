@@ -138,7 +138,6 @@ date_core.o: $(hdrdir)/ruby/internal/intern/re.h
 date_core.o: $(hdrdir)/ruby/internal/intern/ruby.h
 date_core.o: $(hdrdir)/ruby/internal/intern/select.h
 date_core.o: $(hdrdir)/ruby/internal/intern/select/largesize.h
-date_core.o: $(hdrdir)/ruby/internal/intern/set.h
 date_core.o: $(hdrdir)/ruby/internal/intern/signal.h
 date_core.o: $(hdrdir)/ruby/internal/intern/sprintf.h
 date_core.o: $(hdrdir)/ruby/internal/intern/string.h
@@ -314,7 +313,6 @@ date_parse.o: $(hdrdir)/ruby/internal/intern/re.h
 date_parse.o: $(hdrdir)/ruby/internal/intern/ruby.h
 date_parse.o: $(hdrdir)/ruby/internal/intern/select.h
 date_parse.o: $(hdrdir)/ruby/internal/intern/select/largesize.h
-date_parse.o: $(hdrdir)/ruby/internal/intern/set.h
 date_parse.o: $(hdrdir)/ruby/internal/intern/signal.h
 date_parse.o: $(hdrdir)/ruby/internal/intern/sprintf.h
 date_parse.o: $(hdrdir)/ruby/internal/intern/string.h
@@ -480,7 +478,6 @@ date_strftime.o: $(hdrdir)/ruby/internal/intern/re.h
 date_strftime.o: $(hdrdir)/ruby/internal/intern/ruby.h
 date_strftime.o: $(hdrdir)/ruby/internal/intern/select.h
 date_strftime.o: $(hdrdir)/ruby/internal/intern/select/largesize.h
-date_strftime.o: $(hdrdir)/ruby/internal/intern/set.h
 date_strftime.o: $(hdrdir)/ruby/internal/intern/signal.h
 date_strftime.o: $(hdrdir)/ruby/internal/intern/sprintf.h
 date_strftime.o: $(hdrdir)/ruby/internal/intern/string.h
@@ -653,7 +650,6 @@ date_strptime.o: $(hdrdir)/ruby/internal/intern/re.h
 date_strptime.o: $(hdrdir)/ruby/internal/intern/ruby.h
 date_strptime.o: $(hdrdir)/ruby/internal/intern/select.h
 date_strptime.o: $(hdrdir)/ruby/internal/intern/select/largesize.h
-date_strptime.o: $(hdrdir)/ruby/internal/intern/set.h
 date_strptime.o: $(hdrdir)/ruby/internal/intern/signal.h
 date_strptime.o: $(hdrdir)/ruby/internal/intern/sprintf.h
 date_strptime.o: $(hdrdir)/ruby/internal/intern/string.h
