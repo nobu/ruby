@@ -1,5 +1,5 @@
-#ifndef RBIMPL_INTERN_SET_H                         /*-*-C++-*-vi:se ft=cpp:*/
-#define RBIMPL_INTERN_SET_H
+#ifndef RBIMPL_SET_H                         /*-*-C++-*-vi:se ft=cpp:*/
+#define RBIMPL_SET_H
 /**
  * @file
  * @author     Ruby developers <ruby-core@ruby-lang.org>
@@ -108,4 +108,4 @@ size_t rb_set_size(VALUE set);
 
 RBIMPL_SYMBOL_EXPORT_END()
 
-#endif /* RBIMPL_INTERN_SET_H */
+#endif /* RBIMPL_SET_H */

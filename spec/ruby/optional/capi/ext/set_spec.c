@@ -1,4 +1,5 @@
 #include "ruby.h"
+#include "ruby/set.h"
 #include "rubyspec.h"
 
 #ifdef __cplusplus

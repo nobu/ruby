@@ -14,6 +14,7 @@
 #include "internal/set_table.h"
 #include "internal/symbol.h"
 #include "internal/variable.h"
+#include "ruby/set.h"
 #include "ruby_assert.h"
 
 #include <stdio.h>
