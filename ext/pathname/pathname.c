@@ -1667,4 +1667,4 @@ InitVM_pathname(void)
     id_zero_p = rb_intern("zero?");
 }
 
-#include "pathname.rbinc"
+#include "ext/pathname/pathname.rbinc"
