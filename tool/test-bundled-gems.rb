@@ -41,16 +41,12 @@ File.foreach("#{gem_dir}/bundled_gems") do |line|
 
   case gem
   when "rbs"
-    # TODO: We should skip test file instead of test class/methods
-    skip_test_files = %w[
-    ]
-
-    skip_test_files.each do |file|
-      path = "#{gem_dir}/src/#{gem}/#{file}"
-      File.unlink(path) if File.exist?(path)
+    skip_tests = "#{__dir__}/rbs_skip_tests"
+    if /mingw|mswin/ =~ RbConfig::CONFIG['target_os']
+      skip_tests << "#{File::PATH_SEPARATOR}#{skip_tests}.windows"
     end
 
-    test_command << " stdlib_test validate RBS_SKIP_TESTS=#{__dir__}/rbs_skip_tests SKIP_RBS_VALIDATION=true"
+    test_command << " stdlib_test validate RBS_SKIP_TESTS=#{skip_tests} SKIP_RBS_VALIDATION=true"
     first_timeout *= 3
 
   when "debug"
