@@ -4051,6 +4051,8 @@ rb_w32_getservbyport(int port, const char *proto)
 
 #ifdef HAVE_AFUNIX_H
 
+#undef socketpair
+
 /* License: Ruby's */
 static size_t
 socketpair_unix_path(struct sockaddr_un *sock_un)
@@ -4230,7 +4232,7 @@ socketpair_internal(int af, int type, int protocol, SOCKET *sv)
 
 /* License: Ruby's */
 int
-socketpair(int af, int type, int protocol, int *sv)
+rb_w32_socketpair(int af, int type, int protocol, int *sv)
 {
     SOCKET pair[2];
 

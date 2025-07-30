@@ -305,7 +305,7 @@ extern struct protoent *WSAAPI rb_w32_getprotobyname(const char *);
 extern struct protoent *WSAAPI rb_w32_getprotobynumber(int);
 extern struct servent  *WSAAPI rb_w32_getservbyname(const char *, const char *);
 extern struct servent  *WSAAPI rb_w32_getservbyport(int, const char *);
-extern int    socketpair(int, int, int, int *);
+extern int    rb_w32_socketpair(int, int, int, int *);
 extern int    getifaddrs(struct ifaddrs **);
 extern void   freeifaddrs(struct ifaddrs *);
 extern char * rb_w32_ugetcwd(char *, int);
@@ -666,6 +666,9 @@ extern char *rb_w32_strerror(int);
 
 #undef socket
 #define socket(s, t, p)		rb_w32_socket(s, t, p)
+
+#undef socketpair
+#define socketpair(a, t, p, s)	rb_w32_socketpair(a, t, p, s)
 
 #undef gethostbyaddr
 #define gethostbyaddr(a, l, t)	rb_w32_gethostbyaddr(a, l, t)
