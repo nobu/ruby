@@ -279,6 +279,7 @@ extern int    WSAAPI rb_w32_accept(int, struct sockaddr *, int *);
 extern int    WSAAPI rb_w32_bind(int, const struct sockaddr *, int);
 extern int    WSAAPI rb_w32_connect(int, const struct sockaddr *, int);
 extern void   rb_w32_fdset(int, fd_set*);
+extern void   rb_w32_fdset_with_size(int, fd_set*, unsigned int);
 extern void   rb_w32_fdclr(int, fd_set*);
 extern int    rb_w32_fdisset(int, fd_set*);
 extern int    WSAAPI rb_w32_select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
@@ -598,22 +599,7 @@ extern char *rb_w32_strerror(int);
 #define O_NONBLOCK 1
 
 #undef FD_SET
-#define FD_SET(fd, set)	do {\
-    unsigned int i;\
-    SOCKET s = _get_osfhandle(fd);\
-\
-    for (i = 0; i < (set)->fd_count; i++) {\
-        if ((set)->fd_array[i] == s) {\
-            break;\
-        }\
-    }\
-    if (i == (set)->fd_count) {\
-        if ((set)->fd_count < FD_SETSIZE) {\
-            (set)->fd_array[i] = s;\
-            (set)->fd_count++;\
-        }\
-    }\
-} while(0)
+#define FD_SET(fd, set) 	rb_w32_fdset_with_size(fd, set, FD_SETSIZE)
 
 #undef FD_CLR
 #define FD_CLR(f, s)		rb_w32_fdclr(f, s)

@@ -2911,9 +2911,28 @@ ioctl(int i, int u, ...)
 }
 
 void
+rb_w32_fdset_with_size(int fd, fd_set *set, unsigned int setsize)
+{
+    unsigned int i;
+    SOCKET s = _get_osfhandle(fd);
+
+    for (i = 0; i < set->fd_count; i++) {
+        if (set->fd_array[i] == s) {
+            break;
+        }
+    }
+    if (i == set->fd_count) {
+        if (set->fd_count < setsize) {
+            set->fd_array[i] = s;
+            set->fd_count++;
+        }
+    }
+}
+
+void
 rb_w32_fdset(int fd, fd_set *set)
 {
-    FD_SET(fd, set);
+    rb_w32_fdset_with_size(fd, set, FD_SETSIZE);
 }
 
 #undef FD_CLR
