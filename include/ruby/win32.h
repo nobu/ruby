@@ -333,7 +333,7 @@ extern rb_pid_t rb_w32_uaspawn_flags(int, const char *, char *const *, DWORD);
 #undef HAVE_KILL
 #define HAVE_KILL 1
 extern int kill(rb_pid_t, int);
-extern int fcntl(int, int, ...);
+extern int rb_w32_fcntl(int, int, ...);
 extern int rb_w32_set_nonblock(int);
 extern rb_pid_t rb_w32_getpid(void);
 extern rb_pid_t rb_w32_getppid(void);
@@ -597,6 +597,9 @@ extern char *rb_w32_strerror(int);
 #define F_DUPFD_CLOEXEC 67
 #define FD_CLOEXEC 1 /* F_GETFD, F_SETFD */
 #define O_NONBLOCK 1
+
+#undef fcntl
+#define fcntl(fd, ...)		rb_w32_fcntl(fd, __VA_ARGS__)
 
 #undef FD_SET
 #define FD_SET(fd, set) 	rb_w32_fdset_with_size(fd, set, FD_SETSIZE)

@@ -4480,7 +4480,7 @@ dupfd(HANDLE hDup, int flags, int minfd)
 
 /* License: Ruby's */
 int
-fcntl(int fd, int cmd, ...)
+rb_w32_fcntl(int fd, int cmd, ...)
 {
     va_list va;
     int arg;

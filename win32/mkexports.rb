@@ -51,7 +51,7 @@ class Exports
   def read_substitution(header, syms, winapis)
     File.foreach(header) do |line|
       if /^#define (\w+)\((.*?)\)\s+(?:\(void\))?(rb_w32_\w+)\((.*?)\)\s*$/ =~ line and
-          $2.delete(" ") == $4.delete(" ")
+          $2.delete(" ") == $4.delete(" ").sub("__VA_ARGS__", "...")
         export, internal = $1, $3
         if syms[internal] or internal = winapis[internal]
           syms[forwarding(internal, export)] = internal
