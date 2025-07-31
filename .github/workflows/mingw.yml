@@ -92,8 +92,6 @@ jobs:
         shell: pwsh
 
       - name: Set up env
-        # %TEMP% is inconsistent with %TMP% and test-all expects they are consistent.
-        # https://github.com/actions/virtual-environments/issues/712#issuecomment-613004302
         working-directory:
         run: |
           # %TEMP% is inconsistent with %TMP% and test-all expects they are consistent.
