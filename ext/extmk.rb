@@ -289,6 +289,14 @@ def extmake(target, basedir = 'ext', maybestatic = true)
     end
   ensure
     Logging::log_close
+
+    if ENV["GITHUB_ACTIONS"] == "true"
+      %w[mkmf.log extconf.h].each do |file|
+        content = (File.read(file) rescue "\e[91m#{$!}\e[m")
+        puts "::group::\e[91m#{target}/#{file}\e[m", content, "::endgroup::"
+      end
+    end
+
     if rbconfig0
       RbConfig.module_eval {
 	remove_const(:CONFIG)

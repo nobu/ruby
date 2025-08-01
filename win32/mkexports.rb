@@ -176,4 +176,7 @@ end
 END {
   exports = Exports.extract(ARGV)
   Exports.output {|f| f.puts(*exports)}
+  if ENV["GITHUB_ACTIONS"] == "true"
+    puts "::group::\e[91m" "ruby.def" "\e[m", *exports, "::endgroup::"
+  end
 }
