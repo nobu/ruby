@@ -70,6 +70,7 @@ jobs:
         with:
           msystem: UCRT64
           update: true
+          path-type: inherited
           install: >-
             git
             make
@@ -88,6 +89,17 @@ jobs:
           echo "${env:MSYS2_LOCATION}\ucrt64\bin" | Tee-Object -FilePath "${env:GITHUB_PATH}" -Append -Encoding utf8
         env:
           MSYS2_LOCATION: ${{ steps.msys2.outputs.msys2-location }}
+        shell: pwsh
+
+      - name: Set up env
+        working-directory:
+        run: |
+          # %TEMP% is inconsistent with %TMP% and test-all expects they are consistent.
+          # https://github.com/actions/virtual-environments/issues/712#issuecomment-613004302
+          $tmpdir = "${env:LOCALAPPDATA}\Temp"
+          # $home is set by pwsh and read-only
+          echo "HOME=$home" "TMP=$tmpdir" "TEMP=$tmpdir" "TMPDIR=$tmpdir" |
+            Tee-Object -FilePath ${env:GITHUB_ENV} -Append -Encoding utf8
         shell: pwsh
 
       - name: Misc system & package info
