@@ -70,6 +70,7 @@ jobs:
         with:
           msystem: UCRT64
           update: true
+          path-type: inherited
           install: >-
             git
             make
@@ -81,11 +82,17 @@ jobs:
             mingw-w64-ucrt-x86_64-libyaml
             mingw-w64-ucrt-x86_64-libffi
 
-      - name: Add MSYS2 to PATH
+      - name: Set up env
+        # %TEMP% is inconsistent with %TMP% and test-all expects they are consistent.
+        # https://github.com/actions/virtual-environments/issues/712#issuecomment-613004302
         working-directory:
         run: |
-          echo "${env:MSYS2_LOCATION}\usr\bin" | Tee-Object -FilePath "${env:GITHUB_PATH}" -Append -Encoding utf8
-          echo "${env:MSYS2_LOCATION}\ucrt64\bin" | Tee-Object -FilePath "${env:GITHUB_PATH}" -Append -Encoding utf8
+          $msys2 = ${env:MSYS2_LOCATION}
+          echo "$msys2\usr\bin" "$msys2\ucrt64\bin" |
+            Tee-Object -FilePath "${env:GITHUB_PATH}" -Append -Encoding utf8
+          $tmp = ${env:TMP}
+          echo "HOME=$home" "TMP=$tmp" "TEMP=$tmp" "TMPDIR=$tmp" |
+            Tee-Object -FilePath ${env:GITHUB_ENV} -Append -Encoding utf8
         env:
           MSYS2_LOCATION: ${{ steps.msys2.outputs.msys2-location }}
         shell: pwsh
