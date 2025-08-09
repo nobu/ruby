@@ -90,7 +90,7 @@ jobs:
           $msys2 = ${env:MSYS2_LOCATION}
           echo "$msys2\usr\bin" "$msys2\ucrt64\bin" |
             Tee-Object -FilePath "${env:GITHUB_PATH}" -Append -Encoding utf8
-          $tmp = ${env:TMP}
+          $tmp = (Get-Item -LiteralPath ${env:TEMP}).FullName
           echo "HOME=$home" "TMP=$tmp" "TEMP=$tmp" "TMPDIR=$tmp" |
             Tee-Object -FilePath ${env:GITHUB_ENV} -Append -Encoding utf8
         env:
