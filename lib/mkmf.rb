@@ -2809,16 +2809,18 @@ MESSAGE
     @libdir_basename ||= config_string("libdir") {|name| name[/\A\$\(exec_prefix\)\/(.*)/, 1]} || "lib"
   end
 
-  def MAIN_DOES_NOTHING(*refs)
+  def MAIN_DOES_NOTHING(*refs) # :yield:
     src = MAIN_DOES_NOTHING
     unless refs.empty?
-      src = src.sub(/\{/) do
-        $& +
-          "\n  if (argc > 1000000) {\n" +
+      src = src.sub(/\{\K/) do
+        "\n  if (argc > 1000000) {\n" +
           refs.map {|n|"    int (* volatile #{n}p)(void)=(int (*)(void))&#{n};\n"}.join("") +
           refs.map {|n|"    printf(\"%d\", (*#{n}p)());\n"}.join("") +
           "  }\n"
       end
+    end
+    if defined?(yield)
+      src = yield src
     end
     src
   end
@@ -3020,11 +3022,82 @@ realclean: distclean
                    "$(CXXFLAGS) $(src) $(LIBPATH) $(LDFLAGS) $(ARCH_FLAG) $(LOCAL_LIBS) $(LIBS)"
 
     def have_devel?
+      if config_string('CXX') == 'false'
+        return @have_devel = false unless progs = find_cxx_progs
+        unless progs['LDSHAREDXX']&. != ''
+          progs['LDSHAREDXX'] = CONFIG['LDSHARED'].sub(/\$(?:\(CC\)|\{CC\}|CC)/, '$(CXX)')
+        end
+        progs.each_pair {|key, val| RbConfig.fire_update!(key, val)}
+      end
       unless defined? @have_devel
         @have_devel = true
         @have_devel = try_link(MAIN_DOES_NOTHING)
+        if try_compile(MAIN_DOES_NOTHING {|src| <<~CXX + src })
+           #include <cstddef>
+           std::nullptr_t const *const conftest_nullptr = nullptr;
+           CXX
+          [RbConfig::MAKEFILE_CONFIG, RbConfig::CONFIG].each do |conf|
+            conf['CXXFLAGS'] << " -DHAVE_NULLPTR"
+          end
+        end
       end
       @have_devel
+    end
+
+    def check_prog_for_cc(stem, repl, cc)
+      cxx = cc.sub(/#{stem}(?=[^\/]*\z)/, repl)
+      cxx if find_executable0(cxx)
+    end
+
+    # Find C++ programs at runtime, according to CONFIG['CC'].
+    def find_cxx_progs
+      cc, = config_string('CC').shellsplit
+      case File.basename(cc)
+      when 'cc' # /(?:\A|[ \/])cc(?: |\z)/
+        # Don't try g++/clang++ when CC=cc
+        {
+          'CXX' => %w[cl.exe CC c++].find {|cc| find_executable0(cc)},
+        }
+      when /icc/
+        # Intel C++ has interprocedural optimizations.  It tends to come with its
+        # own linker etc.
+        {
+          'AR' => check_prog_for_cc("icc", "xiar", cc),
+          'CXX' => check_prog_for_cc("icc", "icpc", cc),
+          'LD' => check_prog_for_cc("icc", "xild", cc),
+        }
+      when /gcc/
+        # Ditto for GCC.
+        {
+          'LD' => check_prog_for_cc("gcc", "ld", cc),
+          'AR' => check_prog_for_cc("gcc", "gcc-ar", cc),
+          'CXX' => check_prog_for_cc("gcc", "g++", cc),
+          'NM' => check_prog_for_cc("gcc", "gcc-nm", cc),
+          'RANLIB' => check_prog_for_cc("gcc", "gcc-ranlib", cc),
+        }
+      when /clang/
+        # Ditto for LLVM.  Note however that llvm-as is a LLVM-IR to LLVM bitcode
+        # assembler that does not target your machine native binary.
+
+        # Xcode has its own version tools that may be incompatible with
+        # genuine LLVM tools, use the tools in the same directory.
+
+        llvm_prefix = IO.popen([cc, *%w"-E -dM -xc -"], in: :close, &:read)
+        llvm_prefix = llvm_prefix.include?("__apple_build_version__") ? "" : "llvm-"
+        {
+          'LD' => check_prog_for_cc("clang", "ld", cc), # ... maybe try lld ?
+          'AR' => check_prog_for_cc("clang", "#{llvm_prefix}ar", cc),
+          # 'AS' => check_prog_for_cc("clang", "#{llvm_prefix}as", cc),
+          'CXX' => check_prog_for_cc("clang", "clang++", cc),
+          'NM' => check_prog_for_cc("clang", "#{llvm_prefix}nm", cc),
+          'OBJCOPY' => check_prog_for_cc("clang", "#{llvm_prefix}objcopy", cc),
+          'OBJDUMP' => check_prog_for_cc("clang", "#{llvm_prefix}objdump", cc),
+          'RANLIB' => check_prog_for_cc("clang", "#{llvm_prefix}ranlib", cc),
+          'STRIP' => check_prog_for_cc("clang", "#{llvm_prefix}strip", cc),
+        }
+      else
+        return
+      end.compact
     end
 
     def conftest_source
