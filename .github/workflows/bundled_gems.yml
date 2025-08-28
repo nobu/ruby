@@ -42,7 +42,9 @@ jobs:
 
       - name: Set ENV
         run: |
-          echo "TODAY=$(date +%F)" >> $GITHUB_ENV
+          NOW=$(date +%s)
+          echo "NOW=$NOW" >> $GITHUB_ENV
+          echo "TODAY=$(date +%F --date=@$NOW)" >> $GITHUB_ENV
 
       - name: Download previous gems list
         run: |
@@ -129,6 +131,16 @@ jobs:
           !startsWith(github.event_name, 'pull') &&
           steps.diff.outputs.update
           }}
+
+      - name: Development revisions
+        run: |
+          git blame --line-porcelain gems/bundled_gems |
+          ruby -e '
+          while info = gets("\n\t") and line = gets
+            next if line.split(/\s+|#.*/).size < 4
+            next if info[/^committer-time \K\d+/].to_i >= $limit
+            puts "::WARNING:: #{$./2}:#{line}"
+          end' -s -- -limit=(($NOW - 30*86400))
 
       - uses: ./.github/actions/slack
         with:
