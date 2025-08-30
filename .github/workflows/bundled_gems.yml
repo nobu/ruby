@@ -104,8 +104,20 @@ jobs:
         id: logs
         run: |
           file=gems/bundled_gems days=30
+          year=$[${TODAY%%-*}-1]
+          case ${TODAY} in
+          *-12-2[6-9] | *-12-3[01] )
+            exit 0;;
+          *-12-2? )
+            days=3;;
+          *-12-1? )
+            days=7;;
+          *-12-* )
+            days=10;;
+          *)
+          esac
           { echo days=$days; echo file=$file; } >> $GITHUB_OUTPUT
-          since=$(date --date=-$[days * 2 + 10]day +'%F')
+          since=${year}-12-25
           set -x
           git sparse-checkout set --no-cone /$file
           git fetch --shallow-since="$since" --no-tags origin ${GITHUB_REF}
@@ -115,8 +127,8 @@ jobs:
           #!ruby
           file = ENV["file"]
           days = ENV["days"].to_i
-          today = Time.new("#{ENV['TODAY']}T00:00:00Z").to_i
-          limit = today - days * 86400
+          today = Time.new("#{ENV['TODAY']}T00:00:00Z")
+          limit = today.to_i - days * 86400
 
           ok = true
           IO.popen(%W"git blame --line-porcelain -- #{file}") do |blame|
@@ -131,8 +143,9 @@ jobs:
               puts "::#{level} file=#{file},line=#{line},title=Older than #{d} days::#{gem[0]} #{gem[3]}"
             end
           end
-          # exit ok
+          exit ok
         shell: ruby {0}
+        continue-on-error: ${{ !contains(env.TODAY, '-12-') }}
         env:
           file: ${{ steps.logs.outputs.file }}
           days: ${{ steps.logs.outputs.days }}
