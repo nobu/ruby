@@ -6793,44 +6793,46 @@ constat_attr(int count, const int *seq, WORD attr, WORD default_attr, int *rever
           case 1:
             bold = FOREGROUND_INTENSITY;
             break;
+          case 22:
+            bold = 0;
+            break;
           case 4:
 #ifndef COMMON_LVB_UNDERSCORE
 #define COMMON_LVB_UNDERSCORE 0x8000
 #endif
             attr |= COMMON_LVB_UNDERSCORE;
             break;
+          case 24:
+            attr &= ~COMMON_LVB_UNDERSCORE;
+            break;
           case 7:
             rev = 1;
+            break;
+          case 27:
+            rev = 0;
             break;
 
           case 30:
             attr &= ~(FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
             break;
-          case 17:
           case 31:
             attr = (attr & ~(FOREGROUND_BLUE | FOREGROUND_GREEN)) | FOREGROUND_RED;
             break;
-          case 18:
           case 32:
             attr = (attr & ~(FOREGROUND_BLUE | FOREGROUND_RED)) | FOREGROUND_GREEN;
             break;
-          case 19:
           case 33:
             attr = (attr & ~FOREGROUND_BLUE) | FOREGROUND_GREEN | FOREGROUND_RED;
             break;
-          case 20:
           case 34:
             attr = (attr & ~(FOREGROUND_GREEN | FOREGROUND_RED)) | FOREGROUND_BLUE;
             break;
-          case 21:
           case 35:
             attr = (attr & ~FOREGROUND_GREEN) | FOREGROUND_BLUE | FOREGROUND_RED;
             break;
-          case 22:
           case 36:
             attr = (attr & ~FOREGROUND_RED) | FOREGROUND_BLUE | FOREGROUND_GREEN;
             break;
-          case 23:
           case 37:
             attr |= FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
             break;
