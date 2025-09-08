@@ -125,10 +125,14 @@ FILES_IN_BUILD_DIRECTORY = %w[
 # % ruby -e 'def g(d) Dir.chdir(d) { Dir["**/*.{c,h,inc,dmyh}"] } end; puts((g("repo_build_dir") & g("tarball_source_dir_original")).sort)'
 FILES_NEED_VPATH = %w[
   ext/rbconfig/sizeof/sizes.c
+  ext/rbconfig/sizeof/limits.c
   ext/ripper/eventids1.c
+  ext/ripper/eventids1.h
+  ext/ripper/eventids2.h
   ext/ripper/eventids2table.c
   ext/ripper/ripper.c
   ext/ripper/ripper_init.c
+  ext/ripper/ripper_init.h
   golf_prelude.c
   id.c
   id.h
