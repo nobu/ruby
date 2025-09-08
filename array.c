@@ -6990,14 +6990,45 @@ yield_indexed_values(const VALUE values, const long r, const long *const p)
  *
  * n: the size of the set
  * r: the number of elements in each permutation
- * p: the array (of size r) that we're filling in
- * used: an array of booleans: whether a given index is already used
  * values: the Ruby array that holds the actual values to permute
  */
 static void
-permute0(const long n, const long r, long *const p, char *const used, const VALUE values)
+permute0(const long n, const long r, VALUE *ary0)
 {
     long i = 0, index = 0;
+    VALUE ary = *ary0;
+
+    if (r < 0 || n < r) {
+        /* no permutations: yield nothing */
+        return;
+    }
+    else if (r == 0) { /* exactly one permutation: the zero-length array */
+        rb_yield(rb_ary_new2(0));
+        return;
+    }
+    else if (r == 1) { /* this is a special, easy case */
+        for (i = 0; i < RARRAY_LEN(ary); i++) {
+            rb_yield(rb_ary_new3(1, RARRAY_AREF(ary, i)));
+        }
+        return;
+    }
+
+    /* this is the general case */
+    volatile VALUE t0;
+
+    /* the array (of size r) of indexes that we're filling in */
+    long *p = ALLOCV_N(long, t0, r+roomof(n, sizeof(long)));
+
+    /* an array of booleans: whether a given index in ary is already used */
+    char *used = (char*)(p + r);
+    MEMZERO(used, char, n); /* initialize array */
+
+    VALUE values = ary;
+    if (RBASIC_CLASS(ary)) {
+        values = ary_make_shared_copy(ary); /* private defensive copy of ary */
+        RBASIC_CLEAR_CLASS(values);
+        *ary0 = values;
+    }
 
     for (;;) {
         const char *const unused = memchr(&used[i], 0, n-i);
@@ -7027,6 +7058,7 @@ permute0(const long n, const long r, long *const p, char *const used, const VALU
             p[index] = ++i;
         }
     }
+    ALLOCV_END(t0);
 }
 
 /*
@@ -7081,6 +7113,13 @@ rb_ary_permutation_size(VALUE ary, VALUE args, VALUE eobj)
     return descending_factorial(n, k);
 }
 
+static VALUE
+permute1(RB_BLOCK_CALL_FUNC_ARGLIST(num, ary))
+{
+    permute0(RARRAY_LEN(ary), NUM2LONG(num), (VALUE *)ary);
+    return Qnil;
+}
+
 /*
  *  call-seq:
  *    permutation(count = self.size) {|permutation| ... } -> self
@@ -7126,36 +7165,29 @@ rb_ary_permutation_size(VALUE ary, VALUE args, VALUE eobj)
 static VALUE
 rb_ary_permutation(int argc, VALUE *argv, VALUE ary)
 {
-    long r, n, i;
-
-    n = RARRAY_LEN(ary);                  /* Array length */
     RETURN_SIZED_ENUMERATOR(ary, argc, argv, rb_ary_permutation_size);   /* Return enumerator if no block */
-    r = n;
-    if (rb_check_arity(argc, 0, 1) && !NIL_P(argv[0]))
-        r = NUM2LONG(argv[0]);            /* Permutation size from argument */
 
-    if (r < 0 || n < r) {
-        /* no permutations: yield nothing */
+    VALUE ary0 = ary;
+    if (argc == 0) {
+        long n = RARRAY_LEN(ary);                  /* Array length */
+        permute0(n, n, &ary0);
     }
-    else if (r == 0) { /* exactly one permutation: the zero-length array */
-        rb_yield(rb_ary_new2(0));
-    }
-    else if (r == 1) { /* this is a special, easy case */
-        for (i = 0; i < RARRAY_LEN(ary); i++) {
-            rb_yield(rb_ary_new3(1, RARRAY_AREF(ary, i)));
+    else {
+        for (int i = 0; i < argc; ++i) {
+            VALUE v = argv[i];
+            if (NIL_P(v)) {
+                long n = RARRAY_LEN(ary0);
+                permute0(n, n, &ary0);
+            }
+            else if (!UNDEF_P(rb_check_block_call(v, idEach, 0, 0, permute1, (VALUE)&ary0))) {
+                /* looped in argument's `each` */
+            }
+            else {
+                permute0(RARRAY_LEN(ary), NUM2LONG(v), &ary0);
+            }
         }
     }
-    else {             /* this is the general case */
-        volatile VALUE t0;
-        long *p = ALLOCV_N(long, t0, r+roomof(n, sizeof(long)));
-        char *used = (char*)(p + r);
-        VALUE ary0 = ary_make_shared_copy(ary); /* private defensive copy of ary */
-        RBASIC_CLEAR_CLASS(ary0);
-
-        MEMZERO(used, char, n); /* initialize array */
-
-        permute0(n, r, p, used, ary0); /* compute and yield permutations */
-        ALLOCV_END(t0);
+    if (ary != ary0) {
         RBASIC_SET_CLASS_RAW(ary0, rb_cArray);
     }
     return ary;
