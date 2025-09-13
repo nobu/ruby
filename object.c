@@ -3048,6 +3048,52 @@ rb_obj_ivar_defined(VALUE obj, VALUE iv)
 
 /*
  *  call-seq:
+ *     obj.instance_variable_set_unless_defined(symbol, value) -> value
+ *     obj.instance_variable_set_unless_defined(string, value) -> value
+ *     obj.instance_variable_set_unless_defined(symbol) {|symbol| ...} -> value
+ *     obj.instance_variable_set_unless_defined(string) {|symbol| ...} -> value
+ *
+ *  Returns the value of the given instance variable if the instance
+ *  variable is set.  Otherwise if it is not set, sets that instance
+ *  variable to the given +value+ or the result of the given block.
+ *  String arguments are converted to symbols.
+ *
+ *     class Fred
+ *       def initialize(p1, p2)
+ *         @a, @b = p1, p2
+ *       end
+ *     end
+ *     fred = Fred.new('cat', nil)
+ *     fred.instance_variable_set_unless_defined(:@a, "dog")  #=> "cat"
+ *     fred.instance_variable_set_unless_defined(:@b, 99)     #=> nil
+ *     fred.instance_variable_defined?("@c")                  #=> false
+ *     fred.instance_variable_set_unless_defined(:@c, "grey") #=> "grey"
+ *     fred.instance_variable_get("@c")                       #=> "grey"
+ */
+static VALUE
+rb_obj_ivar_set_undef(int argc, VALUE *argv, VALUE obj)
+{
+    int arity = rb_block_given_p() ? 1 : 2;
+    rb_check_arity(argc, arity, arity);
+    VALUE iv = argv[0];
+    VALUE v;
+    ID id = id_for_var(obj, iv, instance);
+
+    if (id) {
+        if (!UNDEF_P(v = rb_ivar_lookup(obj, id, Qundef))) return v;
+        iv = ID2SYM(id);
+    }
+    else if (!id) {
+        iv = rb_str_intern(iv);
+    }
+    v = argc > 1 ? argv[1] : rb_yield(iv);
+    rb_check_frozen(obj);
+    if (!id) id = rb_sym2id(iv);
+    return rb_ivar_set(obj, id, v);
+}
+
+/*
+ *  call-seq:
  *     mod.class_variable_get(symbol)    -> obj
  *     mod.class_variable_get(string)    -> obj
  *
@@ -4532,6 +4578,7 @@ InitVM_Object(void)
     rb_define_method(rb_mKernel, "instance_variable_get", rb_obj_ivar_get, 1);
     rb_define_method(rb_mKernel, "instance_variable_set", rb_obj_ivar_set_m, 2);
     rb_define_method(rb_mKernel, "instance_variable_defined?", rb_obj_ivar_defined, 1);
+    rb_define_method(rb_mKernel, "instance_variable_set_unless_defined", rb_obj_ivar_set_undef, -1);
     rb_define_method(rb_mKernel, "remove_instance_variable",
                      rb_obj_remove_instance_variable, 1); /* in variable.c */
 

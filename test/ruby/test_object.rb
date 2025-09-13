@@ -280,6 +280,12 @@ class TestObject < Test::Unit::TestCase
     assert_equal([:foo], k.private_methods(false))
   end
 
+  class ToStrCounter
+    def initialize(str = "@foo") @str = str; @count = 0; end
+    def to_str; @count += 1; @str; end
+    def count; @count; end
+  end
+
   def test_instance_variable_get
     o = Object.new
     o.instance_eval { @foo = :foo }
@@ -291,9 +297,7 @@ class TestObject < Test::Unit::TestCase
     assert_raise(NameError) { o.instance_variable_get("bar") }
     assert_raise(TypeError) { o.instance_variable_get(1) }
 
-    n = Object.new
-    def n.to_str; @count = defined?(@count) ? @count + 1 : 1; "@foo"; end
-    def n.count; @count; end
+    n = ToStrCounter.new
     assert_equal(:foo, o.instance_variable_get(n))
     assert_equal(1, n.count)
   end
@@ -308,9 +312,7 @@ class TestObject < Test::Unit::TestCase
     assert_raise(NameError) { o.instance_variable_set("bar", 1) }
     assert_raise(TypeError) { o.instance_variable_set(1, 1) }
 
-    n = Object.new
-    def n.to_str; @count = defined?(@count) ? @count + 1 : 1; "@foo"; end
-    def n.count; @count; end
+    n = ToStrCounter.new
     o.instance_variable_set(n, :bar)
     assert_equal(:bar, o.instance_eval { @foo })
     assert_equal(1, n.count)
@@ -327,10 +329,30 @@ class TestObject < Test::Unit::TestCase
     assert_raise(NameError) { o.instance_variable_defined?("bar") }
     assert_raise(TypeError) { o.instance_variable_defined?(1) }
 
-    n = Object.new
-    def n.to_str; @count = defined?(@count) ? @count + 1 : 1; "@foo"; end
-    def n.count; @count; end
+    n = ToStrCounter.new
     assert_equal(true, o.instance_variable_defined?(n))
+    assert_equal(1, n.count)
+  end
+
+  def test_instance_variable_set_unless_defined
+    o = Object.new
+    o.instance_eval { @foo = :foo; @bar = nil }
+    called = nil
+    assert_equal(:foo, o.instance_variable_set_unless_defined(:@foo, :baz))
+    assert_equal(:foo, o.instance_variable_set_unless_defined(:@foo) {|v| called = v; :baz})
+    assert_equal(nil, called)
+    assert_equal(nil, o.instance_variable_set_unless_defined(:@bar, :bar))
+    assert_equal(nil, o.instance_variable_set_unless_defined(:@bar) {|v| called = v; :bar})
+    assert_equal(nil, called)
+    assert_equal(:baz, o.instance_variable_set_unless_defined(:@baz, :baz))
+    assert_equal(:baz, o.instance_variable_get(:@baz))
+    assert_equal(:qux, o.instance_variable_set_unless_defined(:@qux) {|v| called = v; :qux})
+    assert_equal(:qux, o.instance_variable_get(:@qux))
+    assert_equal(:@qux, called)
+    n = ToStrCounter.new("@quux")
+    assert_equal(:quux, o.instance_variable_set_unless_defined(n) {|v| called = v; :quux})
+    assert_equal(:quux, o.instance_variable_get(:@quux))
+    assert_equal(:@quux, called)
     assert_equal(1, n.count)
   end
 
