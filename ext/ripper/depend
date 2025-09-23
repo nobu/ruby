@@ -3,7 +3,7 @@ SRC1 = $(top_srcdir)/parse.y
 SRC2 = $(srcdir)/eventids2.c
 LRAMA = $(BASERUBY) $(top_srcdir)/tool/lrama/exe/lrama
 
-generated_srcs = ripper.c ripper_init.c eventids1.c eventids1.h eventids2table.c
+generated_srcs = {$(VPATH)}ripper.c {$(VPATH)}ripper_init.c {$(VPATH)}eventids1.c {$(VPATH)}eventids1.h {$(VPATH)}eventids2table.c
 
 .SUFFIXES: .y
 
@@ -27,8 +27,6 @@ realclean-srcs: distclean-srcs
 
 .PHONY: clean-srcs clean--srcs clean-$(srcdir)-srcs distclean-srcs realclean-srcs
 
-ripper.o: ripper.c
-
 .y.c:
 	$(ECHO) compiling compiler $<
 	$(Q) $(LRAMA) -o$@ - $< < $<
@@ -36,7 +34,7 @@ ripper.o: ripper.c
 all: check
 static: check
 
-ripper.y: $(srcdir)/tools/preproc.rb $(srcdir)/tools/dsl.rb $(top_srcdir)/parse.y $(top_srcdir)/defs/id.def
+{$(VPATH)}ripper.y: $(srcdir)/tools/preproc.rb $(srcdir)/tools/dsl.rb $(top_srcdir)/parse.y $(top_srcdir)/defs/id.def
 	$(ECHO) extracting $@ from $(top_srcdir)/parse.y
 	$(Q) $(RUBY) $(top_srcdir)/tool/id2token.rb $(top_srcdir)/parse.y | \
 	$(RUBY) $(srcdir)/tools/preproc.rb --output=$@ - ripper.y
@@ -48,19 +46,19 @@ check: .eventids2-check
 	$(Q) $(RUBY) $(GEN) --mode=check --ids1src=$(SRC1) --ids2src=$(SRC2)
 	@exit > $@
 
-eventids1.h: $(GEN) $(srcdir)/tools/dsl.rb $(SRC1)
+{$(VPATH)}eventids1.h: $(GEN) $(srcdir)/tools/dsl.rb $(SRC1)
 	$(ECHO) generating $@ from $(SRC1)
 	$(Q) $(RUBY) $(GEN) --mode=eventids1_h --ids1src=$(SRC1) --output=$@
 
-eventids1.c: $(GEN) $(srcdir)/tools/dsl.rb $(SRC1)
+{$(VPATH)}eventids1.c: $(GEN) $(srcdir)/tools/dsl.rb $(SRC1)
 	$(ECHO) generating $@ from $(SRC1)
 	$(Q) $(RUBY) $(GEN) --mode=eventids1 --ids1src=$(SRC1) --output=$@
 
-eventids2table.c: $(GEN) $(srcdir)/tools/dsl.rb $(SRC2)
+{$(VPATH)}eventids2table.c: $(GEN) $(srcdir)/tools/dsl.rb $(SRC2)
 	$(ECHO) generating $@ from $(SRC2)
 	$(Q) $(RUBY) $(GEN) --mode=eventids2table --ids2src=$(SRC2) --output=$@
 
-ripper_init.c: $(srcdir)/ripper_init.c.tmpl ripper.y $(srcdir)/tools/preproc.rb $(top_srcdir)/internal/ruby_parser.h
+{$(VPATH)}ripper_init.c: $(srcdir)/ripper_init.c.tmpl ripper.y $(srcdir)/tools/preproc.rb $(top_srcdir)/internal/ruby_parser.h
 	$(ECHO) generating $@ from $(srcdir)/ripper_init.c.tmpl
 	$(Q) $(RUBY) $(srcdir)/tools/preproc.rb --output=$@ --template=$(srcdir)/ripper_init.c.tmpl $(top_srcdir)/internal/ruby_parser.h
 
