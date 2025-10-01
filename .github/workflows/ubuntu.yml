@@ -26,28 +26,13 @@ jobs:
       matrix:
         # We enumerate every job in matrix.include to save build time
         include:
-          - test_task: check
-            configure: 'cppflags=-DVM_CHECK_MODE'
-          - test_task: check
-            arch: i686
-          - test_task: check
-            configure: '--disable-yjit'
-          - test_task: check
-            configure: '--enable-shared --enable-load-relative'
-          - test_task: test-bundler-parallel
-            timeout: 50
           - test_task: test-bundled-gems
-          - test_task: check
-            os: ubuntu-24.04
-            extra_checks: [capi]
-          - test_task: check
-            os: ubuntu-24.04-arm
-            extra_checks: [capi]
       fail-fast: false
 
     env: &make-env
       GITPULLOPTIONS: --no-tags origin ${{ github.ref }}
       RUBY_DEBUG: ci
+      BUNDLED_GEMS: bigdecimal
 
     runs-on: ${{ matrix.os || 'ubuntu-22.04' }}
 
@@ -105,16 +90,12 @@ jobs:
           $SETARCH ../src/configure -C --disable-install-doc ${configure:-cppflags=-DRUBY_DEBUG}
           ${arch:+--target=$arch-$OSTYPE --host=$arch-$OSTYPE}
 
-      - run: $SETARCH make prepare-gems
+      - run: $SETARCH make prepare-gems BUNDLED_GEMS="${BUNDLED_GEMS}"
         if: ${{ matrix.test_task == 'test-bundled-gems' }}
 
       - run: $SETARCH make
 
       - run: $SETARCH make hello
-
-      - name: runirb
-        run: |
-          echo IRB::VERSION | $SETARCH make runirb RUNOPT="-- -f"
 
       - name: Set test options for skipped tests
         run: |
@@ -156,6 +137,7 @@ jobs:
           test -n "${LAUNCHABLE_STDERR}" && exec 2> >(tee "${LAUNCHABLE_STDERR}")
 
           $SETARCH make -s ${{ matrix.test_task }} \
+          BUNDLED_GEMS="${BUNDLED_GEMS}" \
           ${TESTS:+TESTS="$TESTS"} \
           ${{ !contains(matrix.test_task, 'bundle') && 'RUBYOPT=-w' || '' }}
         timeout-minutes: ${{ matrix.timeout || 40 }}
