@@ -251,6 +251,9 @@ struct RString {
             char ary[1];
         } embed;
     } as;
+#ifdef __cplusplus
+    RString() : basic() {}
+#endif
 };
 
 RBIMPL_SYMBOL_EXPORT_BEGIN()
@@ -394,10 +397,17 @@ rbimpl_rstring_getmem(VALUE str)
         return *RSTRING(str);
     }
     else {
+#if defined(__cplusplus)
         /* Expecting compilers to optimize this on-stack struct away. */
         struct RString retval;
         retval.len = RSTRING_LEN(str);
         retval.as.heap.ptr = RSTRING(str)->as.embed.ary;
+#else
+        struct RString retval = {
+            .len = RSTRING_LEN(str),
+            .as = {.heap = {.ptr = RSTRING(str)->as.embed.ary}},
+        };
+#endif
         return retval;
     }
 }
