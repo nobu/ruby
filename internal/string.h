@@ -80,6 +80,9 @@ RUBY_SYMBOL_EXPORT_BEGIN
 /* string.c (export) */
 VALUE rb_str_tmp_frozen_acquire(VALUE str);
 void rb_str_tmp_frozen_release(VALUE str, VALUE tmp);
+#ifdef RBIMPL_ATTR_DEPRECATED_INTERNAL
+RBIMPL_ATTR_DEPRECATED_INTERNAL(3.5)
+#endif
 VALUE rb_setup_fake_str(struct RString *fake_str, const char *name, long len, rb_encoding *enc);
 RUBY_SYMBOL_EXPORT_END
 
