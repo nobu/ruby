@@ -6421,16 +6421,15 @@ rb_vm_opt_newarray_hash(rb_execution_context_t *ec, rb_num_t num, const VALUE *p
     return vm_opt_newarray_hash(ec, num, ptr);
 }
 
-VALUE rb_setup_fake_ary(struct RArray *fake_ary, const VALUE *list, long len);
+struct RArray rb_fake_ary_new(const VALUE *list, long len);
 VALUE rb_ec_pack_ary(rb_execution_context_t *ec, VALUE ary, VALUE fmt, VALUE buffer);
 
 static VALUE
 vm_opt_newarray_include_p(rb_execution_context_t *ec, rb_num_t num, const VALUE *ptr, VALUE target)
 {
     if (BASIC_OP_UNREDEFINED_P(BOP_INCLUDE_P, ARRAY_REDEFINED_OP_FLAG)) {
-        struct RArray fake_ary;
-        VALUE ary = rb_setup_fake_ary(&fake_ary, ptr, num);
-        return rb_ary_includes(ary, target);
+        struct RArray fake_ary = rb_fake_ary_new(ptr, num);;
+        return rb_ary_includes((VALUE)&fake_ary, target);
     }
     else {
         VALUE args[1] = {target};
@@ -6448,9 +6447,8 @@ static VALUE
 vm_opt_newarray_pack_buffer(rb_execution_context_t *ec, rb_num_t num, const VALUE *ptr, VALUE fmt, VALUE buffer)
 {
     if (BASIC_OP_UNREDEFINED_P(BOP_PACK, ARRAY_REDEFINED_OP_FLAG)) {
-        struct RArray fake_ary;
-        VALUE ary = rb_setup_fake_ary(&fake_ary, ptr, num);
-        return rb_ec_pack_ary(ec, ary, fmt, (UNDEF_P(buffer) ? Qnil : buffer));
+        struct RArray fake_ary = rb_fake_ary_new(ptr, num);
+        return rb_ec_pack_ary(ec, (VALUE)&fake_ary, fmt, (UNDEF_P(buffer) ? Qnil : buffer));
     }
     else {
         // The opt_newarray_send insn drops the keyword args so we need to rebuild them.

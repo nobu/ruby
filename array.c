@@ -917,17 +917,23 @@ init_fake_ary_flags(void)
     return fake_ary.basic.flags;
 }
 
-VALUE
-rb_setup_fake_ary(struct RArray *fake_ary, const VALUE *list, long len)
+struct RArray
+rb_fake_ary_new(const VALUE *list, long len)
 {
-    fake_ary->basic.flags = fake_ary_flags;
-    RBASIC_CLEAR_CLASS((VALUE)fake_ary);
-
-    // bypass frozen checks
-    fake_ary->as.heap.ptr = list;
-    fake_ary->as.heap.len = len;
-    fake_ary->as.heap.aux.capa = len;
-    return (VALUE)fake_ary;
+    struct RArray fake_ary = {
+        .basic = {
+            .flags = fake_ary_flags,
+        },
+        // bypass frozen checks
+        .as = {
+            .heap = {
+                .ptr = list,
+                .len = len,
+                .aux = {.capa = len},
+            },
+        },
+    };
+    return fake_ary;
 }
 
 size_t
