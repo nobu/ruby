@@ -1428,10 +1428,8 @@ long
 ruby_marshal_read_long(const char **buf, long len)
 {
     long x;
-    struct RString src;
-    struct load_arg arg;
-    memset(&arg, 0, sizeof(arg));
-    arg.src = rb_setup_fake_str(&src, *buf, len, 0);
+    struct RString src = rb_fake_str_new(*buf, len, 0);
+    struct load_arg arg = {.src = (VALUE)&src};
     x = r_long(&arg);
     *buf += arg.offset;
     return x;

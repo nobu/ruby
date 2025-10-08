@@ -2619,13 +2619,16 @@ name_err_mesg_to_str(VALUE obj)
     VALUE mesg = ptr->mesg;
     if (NIL_P(mesg)) return Qnil;
     else {
-        struct RString s_str, c_str, d_str;
-        VALUE c, s, d = 0, args[4], c2;
+        struct RString s_str = rb_fake_str_new(0, 0, rb_usascii_encoding());
+        struct RString c_str = s_str, d_str = s_str;
+        VALUE s = (VALUE)&s_str, c = (VALUE)&c_str, d = (VALUE)&d_str;
+        VALUE args[4], c2;
         int state = 0;
-        rb_encoding *usascii = rb_usascii_encoding();
 
-#define FAKE_CSTR(v, str) rb_setup_fake_str((v), (str), rb_strlen_lit(str), usascii)
-        c = s = FAKE_CSTR(&s_str, "");
+#define FAKE_CSTR(v, str) ( \
+            (v)->as.heap.ptr = (char *)(str), \
+            (v)->as.heap.aux.capa = (v)->len = rb_strlen_lit(str), \
+            (VALUE)(v))
         obj = ptr->recv;
         switch (obj) {
           case Qnil:

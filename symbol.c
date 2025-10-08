@@ -845,8 +845,8 @@ lookup_id_str(ID id)
 ID
 rb_intern3(const char *name, long len, rb_encoding *enc)
 {
-    struct RString fake_str;
-    VALUE str = rb_setup_fake_str(&fake_str, name, len, enc);
+    struct RString fake_str = rb_fake_str_new(name, len, enc);
+    VALUE str = (VALUE)&fake_str;
     OBJ_FREEZE(str);
 
     VALUE sym = sym_find_or_insert_static_symbol(&ruby_global_symbols, str);
@@ -1222,8 +1222,8 @@ rb_check_symbol(volatile VALUE *namep)
 ID
 rb_check_id_cstr(const char *ptr, long len, rb_encoding *enc)
 {
-    struct RString fake_str;
-    const VALUE name = rb_setup_fake_str(&fake_str, ptr, len, enc);
+    struct RString fake_str = rb_fake_str_new(ptr, len, enc);
+    const VALUE name = (VALUE)&fake_str;
 
     sym_check_asciionly(name, true);
 
@@ -1234,8 +1234,8 @@ VALUE
 rb_check_symbol_cstr(const char *ptr, long len, rb_encoding *enc)
 {
     VALUE sym;
-    struct RString fake_str;
-    const VALUE name = rb_setup_fake_str(&fake_str, ptr, len, enc);
+    struct RString fake_str = rb_fake_str_new(ptr, len, enc);
+    const VALUE name = (VALUE)&fake_str;
 
     sym_check_asciionly(name, true);
 
@@ -1258,8 +1258,8 @@ FUNC_MINIMIZED(VALUE rb_sym_intern_ascii_cstr(const char *ptr));
 VALUE
 rb_sym_intern(const char *ptr, long len, rb_encoding *enc)
 {
-    struct RString fake_str;
-    const VALUE name = rb_setup_fake_str(&fake_str, ptr, len, enc);
+    struct RString fake_str = rb_fake_str_new(ptr, len, enc);
+    const VALUE name = (VALUE)&fake_str;
     return rb_str_intern(name);
 }
 

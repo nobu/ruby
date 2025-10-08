@@ -618,6 +618,39 @@ rb_fstring_foreach_with_replace(int (*callback)(VALUE *str, void *data), void *d
     }
 }
 
+static struct RString
+fake_str_new(const char *name, long len, int encidx)
+{
+    if (!name) {
+        RUBY_ASSERT_ALWAYS(len == 0);
+        name = "";
+    }
+
+    struct RString fake_str = {
+        .basic = {
+            .flags = T_STRING|RSTRING_NOEMBED|STR_NOFREE|STR_FAKESTR,
+            .klass = rb_cString,
+        },
+        .len = len,
+        .as = {
+            .heap= {
+                .ptr = (char *)name,
+                .aux = {.capa = len},
+            },
+        },
+    };
+
+    RBASIC_SET_SHAPE_ID((VALUE)&fake_str, ROOT_SHAPE_ID);
+    ENCODING_SET_INLINED((VALUE)&fake_str, encidx);
+    return fake_str;
+}
+
+struct RString
+rb_fake_str_new(const char *name, long len, rb_encoding *enc)
+{
+    return fake_str_new(name, len, rb_enc_to_index(enc));
+}
+
 static VALUE
 setup_fake_str(struct RString *fake_str, const char *name, long len, int encidx)
 {
@@ -655,15 +688,15 @@ rb_setup_fake_str(struct RString *fake_str, const char *name, long len, rb_encod
 VALUE
 rb_fstring_new(const char *ptr, long len)
 {
-    struct RString fake_str;
-    return register_fstring(setup_fake_str(&fake_str, ptr, len, ENCINDEX_US_ASCII), false, false);
+    struct RString fake_str = fake_str_new(ptr, len, ENCINDEX_US_ASCII);
+    return register_fstring((VALUE)&fake_str, false, false);
 }
 
 VALUE
 rb_fstring_enc_new(const char *ptr, long len, rb_encoding *enc)
 {
-    struct RString fake_str;
-    return register_fstring(rb_setup_fake_str(&fake_str, ptr, len, enc), false, false);
+    struct RString fake_str = rb_fake_str_new(ptr, len, enc);
+    return register_fstring((VALUE)&fake_str, false, false);
 }
 
 VALUE
@@ -6497,18 +6530,17 @@ str_gsub(int argc, VALUE *argv, VALUE str, int bang)
                 val = rb_obj_as_string(rb_yield(match0));
             }
             else {
-                struct RString fake_str;
-                VALUE key;
                 if (mode == FAST_MAP) {
                     // It is safe to use a fake_str here because we established that it won't escape,
                     // as it's only used for `rb_hash_aref` and we checked the hash doesn't have a
                     // default proc.
-                    key = setup_fake_str(&fake_str, sp + beg0, end0 - beg0, ENCODING_GET_INLINED(str));
+                    struct RString fake_str = fake_str_new(sp + beg0, end0 - beg0, ENCODING_GET_INLINED(str));
+                    val = rb_hash_aref(hash, (VALUE)&fake_str);
                 }
                 else {
-                    key = rb_str_subseq(str, beg0, end0 - beg0);
+                    VALUE key = rb_str_subseq(str, beg0, end0 - beg0);
+                    val = rb_hash_aref(hash, key);
                 }
-                val = rb_hash_aref(hash, key);
                 val = rb_obj_as_string(val);
             }
             str_mod_check(str, sp, slen);
@@ -12747,8 +12779,8 @@ rb_str_to_interned_str(VALUE str)
 VALUE
 rb_interned_str(const char *ptr, long len)
 {
-    struct RString fake_str;
-    return register_fstring(setup_fake_str(&fake_str, ptr, len, ENCINDEX_US_ASCII), true, false);
+    struct RString fake_str = fake_str_new(ptr, len, ENCINDEX_US_ASCII);
+    return register_fstring((VALUE)&fake_str, true, false);
 }
 
 VALUE
@@ -12764,8 +12796,8 @@ rb_enc_interned_str(const char *ptr, long len, rb_encoding *enc)
         rb_enc_autoload(enc);
     }
 
-    struct RString fake_str;
-    return register_fstring(rb_setup_fake_str(&fake_str, ptr, len, enc), true, false);
+    struct RString fake_str = rb_fake_str_new(ptr, len, enc);
+    return register_fstring((VALUE)&fake_str, true, false);
 }
 
 VALUE
@@ -12775,8 +12807,8 @@ rb_enc_literal_str(const char *ptr, long len, rb_encoding *enc)
         rb_enc_autoload(enc);
     }
 
-    struct RString fake_str;
-    return register_fstring(rb_setup_fake_str(&fake_str, ptr, len, enc), true, true);
+    struct RString fake_str = rb_fake_str_new(ptr, len, enc);
+    return register_fstring((VALUE)&fake_str, true, true);
 }
 
 VALUE
