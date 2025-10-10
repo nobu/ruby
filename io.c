@@ -583,7 +583,30 @@ rb_sys_fail_on_write(rb_io_t *fptr)
 # define RUBY_CRLF_ENVIRONMENT 0
 #endif
 
+#ifndef O_BINARY
+# define O_BINARY 0
+#endif
+#ifndef O_TEXT
+# define O_TEXT 0
+#endif
+
 #if RUBY_CRLF_ENVIRONMENT
+# ifndef _WIN32
+#   define rb_w32_fd_is_text(fd) ((void)(fd), 0)
+#   define _read(fd, ptr, size) read(fd, ptr, size)
+#   define setmode(fd, mode) ((void)(fd), 0)
+static inline int
+eof(int fd)
+{
+    rb_off_t cur = lseek(fd, 0, SEEK_CUR);
+    if (cur == (rb_off_t)-1) return -1;
+    rb_off_t end = lseek(fd, 0, SEEK_END);
+    if (cur == end) return 1;
+    lseek(fd, 0, SEEK_SET);
+    return 0;
+}
+# endif
+
 /* Windows */
 # define DEFAULT_TEXTMODE FMODE_TEXTMODE
 # define TEXTMODE_NEWLINE_DECORATOR_ON_WRITE ECONV_CRLF_NEWLINE_DECORATOR
@@ -604,15 +627,16 @@ rb_sys_fail_on_write(rb_io_t *fptr)
   ((fptr)->encs.ecflags & WRITECONV_MASK) || \
   0)
 #define SET_BINARY_MODE(fptr) setmode((fptr)->fd, O_BINARY)
+#define SET_TEXT_MODE(fptr) setmode((fptr)->fd, O_TEXT)
 
 #define NEED_NEWLINE_DECORATOR_ON_READ_CHECK(fptr) do {\
     if (NEED_NEWLINE_DECORATOR_ON_READ(fptr)) {\
         if (((fptr)->mode & FMODE_READABLE) &&\
             !((fptr)->encs.ecflags & ECONV_NEWLINE_DECORATOR_MASK)) {\
-            setmode((fptr)->fd, O_BINARY);\
+            SET_BINARY_MODE((fptr));\
         }\
         else {\
-            setmode((fptr)->fd, O_TEXT);\
+            SET_TEXT_MODE((fptr));\
         }\
     }\
 } while(0)
@@ -719,10 +743,10 @@ set_binary_mode_with_seek_cur(rb_io_t *fptr)
     if (!rb_w32_fd_is_text(fptr->fd)) return O_BINARY;
 
     if (fptr->rbuf.len == 0 || fptr->mode & FMODE_DUPLEX) {
-        return setmode(fptr->fd, O_BINARY);
+        return SET_BINARY_MODE(fptr);
     }
     flush_before_seek(fptr, false);
-    return setmode(fptr->fd, O_BINARY);
+    return SET_BINARY_MODE(fptr);
 }
 #define SET_BINARY_MODE_WITH_SEEK_CUR(fptr) set_binary_mode_with_seek_cur(fptr)
 
@@ -1970,10 +1994,10 @@ do_writeconv(VALUE str, rb_io_t *fptr, int *converted)
     else if (MODE_BTMODE(DEFAULT_TEXTMODE,0,1)) {
         if ((fptr->mode & FMODE_READABLE) &&
             !(fptr->encs.ecflags & ECONV_NEWLINE_DECORATOR_MASK)) {
-            setmode(fptr->fd, O_BINARY);
+            SET_BINARY_MODE(fptr);
         }
         else {
-            setmode(fptr->fd, O_TEXT);
+            SET_TEXT_MODE(fptr);
         }
         if (!rb_enc_asciicompat(rb_enc_get(str))) {
             rb_raise(rb_eArgError, "ASCII incompatible string written for text mode IO without encoding conversion: %s",
@@ -3840,7 +3864,7 @@ io_read(int argc, VALUE *argv, VALUE io)
     io_set_read_length(str, n, shrinkable);
 #if RUBY_CRLF_ENVIRONMENT
     if (previous_mode == O_TEXT) {
-        setmode(fptr->fd, O_TEXT);
+        SET_TEXT_MODE(fptr);
     }
 #endif
     if (n == 0) return Qnil;
@@ -6342,14 +6366,12 @@ rb_io_binmode(VALUE io)
     fptr->mode |= FMODE_BINMODE;
     fptr->mode &= ~FMODE_TEXTMODE;
     fptr->writeconv_pre_ecflags &= ~ECONV_NEWLINE_DECORATOR_MASK;
-#ifdef O_BINARY
     if (!fptr->readconv) {
         SET_BINARY_MODE_WITH_SEEK_CUR(fptr);
     }
     else {
-        setmode(fptr->fd, O_BINARY);
+        SET_BINARY_MODE(fptr);
     }
-#endif
     return io;
 }
 
@@ -6547,11 +6569,9 @@ rb_io_oflags_fmode(int oflags)
     if (oflags & O_EXCL) {
         fmode |= FMODE_EXCL;
     }
-#ifdef O_BINARY
     if (oflags & O_BINARY) {
         fmode |= FMODE_BINMODE;
     }
-#endif
 
     return fmode;
 }
@@ -6585,11 +6605,9 @@ rb_io_fmode_oflags(enum rb_io_mode fmode)
     if (fmode & FMODE_EXCL) {
         oflags |= O_EXCL;
     }
-#ifdef O_BINARY
     if (fmode & FMODE_BINMODE) {
         oflags |= O_BINARY;
     }
-#endif
 
     return oflags;
 }
@@ -6603,11 +6621,7 @@ rb_io_modestr_oflags(const char *modestr)
 static const char*
 rb_io_oflags_modestr(int oflags)
 {
-#ifdef O_BINARY
 # define MODE_BINARY(a,b) ((oflags & O_BINARY) ? (b) : (a))
-#else
-# define MODE_BINARY(a,b) (a)
-#endif
     int accmode;
     if (oflags & O_EXCL) {
         rb_raise(rb_eArgError, "exclusive access mode is not supported");
@@ -6928,9 +6942,7 @@ rb_io_extract_modeenc(VALUE *vmode_p, VALUE *vperm_p, VALUE opthash,
         SET_UNIVERSAL_NEWLINE_DECORATOR_IF_ENC2(enc2, ecflags);
         ecopts = Qnil;
         if (fmode & FMODE_BINMODE) {
-#ifdef O_BINARY
             oflags |= O_BINARY;
-#endif
             if (!has_enc)
                 rb_io_ext_int_to_encs(rb_ascii8bit_encoding(), NULL, &enc, &enc2, fmode);
         }
@@ -6962,9 +6974,7 @@ rb_io_extract_modeenc(VALUE *vmode_p, VALUE *vperm_p, VALUE opthash,
         }
         extract_binmode(opthash, &fmode);
         if (fmode & FMODE_BINMODE) {
-#ifdef O_BINARY
             oflags |= O_BINARY;
-#endif
             if (!has_enc)
                 rb_io_ext_int_to_encs(rb_ascii8bit_encoding(), NULL, &enc, &enc2, fmode);
         }
@@ -11978,7 +11988,7 @@ rb_io_s_pipe(int argc, VALUE *argv, VALUE klass)
 #if DEFAULT_TEXTMODE
     if ((fptr->mode & FMODE_TEXTMODE) && (fmode & FMODE_BINMODE)) {
         fptr->mode &= ~FMODE_TEXTMODE;
-        setmode(fptr->fd, O_BINARY);
+        SET_BINARY_MODE(fptr);
     }
 #if RUBY_CRLF_ENVIRONMENT
     if (fptr->encs.ecflags & ECONV_DEFAULT_NEWLINE_DECORATOR) {
@@ -11990,7 +12000,7 @@ rb_io_s_pipe(int argc, VALUE *argv, VALUE klass)
 #if DEFAULT_TEXTMODE
     if ((fptr2->mode & FMODE_TEXTMODE) && (fmode & FMODE_BINMODE)) {
         fptr2->mode &= ~FMODE_TEXTMODE;
-        setmode(fptr2->fd, O_BINARY);
+        SET_BINARY_MODE(fptr2);
     }
 #endif
     fptr2->mode |= fmode;
@@ -12339,10 +12349,7 @@ rb_io_s_binread(int argc, VALUE *argv, VALUE io)
     struct foreach_arg arg;
     enum rb_io_mode fmode = FMODE_READABLE|FMODE_BINMODE;
     enum {
-        oflags = O_RDONLY
-#ifdef O_BINARY
-                |O_BINARY
-#endif
+        oflags = O_RDONLY|O_BINARY
     };
     struct rb_io_encoding convconfig = {NULL, NULL, 0, Qnil};
 
@@ -12390,17 +12397,13 @@ io_s_write(int argc, VALUE *argv, VALUE klass, int binary)
 
     if (NIL_P(rb_hash_aref(opt,sym_mode))) {
        int mode = O_WRONLY|O_CREAT;
-#ifdef O_BINARY
        if (binary) mode |= O_BINARY;
-#endif
        if (NIL_P(offset)) mode |= O_TRUNC;
        rb_hash_aset(opt,sym_mode,INT2NUM(mode));
     }
     open_key_args(klass, argc, argv, opt, &arg);
 
-#ifndef O_BINARY
-    if (binary) rb_io_binmode_m(arg.io);
-#endif
+    if (O_BINARY && binary) rb_io_binmode_m(arg.io);
 
     if (NIL_P(arg.io)) return Qnil;
     if (!NIL_P(offset)) {
@@ -13335,10 +13338,8 @@ copy_stream_body(VALUE arg)
         }
     }
 
-#ifdef O_BINARY
     if (stp->src_fptr)
         SET_BINARY_MODE_WITH_SEEK_CUR(stp->src_fptr);
-#endif
     if (stp->dst_fptr)
         io_ascii8bit_binmode(stp->dst_fptr);
 
