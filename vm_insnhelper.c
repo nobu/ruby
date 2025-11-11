@@ -2468,6 +2468,12 @@ rb_vm_method_cfunc_is(const rb_iseq_t *iseq, CALL_DATA cd, VALUE recv, cfunc_typ
 #define check_cfunc(me, func) check_cfunc(me, make_cfunc_type(func))
 #define vm_method_cfunc_is(iseq, cd, recv, func) vm_method_cfunc_is(iseq, cd, recv, make_cfunc_type(func))
 
+int
+rb_mod_method_cfunc_is(VALUE klass, ID mid, VALUE (*func)(ANYARGS))
+{
+    return check_cfunc(rb_callable_method_entry(klass, mid), func);
+}
+
 #define EQ_UNREDEFINED_P(t) BASIC_OP_UNREDEFINED_P(BOP_EQ, t##_REDEFINED_OP_FLAG)
 
 static inline bool

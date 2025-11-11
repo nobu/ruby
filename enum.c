@@ -40,6 +40,7 @@ static ID id_slicebefore_sep_pred;
 static ID id_slicewhen_enum;
 static ID id_slicewhen_inverted;
 static ID id_slicewhen_pred;
+static ID id_reverse_each;
 
 #define id_div idDiv
 #define id_each idEach
@@ -322,14 +323,12 @@ enum_count(int argc, VALUE *argv, VALUE obj)
     return imemo_count_value(memo);
 }
 
-NORETURN(static void found(VALUE i, VALUE memop));
 static void
 found(VALUE i, VALUE memop)
 {
     struct MEMO *memo = MEMO_CAST(memop);
     MEMO_V1_SET(memo, i);
     memo->u3.cnt = 1;
-    rb_iter_break();
 }
 
 static VALUE
@@ -338,6 +337,7 @@ find_i_fast(RB_BLOCK_CALL_FUNC_ARGLIST(i, memop))
     if (RTEST(rb_yield_values2(argc, argv))) {
         ENUM_WANT_SVALUE();
         found(i, memop);
+        rb_iter_break();
     }
     return Qnil;
 }
@@ -349,6 +349,7 @@ find_i(RB_BLOCK_CALL_FUNC_ARGLIST(i, memop))
 
     if (RTEST(enum_yield(argc, i))) {
         found(i, memop);
+        rb_iter_break();
     }
     return Qnil;
 }
@@ -387,6 +388,83 @@ enum_find(int argc, VALUE *argv, VALUE obj)
         rb_block_call2(obj, id_each, 0, 0, find_i_fast, (VALUE)memo, RB_BLOCK_NO_USE_PACKED_ARGS);
     else
         rb_block_call2(obj, id_each, 0, 0, find_i, (VALUE)memo, RB_BLOCK_NO_USE_PACKED_ARGS);
+    if (memo->u3.cnt) {
+        return memo->v1;
+    }
+    if (!NIL_P(if_none)) {
+        return rb_funcallv(if_none, id_call, 0, 0);
+    }
+    return Qnil;
+}
+
+static VALUE
+rfind_i_fast(RB_BLOCK_CALL_FUNC_ARGLIST(i, memop))
+{
+    if (RTEST(rb_yield_values2(argc, argv))) {
+        ENUM_WANT_SVALUE();
+        found(i, memop);
+    }
+    return Qnil;
+}
+
+static VALUE
+rfind_i(RB_BLOCK_CALL_FUNC_ARGLIST(i, memop))
+{
+    ENUM_WANT_SVALUE();
+
+    if (RTEST(enum_yield(argc, i))) {
+        found(i, memop);
+    }
+    return Qnil;
+}
+
+int rb_mod_method_cfunc_is(VALUE klass, ID mid, VALUE (*func)(ANYARGS));
+static VALUE enum_reverse_each(int argc, VALUE *argv, VALUE obj);
+
+/*
+ * call-seq:
+ *   rfind(if_none_proc = nil) {|element| ... } -> object or nil
+ *   rfind(if_none_proc = nil) -> enumerator
+ *
+ * Returns the last element for which the block returns a truthy value.
+ *
+ * With a block given, calls the block with successive elements of the collection;
+ * returns the last element for which the block returns a truthy value:
+ *
+ *   (0..9).rfind {|element| element > 2}                # => 9
+ *
+ * If no such element is found, calls +if_none_proc+ and returns its return value.
+ *
+ *   (0..9).rfind(proc {false}) {|element| element > 12} # => false
+ *   [[:foo, 0], [:bar, 1], [:baz, 2]].rfind {|key, value| key.start_with?('b') } # => [:baz, 2]
+ *   [[:foo, 0], [:bar, 1], [:baz, 2]].rfind {|key, value| key.start_with?('c') } # => []
+ *
+ * With no block given, returns an Enumerator.
+ *
+ */
+static VALUE
+enum_rfind(int argc, VALUE *argv, VALUE obj)
+{
+    struct MEMO *memo;
+    VALUE if_none;
+
+    if_none = rb_check_arity(argc, 0, 1) ? argv[0] : Qnil;
+    RETURN_ENUMERATOR(obj, argc, argv);
+    static const rb_block_call_func_t rfind[] = {rfind_i_fast, rfind_i};
+    static const rb_block_call_func_t find[] = {find_i_fast, find_i};
+    const rb_block_call_func_t *funcs;
+    ID each;
+    if (rb_mod_method_cfunc_is(CLASS_OF(obj), id_reverse_each, (VALUE (*)(ANYARGS))enum_reverse_each)) {
+        funcs = rfind;
+        each = id_each;
+    }
+    else {
+        funcs = find;
+        each = id_reverse_each;
+    }
+    rb_block_call_func_t func = funcs[rb_block_pair_yield_optimizable() ? 0 : 1];
+    memo = MEMO_NEW(Qundef, 0, 0);
+    rb_block_call2(obj, each, 0, 0, func, (VALUE)memo, RB_BLOCK_NO_USE_PACKED_ARGS);
     if (memo->u3.cnt) {
         return memo->v1;
     }
@@ -5214,6 +5292,7 @@ Init_Enumerable(void)
     rb_define_method(rb_mEnumerable, "count", enum_count, -1);
     rb_define_method(rb_mEnumerable, "find", enum_find, -1);
     rb_define_method(rb_mEnumerable, "detect", enum_find, -1);
+    rb_define_method(rb_mEnumerable, "rfind", enum_rfind, -1);
     rb_define_method(rb_mEnumerable, "find_index", enum_find_index, -1);
     rb_define_method(rb_mEnumerable, "find_all", enum_find_all, 0);
     rb_define_method(rb_mEnumerable, "select", enum_find_all, 0);
@@ -5277,4 +5356,5 @@ Init_Enumerable(void)
     id_slicewhen_enum = rb_intern_const("slicewhen_enum");
     id_slicewhen_inverted = rb_intern_const("slicewhen_inverted");
     id_slicewhen_pred = rb_intern_const("slicewhen_pred");
+    id_reverse_each = rb_intern_const("reverse_each");
 }
