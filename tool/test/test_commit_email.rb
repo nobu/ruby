@@ -2,7 +2,6 @@ require 'test/unit'
 require 'shellwords'
 require 'tmpdir'
 require 'fileutils'
-require 'open3'
 
 class TestCommitEmail < Test::Unit::TestCase
   STDIN_DELIMITER = "---\n"
@@ -86,8 +85,8 @@ class TestCommitEmail < Test::Unit::TestCase
   end
 
   def git(*cmd, env: {})
-    out, status = Open3.capture2(env, 'git', *cmd)
-    unless status.success?
+    out = IO.popen([env, 'git', *cmd], &:read)
+    unless $?.success?
       raise "git #{cmd.shelljoin}\n#{out}"
     end
     out
