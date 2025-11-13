@@ -1,3 +1,6 @@
+# commit-email.rb does not run on Windows
+return if /mingw|mswin/.match?(RUBY_PLATFORM)
+
 require 'test/unit'
 require 'shellwords'
 require 'tmpdir'
@@ -39,8 +42,6 @@ class TestCommitEmail < Test::Unit::TestCase
   end
 
   def test_sendmail_encoding
-    omit 'the sendmail script does not work on windows' if windows?
-
     Dir.chdir(@ruby) do
       before_rev = git('rev-parse', 'HEAD^').chomp
       after_rev = git('rev-parse', 'HEAD').chomp
