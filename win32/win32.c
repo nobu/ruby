@@ -6624,7 +6624,7 @@ rb_w32_fclose(FILE *fp)
     SOCKET sock = TO_SOCKET(fd);
     int save_errno = errno;
 
-    if (fflush(fp)) return -1;
+    (void)fflush(fp); // call the original fclose even if failed
     if (!is_socket(sock)) {
         UnlockFile((HANDLE)sock, 0, 0, LK_LEN, LK_LEN);
         return fclose(fp);
