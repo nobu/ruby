@@ -247,15 +247,27 @@ rb_w32_check_imported(HMODULE ext, HMODULE mine)
         PIMAGE_THUNK_DATA piat = (PIMAGE_THUNK_DATA)((char *)ext + desc->FirstThunk);
         for (; piat->u1.Function; piat++, pint++) {
             static const char prefix[] = "rb_";
+            static const char *crt_names[] = {
+                "access", "close", "dup2", "fclose", "fstat", "get_osfhandle",
+                "getpid", "isatty", "lseek", "mkdir", "pipe", "read", "rename",
+                "rmdir", "strerror", "unlink", "utime", "write",
+            };
             PIMAGE_IMPORT_BY_NAME pii;
             const char *name;
+            int i;
 
             if (IMAGE_SNAP_BY_ORDINAL(pint->u1.Ordinal)) continue;
             pii = (PIMAGE_IMPORT_BY_NAME)((char *)ext + (size_t)pint->u1.AddressOfData);
             name = (const char *)pii->Name;
             if (strncmp(name, prefix, sizeof(prefix) - 1) == 0) {
                 FARPROC addr = GetProcAddress(mine, name);
-                if (addr) return (FARPROC)piat->u1.Function == addr;
+                if (addr && (FARPROC)piat->u1.Function != addr) return 0;
+            }
+            for (i = 0; i < numberof(crt_names); ++i) {
+                if (strcmp(name, crt_names[i]) == 0) {
+                    FARPROC addr = GetProcAddress(mine, name);
+                    if (addr && (FARPROC)piat->u1.Function != addr) return 0;
+                }
             }
         }
         desc++;
