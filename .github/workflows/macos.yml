@@ -175,6 +175,7 @@ jobs:
         uses: ./.github/actions/capiext
         with:
           builddir: build
+          srcdir: src
         env:
           RUBY_TESTOPTS: '-v --tty=no'
         if: ${{ contains(matrix.extra_checks, 'capi') }}

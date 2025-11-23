@@ -178,6 +178,7 @@ jobs:
         uses: ./.github/actions/capiext
         with:
           builddir: build
+          srcdir: src
           make: '$SETARCH make'
         env:
           RUBY_TESTOPTS: '-v --tty=no'
