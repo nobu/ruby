@@ -42,6 +42,10 @@
 
 #if defined __APPLE__
 # include <AvailabilityMacros.h>
+# if !defined(MAC_OS_X_VERSION_10_5) || \
+      (MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_5)
+#   error Unsupported OS version required
+# endif
 #endif
 
 #if defined(HAVE_SYS_EVENTFD_H) && defined(HAVE_EVENTFD)

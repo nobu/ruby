@@ -38,6 +38,10 @@
 #   define API_DEPRECATED(...)
 # endif
 # include <CoreFoundation/CFString.h>
+# if !defined(MAC_OS_X_VERSION_10_5) || \
+      (MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_5)
+#   error Unsupported OS version required
+# endif
 #endif
 
 #ifdef HAVE_UNISTD_H

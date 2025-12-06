@@ -751,11 +751,7 @@ rb_vmdebug_thread_dump_state(FILE *errout, VALUE self)
 
 #if defined __APPLE__
 # include <AvailabilityMacros.h>
-# if defined(MAC_OS_X_VERSION_10_5) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5
-#   define MCTX_SS_REG(reg) __ss.__##reg
-# else
-#   define MCTX_SS_REG(reg) ss.reg
-# endif
+# define MCTX_SS_REG(reg) __ss.__##reg /* OS X 10.5 or later */
 #endif
 
 #if defined(HAVE_BACKTRACE)
