@@ -93,3 +93,7 @@ test_relative_path_from(PathnameInstanceTest)
 test_slash(PathnameInstanceTest)
 test_Pathname(PathnameKernelTest)
 test_initialize(PathnameSingletonTest)
+
+# io-wait
+test_readyp(IOWaitTest)
+test_nread(IOWaitTest)
