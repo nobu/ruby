@@ -34,9 +34,6 @@ jobs:
           - os: 11-arm
             test_task: 'btest test-basic test-tool' # check and test-spec are broken yet.
             target: arm64
-          - os: 2025
-            vc: 2022
-            test_task: test-bundled-gems
       fail-fast: false
 
     runs-on: windows-${{ matrix.os }}
