@@ -1,5 +1,6 @@
 #include "parser_st.h"
-#include "parser_bits.h"
+#include "parser_value.h"           /* for VALUE */
+#include "internal/bits.h"
 
 #ifndef TRUE
 # define TRUE    1
@@ -28,23 +29,7 @@ nonempty_memcpy(void *dest, const void *src, size_t n)
     }
 }
 
-#include <stdio.h>
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
-#include <string.h>
 #include <assert.h>
-
-#ifdef __GNUC__
-#define PREFETCH(addr, write_p) __builtin_prefetch(addr, write_p)
-#define EXPECT(expr, val) __builtin_expect(expr, val)
-#define ATTRIBUTE_UNUSED  __attribute__((unused))
-#else
-#define PREFETCH(addr, write_p)
-#define EXPECT(expr, val) (expr)
-#define ATTRIBUTE_UNUSED
-#endif
-
 
 #define st_index_t parser_st_index_t
 #define st_hash_t parser_st_hash_t

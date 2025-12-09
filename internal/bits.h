@@ -29,6 +29,10 @@
 #include <limits.h>             /* for CHAR_BITS */
 #include <stdint.h>             /* for uintptr_t */
 #include "internal/compilers.h" /* for MSC_VERSION_SINCE */
+#include "internal/static_assert.h" /* for STATIC_ASSERT */
+#ifndef SIZEOF_VALUE
+#include "ruby/ruby.h"              /* for VALUE */
+#endif
 
 #ifdef _MSC_VER
 # include <stdlib.h>            /* for _byteswap_uint64 */
@@ -64,9 +68,6 @@
 #  pragma intrinsic(_BitScanReverse64)
 # endif
 #endif
-
-#include "ruby/ruby.h"              /* for VALUE */
-#include "internal/static_assert.h" /* for STATIC_ASSERT */
 
 /* The most significant bit of the lower part of half-long integer.
  * If sizeof(long) == 4, this is 0x8000.
