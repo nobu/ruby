@@ -221,6 +221,8 @@ module Forwardable
           _#{method_call}
         end
       RUBY
+    else
+      pre = ""
     end
 
     eval(<<~RUBY, nil, __FILE__, __LINE__ + 1)
