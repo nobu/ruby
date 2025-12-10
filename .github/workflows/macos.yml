@@ -78,10 +78,19 @@ jobs:
       - name: Run configure
         run: ../src/configure -C --disable-install-doc ${ruby_configure_args} ${{ matrix.configure_args }}
 
+      - name: quiet
+        run: if [ -f quiet ]; then file quiet && head quiet; false; fi
+
       - run: make prepare-gems
         if: ${{ matrix.test_task == 'test-bundled-gems' }}
 
+      - name: quiet
+        run: if [ -f quiet ]; then file quiet && head quiet; false; fi
+
       - run: make
+
+      - name: quiet
+        run: if [ -f quiet ]; then file quiet && head quiet; false; fi
 
       - run: make hello
 
@@ -89,12 +98,18 @@ jobs:
         run: |
           echo IRB::VERSION | make runirb RUNOPT="-- -f"
 
+      - name: quiet
+        run: if [ -f quiet ]; then file quiet && head quiet; false; fi
+
       - name: Set test options for skipped tests
         run: |
           set -x
           TESTS="$(echo "${{ matrix.skipped_tests }}" | sed 's| |$$/ -n!/|g;s|^|-n!/|;s|$|$$/|')"
           echo "TESTS=${TESTS}" >> $GITHUB_ENV
         if: ${{ matrix.test_task == 'check' && matrix.skipped_tests }}
+
+      - name: quiet
+        run: if [ -f quiet ]; then file quiet && head quiet; false; fi
 
       - name: Set up Launchable
         id: launchable
@@ -107,6 +122,9 @@ jobs:
           srcdir: src
         continue-on-error: true
         timeout-minutes: 3
+
+      - name: quiet
+        run: if [ -f quiet ]; then file quiet && head quiet; false; fi
 
       - name: Set extra test options
         run: |
@@ -139,6 +157,9 @@ jobs:
         if: ${{ matrix.test_task == 'check' && matrix.skipped_tests }}
         continue-on-error: ${{ matrix.continue-on-skipped_tests || false }}
 
+      - name: quiet
+        run: if [ -f quiet ]; then file quiet && head quiet; false; fi
+
       - name: CAPI extensions
         uses: ./.github/actions/capiext
         with:
@@ -152,6 +173,9 @@ jobs:
           label: ${{ matrix.os }} / ${{ matrix.test_task }}
           SLACK_WEBHOOK_URL: ${{ secrets.SIMPLER_ALERTS_URL }} # ruby-lang slack: ruby/simpler-alerts-bot
         if: ${{ failure() }}
+
+      - name: quiet
+        run: if [ -f quiet ]; then file quiet && head quiet; false; fi
 
       - name: Resolve job ID
         id: job_id
@@ -168,6 +192,9 @@ jobs:
             const matrix = JSON.parse(process.env.matrix);
             const job_name = `${context.job}${matrix ? ` (${Object.values(matrix).join(", ")})` : ""}`;
             return workflow_run.jobs.find((job) => job.name === job_name).id;
+
+      - name: quiet
+        run: if [ -f quiet ]; then file quiet && head quiet; false; fi
 
   result:
     if: ${{ always() }}
