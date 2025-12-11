@@ -2731,8 +2731,10 @@ io_buffer_set_string(int argc, VALUE *argv, VALUE self)
 
     const void *source_base = RSTRING_PTR(string);
     size_t source_size = RSTRING_LEN(string);
+    VALUE length = io_buffer_copy_from(buffer, source_base, source_size, argc-1, argv+1);
+    RB_GC_GUARD(string);
 
-    return io_buffer_copy_from(buffer, source_base, source_size, argc-1, argv+1);
+    return length;
 }
 
 void
