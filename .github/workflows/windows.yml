@@ -25,18 +25,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: 2022
-            vc: 2022
-            test_task: check
-          - os: 2025
-            vc: 2022
-            test_task: check
           - os: 11-arm
             test_task: 'btest test-basic test-tool' # check and test-spec are broken yet.
             target: arm64
-          - os: 2025
-            vc: 2022
-            test_task: test-bundled-gems
       fail-fast: false
 
     runs-on: windows-${{ matrix.os }}
@@ -156,11 +147,17 @@ jobs:
       # windows-11-arm runner cannot run `ruby tool/file2lastrev.rb --revision.h --output=revision.h`
       - name: make revision.h
         run: |
+          type revision.h
           win32\lastrev.bat | win32\ifchange.bat --timestamp=.revision.time revision.h -
           type revision.h
         working-directory: src
 
       - run: nmake
+
+      - name: revision.h
+        run: |
+          nmake runnable
+          .\bin\ruby -C ../src tool/file2lastrev.rb --revision.h
 
       - name: Set up Launchable
         uses: ./.github/actions/launchable/setup
