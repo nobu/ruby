@@ -536,11 +536,19 @@ ruby_incpush_expand(const char *path)
 #if defined _WIN32 || defined __CYGWIN__
 static HMODULE libruby;
 
+void rb_w32_detach_dll(HINSTANCE);
+
 BOOL WINAPI
 DllMain(HINSTANCE dll, DWORD reason, LPVOID reserved)
 {
-    if (reason == DLL_PROCESS_ATTACH)
+    switch (reason) {
+      case DLL_PROCESS_ATTACH:
         libruby = dll;
+        break;
+      case DLL_PROCESS_DETACH:
+        rb_w32_detach_dll(dll);
+        break;
+    }
     return TRUE;
 }
 

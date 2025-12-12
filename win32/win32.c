@@ -2677,6 +2677,10 @@ rb_w32_open_osfhandle(intptr_t osfhandle, int flags)
     return fh;			/* return handle */
 }
 
+static struct {
+    HANDLE input, output;
+} dup_handle;
+
 /* License: Ruby's */
 static void
 init_stdhandle(void)
@@ -2713,7 +2717,19 @@ init_stdhandle(void)
 #endif
             SetConsoleMode(h, m | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
         }
+        HANDLE process = GetCurrentProcess();
+        DuplicateHandle(process, h, process, &dup_handle.output, 0L, FALSE, DUPLICATE_SAME_ACCESS);
+        h = GetStdHandle(STD_INPUT_HANDLE);
+        DuplicateHandle(process, h, process, &dup_handle.input, 0L, FALSE, DUPLICATE_SAME_ACCESS);
+        CloseHandle(process);
     }
+}
+
+void
+rb_w32_detach_dll(HINSTANCE dll)
+{
+    CloseHandle(dup_handle.input);
+    CloseHandle(dup_handle.output);
 }
 
 #undef getsockopt
