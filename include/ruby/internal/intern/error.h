@@ -38,7 +38,19 @@
 #define rb_exc_new3             rb_exc_new_str  /**< @old{rb_exc_new_str} */
 
 /** @cond INTERNAL_MACRO */
-#define rb_check_arity          rb_check_arity
+#ifdef HAVE_BUILTIN___BUILTIN_CHOOSE_EXPR_CONSTANT_P
+# define rb_check_arity_validate(min, max) \
+    ((void)__builtin_choose_expr( \
+        __builtin_constant_p(min) && __builtin_constant_p(max), \
+        sizeof(char[2*((max) == UNLIMITED_ARGUMENTS ? (min)>0 : (min)>=0&&(min)<=(max))-1]), \
+        0))
+
+#else
+# define rb_check_arity_validate(min, max) (void)0
+#endif
+#define rb_check_arity(argc, min, max) \
+    (rb_check_arity_validate(min, max), rb_check_arity_inline(argc, min, max))
+
 /** @endcond */
 
 RBIMPL_SYMBOL_EXPORT_BEGIN()
@@ -281,7 +293,7 @@ rb_check_frozen_inline(VALUE obj)
  *             inclusive.
  */
 static inline int
-rb_check_arity(int argc, int min, int max)
+rb_check_arity_inline(int argc, int min, int max)
 {
     if ((argc < min) || (max != UNLIMITED_ARGUMENTS && argc > max))
         rb_error_arity(argc, min, max);
