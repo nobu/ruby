@@ -2033,6 +2033,7 @@ rb_backref_get(void)
 void
 rb_backref_set(VALUE val)
 {
+    RB_OBJ_FREEZE_RAW(val);
     vm_svar_set(GET_EC(), VM_SVAR_BACKREF, val);
 }
 

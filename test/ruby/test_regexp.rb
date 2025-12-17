@@ -517,7 +517,7 @@ class TestRegexp < Test::Unit::TestCase
   def test_match_init_copy
     m = /foo/.match("foo")
     assert_equal(/foo/, m.dup.regexp)
-    assert_raise(TypeError) do
+    assert_raise(FrozenError) do
       m.instance_eval { initialize_copy(nil) }
     end
     assert_equal([0, 3], m.offset(0))

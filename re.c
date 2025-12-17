@@ -1105,6 +1105,7 @@ match_init_copy(VALUE obj, VALUE orig)
         RB_GC_GUARD(orig);
     }
 
+    RB_OBJ_FREEZE_RAW(obj);
     return obj;
 }
 
