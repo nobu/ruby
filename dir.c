@@ -12,6 +12,7 @@
 **********************************************************************/
 
 #include "ruby/internal/config.h"
+#include "internal/proc.h"
 
 #include <ctype.h>
 #include <errno.h>
@@ -905,13 +906,45 @@ dir_read(VALUE dir)
     }
 }
 
-static VALUE dir_each_entry(VALUE, VALUE (*)(VALUE, VALUE), VALUE, int);
+VALUE rb_stat_new_dtype(VALUE dir, VALUE name, unsigned int dtype);
+VALUE rb_stat_dtype_uninitialize(VALUE obj);
+
+typedef VALUE (*dir_entry_func)(VALUE, VALUE, VALUE, const struct dirent *);
+static VALUE dir_each_entry(VALUE, dir_entry_func, VALUE, int);
 
 static VALUE
-dir_yield(VALUE arg, VALUE path)
+dir_yield_path(VALUE arg, VALUE path, VALUE dir, const struct dirent *dp)
 {
     return rb_yield(path);
 }
+
+static VALUE
+dir_yield_values(VALUE arg)
+{
+    VALUE *argp = (VALUE *)arg;
+    return rb_yield_values(2, argp[0], argp[1]);
+}
+
+static VALUE
+dir_yield_with_stat(VALUE arg, VALUE path, VALUE dir, const struct dirent *dp)
+{
+    VALUE stat_obj = rb_stat_new_dtype(dir, path, dp->d_type);
+    VALUE args[2] = {path, stat_obj};
+    return rb_ensure(dir_yield_values, (VALUE)args, rb_stat_dtype_uninitialize, stat_obj);
+}
+
+static dir_entry_func
+dir_yield_func(void)
+{
+    if (rb_block_given_p() && (rb_block_arity() == 2)) {
+        return dir_yield_with_stat;
+    }
+    else {
+        return dir_yield_path;
+    }
+}
+
+#define dir_yield dir_yield_func()
 
 /*
  * call-seq:
@@ -940,7 +973,7 @@ dir_each(VALUE dir)
 }
 
 static VALUE
-dir_each_entry(VALUE dir, VALUE (*each)(VALUE, VALUE), VALUE arg, int children_only)
+dir_each_entry(VALUE dir, dir_entry_func each, VALUE arg, int children_only)
 {
     struct dir_data *dirp;
     struct dirent *dp;
@@ -966,7 +999,7 @@ dir_each_entry(VALUE dir, VALUE (*each)(VALUE, VALUE), VALUE arg, int children_o
         else
 #endif
         path = rb_external_str_new_with_enc(name, namlen, dirp->enc);
-        (*each)(arg, path);
+        (*each)(arg, path, dir, dp);
     }
     return dir;
 }
@@ -1859,6 +1892,68 @@ do_lstat(int fd, size_t baselen, const char *path, struct stat *pst, int flags, 
 #else
 #define do_lstat do_stat
 #endif
+
+#if RUBY_USE_STATX
+struct statx_args {
+    int fd;
+    int flag;
+    unsigned int mask;
+    const char *path;
+    struct statx *pst;
+};
+
+static void *
+nogvl_statx(void *args)
+{
+    struct statx_args *arg = args;
+    return (void *)(VALUE)statx(arg->fd, arg->path, arg->flag, arg->mask, arg->pst);
+}
+#endif
+
+bool
+rb_dir_stat_child(VALUE dir, VALUE name, rb_io_stat_data *pst, bool follow_link)
+{
+    int ret;
+    struct dir_data *dirp;
+    GetDIR(dir, dirp);
+    void *(*nogvl_stat_func)(void *);
+
+#if defined(HAVE_DIRFD) && (RUBY_USE_STATX || USE_OPENDIR_AT)
+# define USE_DIR_STAT_FD 1
+    int fd = dirfd(dirp->dir);
+    if (fd == -1)
+        rb_sys_fail("dirfd");
+# if RUBY_USE_STATX
+    typedef struct statx_args dir_stat_args;
+    nogvl_stat_func = nogvl_statx;
+# else
+    typedef struct fstatat_args dir_stat_args;
+    nogvl_stat_func = nogvl_fstatat;
+# endif
+#else
+# define USE_DIR_STAT_FD 0
+    typedef struct stat_args dir_stat_args;
+    nogvl_stat_func = follow_link ? nogvl_stat : nogvl_lstat;
+
+    name = rb_file_join(rb_assoc_new(dirp->path, name));
+#endif
+
+    dir_stat_args args = {
+        .path = StringValueCStr(name),
+        .pst = pst,
+#if USE_DIR_STAT_FD
+        .fd = fd,
+        .flag = follow_link ? 0 : AT_SYMLINK_NOFOLLOW,
+# if RUBY_USE_STATX
+        .mask = STATX_ALL,
+# endif
+#endif
+    };
+    ret = IO_WITHOUT_GVL_INT(nogvl_stat_func, &args);
+    RB_GC_GUARD(name);
+
+    return ret;
+}
 
 struct opendir_at_arg {
     int basefd;
@@ -3471,10 +3566,16 @@ dir_foreach(int argc, VALUE *argv, VALUE io)
 }
 
 static VALUE
+dir_entry_ary_push(VALUE ary, VALUE entry, VALUE dir, const struct dirent *dp)
+{
+    return rb_ary_push(ary, entry);
+}
+
+static VALUE
 dir_collect(VALUE dir)
 {
     VALUE ary = rb_ary_new();
-    dir_each_entry(dir, rb_ary_push, ary, FALSE);
+    dir_each_entry(dir, dir_entry_ary_push, ary, FALSE);
     return ary;
 }
 
@@ -3513,7 +3614,7 @@ dir_each_child(VALUE dir)
 /*
  * call-seq:
  *   Dir.each_child(dirpath) {|entry_name| ... } -> nil
- *   Dir.each_child(dirpath, encoding: 'UTF-8') {|entry_name| ... }  -> nil
+ *   Dir.each_child(dirpath, encoding: 'UTF-8') {|entry_name[, stat]| ... }  -> nil
  *
  * Like Dir.foreach, except that entries <tt>'.'</tt> and <tt>'..'</tt>
  * are not included.
@@ -3532,6 +3633,7 @@ dir_s_each_child(int argc, VALUE *argv, VALUE io)
 /*
  * call-seq:
  *   each_child {|entry_name| ... } -> self
+ *   each_child {|entry_name[, stat]| ... } -> self
  *
  * Calls the block with each entry name in +self+
  * except <tt>'.'</tt> and <tt>'..'</tt>:
@@ -3544,6 +3646,10 @@ dir_s_each_child(int argc, VALUE *argv, VALUE io)
  *   "config.h"
  *   "lib"
  *   "main.rb"
+ *
+ * If the arity of the given block is 2, also `File::Stat` of the
+ * entry is yielded as the second argument.  This object can be used
+ * only inside the block.
  *
  * If no block is given, returns an enumerator.
  */
@@ -3569,7 +3675,7 @@ static VALUE
 dir_collect_children(VALUE dir)
 {
     VALUE ary = rb_ary_new();
-    dir_each_entry(dir, rb_ary_push, ary, TRUE);
+    dir_each_entry(dir, dir_entry_ary_push, ary, TRUE);
     return ary;
 }
 

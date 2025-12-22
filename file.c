@@ -75,6 +75,23 @@ int flock(int, int);
 # include <sys/sysmacros.h>
 #endif
 
+#if defined _WIN32
+# include "win32/dir.h"
+#elif defined HAVE_DIRENT_H
+# include <dirent.h>
+#elif defined HAVE_DIRECT_H
+# include <direct.h>
+# ifdef HAVE_SYS_NDIR_H
+#  include <sys/ndir.h>
+# endif
+# ifdef HAVE_SYS_DIR_H
+#  include <sys/dir.h>
+# endif
+# ifdef HAVE_NDIR_H
+#  include <ndir.h>
+# endif
+#endif
+
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -176,6 +193,7 @@ typedef struct timespec stat_timestamp;
 #include "internal/object.h"
 #include "internal/process.h"
 #include "internal/thread.h"
+#include "internal/variable.h"
 #include "internal/vm.h"
 #include "ruby/encoding.h"
 #include "ruby/thread.h"
@@ -523,9 +541,16 @@ static const rb_data_type_t stat_data_type = {
     0, 0, RUBY_TYPED_FREE_IMMEDIATELY | RUBY_TYPED_WB_PROTECTED | RUBY_TYPED_EMBEDDABLE
 };
 
+enum rb_stat_initialized {
+    not_initialized,
+    fully_initialized,
+    dtype_initialized,
+};
+
 struct rb_stat {
     rb_io_stat_data stat;
-    bool initialized;
+    unsigned int dtype;
+    enum rb_stat_initialized initialized;
 };
 
 static struct rb_stat *
@@ -578,18 +603,83 @@ rb_statx_new(const rb_io_stat_data *st)
     struct rb_stat *rb_st = stat_alloc(rb_cStat, &obj);
     if (st) {
         rb_st->stat = *st;
-        rb_st->initialized = true;
+        rb_st->initialized = fully_initialized;
     }
     return obj;
 }
 #endif
 
-static rb_io_stat_data*
-get_stat(VALUE self)
+extern bool rb_dir_stat_child(VALUE dir, VALUE name, rb_io_stat_data *st, bool follow_link);
+static ID id_dir, id_name;
+
+VALUE
+rb_stat_new_dtype(VALUE dir, VALUE name, unsigned int dtype)
+{
+    VALUE obj;
+    struct rb_stat *rb_st = stat_alloc(rb_cStat, &obj);
+    rb_st->dtype = dtype;
+    rb_st->initialized = dtype_initialized;
+    rb_ivar_set(obj, id_dir, dir);
+    rb_ivar_set(obj, id_name, name);
+    return obj;
+}
+
+VALUE
+rb_stat_dtype_uninitialize(VALUE obj)
+{
+    struct rb_stat* rb_st;
+    TypedData_Get_Struct(obj, struct rb_stat, &stat_data_type, rb_st);
+    rb_st->initialized = not_initialized;
+    rb_attr_delete(obj, id_dir);
+    rb_attr_delete(obj, id_name);
+    return obj;
+}
+
+NORETURN(static void)
+stat_uninitialized(void)
+{
+    rb_raise(rb_eTypeError, "uninitialized File::Stat");
+}
+
+static rb_io_stat_data *
+stat_init_lazy(VALUE self, struct rb_stat *rb_st)
+{
+    if (rb_st->initialized == dtype_initialized) {
+        VALUE dir = rb_ivar_lookup(self, id_dir, Qundef);
+        VALUE name = rb_ivar_lookup(self, id_name, Qundef);
+        if (UNDEF_P(dir) || UNDEF_P(name)) stat_uninitialized();
+        rb_dir_stat_child(dir, name, &rb_st->stat, false);
+        rb_st->initialized = fully_initialized;
+    }
+    return &rb_st->stat;
+}
+
+static struct rb_stat *
+get_stat_dtype(VALUE self)
 {
     struct rb_stat* rb_st;
     TypedData_Get_Struct(self, struct rb_stat, &stat_data_type, rb_st);
-    if (!rb_st->initialized) rb_raise(rb_eTypeError, "uninitialized File::Stat");
+    if (rb_st->initialized == not_initialized) stat_uninitialized();
+    return rb_st;
+}
+
+# define RETURN_IF_DTYPE(obj, rb_st, dtname) do { \
+        struct rb_stat *rb_st = get_stat_dtype(obj); \
+        if (rb_st->initialized == dtype_initialized) { \
+            return RBOOL(rb_st->dtype == DT_##dtname); \
+        } \
+        if (S_IS##dtname(rb_st->stat.ST_(mode))) { \
+            return Qtrue; \
+        } \
+    } while (0)
+
+static rb_io_stat_data*
+get_stat(VALUE self)
+{
+    struct rb_stat *rb_st = get_stat_dtype(self);
+    if (rb_st->initialized == dtype_initialized) {
+        stat_init_lazy(self, rb_st);
+    }
     return &rb_st->stat;
 }
 
@@ -1207,12 +1297,24 @@ rb_stat_inspect(VALUE self)
 
     struct rb_stat* rb_st;
     TypedData_Get_Struct(self, struct rb_stat, &stat_data_type, rb_st);
-    if (!rb_st->initialized) {
-        return rb_sprintf("#<%s: uninitialized>", rb_obj_classname(self));
-    }
 
     str = rb_str_buf_new2("#<");
     rb_str_buf_cat2(str, rb_obj_classname(self));
+
+    switch (rb_st->initialized) {
+      case fully_initialized: break;
+      case not_initialized: goto uninitialized;
+      case dtype_initialized:
+        switch (rb_st->dtype) {
+          case DT_DIR: rb_str_buf_cat2(str, ": dir>"); break;
+          case DT_REG: rb_str_buf_cat2(str, ": reg>"); break;
+          case DT_LNK: rb_str_buf_cat2(str, ": lnk>"); break;
+          uninitialized:
+          default: rb_str_buf_cat2(str, ": uninitialized>"); break;
+        }
+        return str;
+    }
+
     rb_str_buf_cat2(str, " ");
 
     for (i = 0; i < sizeof(member)/sizeof(member[0]); i++) {
@@ -5903,7 +6005,11 @@ rb_stat_ftype(VALUE obj)
 static VALUE
 rb_stat_d(VALUE obj)
 {
+# ifdef DT_FIFO
+    RETURN_IF_DTYPE(obj, rb_st, DIR);
+# else
     if (S_ISDIR(get_stat(obj)->ST_(mode))) return Qtrue;
+# endif
     return Qfalse;
 }
 
@@ -5919,8 +6025,11 @@ static VALUE
 rb_stat_p(VALUE obj)
 {
 #ifdef S_IFIFO
+# ifdef DT_FIFO
+    RETURN_IF_DTYPE(obj, rb_st, FIFO);
+# else
     if (S_ISFIFO(get_stat(obj)->ST_(mode))) return Qtrue;
-
+# endif
 #endif
     return Qfalse;
 }
@@ -5945,7 +6054,11 @@ static VALUE
 rb_stat_l(VALUE obj)
 {
 #ifdef S_ISLNK
+# ifdef DT_LNK
+    RETURN_IF_DTYPE(obj, rb_st, LNK);
+# else
     if (S_ISLNK(get_stat(obj)->ST_(mode))) return Qtrue;
+# endif
 #endif
     return Qfalse;
 }
@@ -5966,8 +6079,11 @@ static VALUE
 rb_stat_S(VALUE obj)
 {
 #ifdef S_ISSOCK
+# ifdef DT_SOCK
+    RETURN_IF_DTYPE(obj, rb_st, SOCK);
+# else
     if (S_ISSOCK(get_stat(obj)->ST_(mode))) return Qtrue;
-
+# endif
 #endif
     return Qfalse;
 }
@@ -5989,8 +6105,11 @@ static VALUE
 rb_stat_b(VALUE obj)
 {
 #ifdef S_ISBLK
+# ifdef DT_BLK
+    RETURN_IF_DTYPE(obj, rb_st, BLK);
+# else
     if (S_ISBLK(get_stat(obj)->ST_(mode))) return Qtrue;
-
+# endif
 #endif
     return Qfalse;
 }
@@ -6010,8 +6129,11 @@ rb_stat_b(VALUE obj)
 static VALUE
 rb_stat_c(VALUE obj)
 {
+# ifdef DT_CHR
+    RETURN_IF_DTYPE(obj, rb_st, CHR);
+# else
     if (S_ISCHR(get_stat(obj)->ST_(mode))) return Qtrue;
-
+# endif
     return Qfalse;
 }
 
@@ -6327,7 +6449,11 @@ rb_stat_X(VALUE obj)
 static VALUE
 rb_stat_f(VALUE obj)
 {
+# ifdef DT_REG
+    RETURN_IF_DTYPE(obj, rb_st, REG);
+# else
     if (S_ISREG(get_stat(obj)->ST_(mode))) return Qtrue;
+# endif
     return Qfalse;
 }
 
@@ -7505,6 +7631,9 @@ Init_File(void)
 #if defined(__APPLE__) && defined(HAVE_WORKING_FORK)
     rb_CFString_class_initialize_before_fork();
 #endif
+
+    id_dir = rb_intern_const("dir");
+    id_name = rb_intern_const("name");
 
     VALUE separator;
 

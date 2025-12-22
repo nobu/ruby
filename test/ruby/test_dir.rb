@@ -505,6 +505,23 @@ class TestDir < Test::Unit::TestCase
     end
   end
 
+  def test_each_child_type
+    begin
+      File.symlink("dummy", @root + "/lnk")
+    rescue NotImplementedError, Errno::EACCES
+    end
+
+    Dir.each_child(@root) do |ent, st|
+      if ent == "lnk"
+        assert_predicate(st, :symlink?)
+      elsif @dirs.include?(ent+"/")
+        assert_predicate(st, :directory?)
+      else
+        assert_predicate(st, :file?)
+      end
+    end
+  end
+
   def test_dir_enc
     dir = Dir.open(@root, encoding: "UTF-8")
     begin
