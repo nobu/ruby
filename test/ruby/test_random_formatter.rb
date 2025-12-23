@@ -92,13 +92,16 @@ module Random::Formatter
       0.upto(12) do |extra_timestamp_bits|
         assert_uuid_v7 extra_timestamp_bits: extra_timestamp_bits
       end
+      timestamp = Time.at(@it.rand(1<<48).quo(1_000), in: "UTC")
+      assert_equal timestamp, get_uuid7_time(@it.uuid_v7(timestamp: timestamp))
+      assert_equal timestamp, get_uuid7_time(@it.uuid_v7(extra_timestamp_bits: 12, timestamp: timestamp))
     end
 
     # It would be nice to simply use Time#floor here.  But that is problematic
     # due to the difference between decimal vs binary fractions.
-    def current_uuid7_time(extra_timestamp_bits: 0)
+    def current_uuid7_time(extra_timestamp_bits: 0, timestamp: nil)
       denominator = (1 << extra_timestamp_bits).to_r
-      Process.clock_gettime(Process::CLOCK_REALTIME, :nanosecond)
+      (timestamp || Process.clock_gettime(Process::CLOCK_REALTIME, :nanosecond))
         .then {|ns| ((ns / 1_000_000r) * denominator).floor / denominator }
         .then {|ms| Time.at(ms / 1000r, in: "+00:00") }
     end

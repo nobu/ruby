@@ -244,10 +244,15 @@ module Random::Formatter
   # {Section 6.2}[https://www.rfc-editor.org/rfc/rfc9562.html#name-monotonicity-and-counters]
   # of the specification.
   #
-  def uuid_v7(extra_timestamp_bits: 0)
+  def uuid_v7(extra_timestamp_bits: 0, timestamp: Process.clock_gettime(Process::CLOCK_REALTIME, :nanosecond))
+    if timestamp.respond_to?(:nsec)
+      ms, ns = timestamp.nsec.divmod(1_000_000)
+      ms += timestamp.to_i * 1000
+    else
+      ms, ns = timestamp.divmod(1_000_000)
+    end
     case (extra_timestamp_bits = Integer(extra_timestamp_bits))
     when 0 # min timestamp precision
-      ms = Process.clock_gettime(Process::CLOCK_REALTIME, :millisecond)
       rand = random_bytes(10)
       rand.setbyte(0, rand.getbyte(0) & 0x0f | 0x70) # version
       rand.setbyte(2, rand.getbyte(2) & 0x3f | 0x80) # variant
@@ -258,8 +263,6 @@ module Random::Formatter
       ]
 
     when 12 # max timestamp precision
-      ms, ns = Process.clock_gettime(Process::CLOCK_REALTIME, :nanosecond)
-        .divmod(1_000_000)
       extra_bits = ns * 4096 / 1_000_000
       rand = random_bytes(8)
       rand.setbyte(0, rand.getbyte(0) & 0x3f | 0x80) # variant
@@ -273,8 +276,6 @@ module Random::Formatter
     when (0..12) # the generic version is slower than the special cases above
       rand_a, rand_b1, rand_b2, rand_b3 = random_bytes(10).unpack("nnnN")
       rand_mask_bits = 12 - extra_timestamp_bits
-      ms, ns = Process.clock_gettime(Process::CLOCK_REALTIME, :nanosecond)
-        .divmod(1_000_000)
       "%08x-%04x-%04x-%04x-%04x%08x" % [
         (ms & 0x0000_ffff_ffff_0000) >> 16,
         (ms & 0x0000_0000_0000_ffff),
