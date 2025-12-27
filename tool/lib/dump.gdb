@@ -9,8 +9,8 @@ echo \n>>> Machine level backtrace\n\n
 thread apply all info stack full
 
 echo \n>>> Dump Ruby level backtrace (if possible)\n\n
-call rb_vmdebug_stack_dump_all_threads()
-call fflush(stderr)
+call (void)rb_vmdebug_stack_dump_all_threads()
+call (int)fflush(stderr)
 
 echo ">>> Finish\n"
 detach
