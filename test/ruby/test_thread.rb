@@ -1480,7 +1480,9 @@ q.pop
   end
 
   def test_thread_interrupt_for_killed_thread
-    opts = { timeout: 5, timeout_error: nil }
+    timeout = 5
+    timeout = 30 if RUBY_PLATFORM.include?("mingw")
+    opts = { timeout: timeout, timeout_error: nil }
 
     assert_normal_exit(<<-_end, '[Bug #8996]', **opts)
       Thread.report_on_exception = false
