@@ -35,6 +35,7 @@ jobs:
     name: ${{ github.workflow }} (${{ matrix.msystem }})
 
     env:
+      TESTS: -v ruby/test_thread.rb
       MSYSTEM: ${{ matrix.msystem }}
       MSYS2_ARCH: >-
         ${{
