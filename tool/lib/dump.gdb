@@ -1,6 +1,7 @@
 set height 0
 set width 0
 set confirm off
+set unwind-on-signal on
 
 echo \n>>> Threads\n\n
 info threads
