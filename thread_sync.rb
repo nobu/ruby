@@ -19,8 +19,8 @@ class Thread
       end
       Primitive.rb_queue_pop(non_block, timeout)
     end
-    alias_method :deq, :pop
-    alias_method :shift, :pop
+    alias deq pop
+    alias shift pop
   end
 
   class SizedQueue
@@ -41,8 +41,8 @@ class Thread
       end
       Primitive.rb_szqueue_pop(non_block, timeout)
     end
-    alias_method :deq, :pop
-    alias_method :shift, :pop
+    alias deq pop
+    alias shift pop
 
     # call-seq:
     #   push(object, non_block=false, timeout: nil)
@@ -64,8 +64,8 @@ class Thread
       end
       Primitive.rb_szqueue_push(object, non_block, timeout)
     end
-    alias_method :enq, :push
-    alias_method :<<, :push
+    alias enq push
+    alias << push
   end
 
   class Mutex
