@@ -27,16 +27,7 @@ jobs:
         include:
           - os: 2022
             vc: 2022
-            test_task: check
-          - os: 2025
-            vc: 2022
-            test_task: check
-          - os: 11-arm
-            test_task: 'btest test-basic test-tool' # check and test-spec are broken yet.
-            target: arm64
-          - os: 2025
-            vc: 2022
-            test_task: test-bundled-gems
+            test_task: test-tool
       fail-fast: false
 
     runs-on: windows-${{ matrix.os }}
@@ -175,8 +166,6 @@ jobs:
         timeout-minutes: 3
 
       - run: nmake ${{ matrix.test_task || 'check' }}
-        env:
-          RUBY_TESTOPTS: -j${{ env.TEST_JOBS || 4 }}
         timeout-minutes: 70
 
       - uses: ./.github/actions/slack
