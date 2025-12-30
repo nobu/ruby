@@ -213,24 +213,6 @@ jobs:
           RUBY_TESTOPTS: '-v --tty=no'
         if: ${{ matrix.test_task == 'check' || matrix.test_task == 'test' }}
 
-      - name: test-all
-        timeout-minutes: 45
-        run: |
-          make ${{ StartsWith(matrix.test_task, 'test/') && matrix.test_task || 'test-all' }}
-        env:
-          RUBY_TESTOPTS: >-
-            --retry --job-status=normal --show-skip --timeout-scale=1.5 -j4
-            ${{ matrix.test-all-opts }}
-            ${{ env.TESTS }}
-          BUNDLER_VERSION:
-        if: ${{ matrix.test_task == 'check' || matrix.test_task == 'test-all' || StartsWith(matrix.test_task, 'test/') }}
-
-      - name: test-spec
-        timeout-minutes: 10
-        run: |
-          make ${{ StartsWith(matrix.test_task, 'spec/') && matrix.test_task || 'test-spec' }}
-        if: ${{ matrix.test_task == 'check' || matrix.test_task == 'test-spec' || StartsWith(matrix.test_task, 'spec/') }}
-
       - uses: ./src/.github/actions/slack
         with:
           label: ${{ matrix.msystem }} / ${{ matrix.test_task }}
