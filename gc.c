@@ -1179,7 +1179,7 @@ rb_gc_handle_weak_references(VALUE obj)
 {
     switch (BUILTIN_TYPE(obj)) {
       case T_DATA:
-        if (RTYPEDDATA_P(obj)) {
+        {
             const rb_data_type_t *type = RTYPEDDATA_TYPE(obj);
 
             if (type == &rb_fiber_data_type) {
@@ -1197,9 +1197,6 @@ rb_gc_handle_weak_references(VALUE obj)
             else {
                 rb_bug("rb_gc_handle_weak_references: unknown TypedData %s", RTYPEDDATA_TYPE(obj)->wrap_struct_name);
             }
-        }
-        else {
-           rb_bug("rb_gc_handle_weak_references: unknown T_DATA");
         }
         break;
 
