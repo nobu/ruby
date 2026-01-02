@@ -176,7 +176,7 @@ module Test
         require_relative 'memory_status'
         raise Test::Unit::PendedError, "unsupported platform" unless defined?(Memory::Status)
 
-        token_dump, token_re = new_test_token
+        token = new_test_token
         envs = args.shift if Array === args and Hash === args.first
         args = [
           "--disable=gems",
@@ -191,14 +191,16 @@ module Test
         end
         args.unshift(envs) if envs
         cmd = [
-          'END {STDERR.puts '"#{token_dump}"'"FINAL=#{Memory::Status.new}"}',
+          '_memory_leak_report_token = '"#{token_dump}"'.sub("<PID>", $$.to_s)',
+          'END {STDERR.puts "#{_memory_leak_report_token}FINAL=#{Memory::Status.new}"}',
           prepare,
-          'STDERR.puts('"#{token_dump}"'"START=#{$initial_status = Memory::Status.new}")',
+          'STDERR.puts("#{_memory_leak_report_token}START=#{$initial_status = Memory::Status.new}")',
           '$initial_size = $initial_status.size',
           code,
           'GC.start',
         ].join("\n")
         _, err, status = EnvUtil.invoke_ruby(args, cmd, true, true, **opt)
+        token_re = Regexp.quote(token_for_pid(token, status.pid))
         before = err.sub!(/^#{token_re}START=(\{.*\})\n/, '') && Memory::Status.parse($1)
         after = err.sub!(/^#{token_re}FINAL=(\{.*\})\n/, '') && Memory::Status.parse($1)
         assert(status.success?, FailDesc[status, message, err])
@@ -325,6 +327,7 @@ module Test
         # assume Method#call and UnboundMethod#bind_call need to work as the original
 
         at_exit {
+          token = token_for_pid(token, Process.pid)
           assertions = assertions_ivar_get.call(:@_assertions)
           out_write.call <<~OUT
           #{token}<error>
@@ -353,12 +356,12 @@ module Test
           res_p, res_c = IO.pipe
           opt[:ios] = [res_c]
         end
-        token_dump, token_re = new_test_token
+        token = new_test_token
         src = <<eom
 # -*- coding: #{line += __LINE__; src.encoding}; -*-
 BEGIN {
   require "test/unit";include Test::Unit::Assertions;require #{__FILE__.dump};include Test::Unit::CoreAssertions
-  separated_runner #{token_dump}, #{res_c&.fileno || 'nil'}
+  separated_runner #{token.dump}, #{res_c&.fileno || 'nil'}
 }
 #{line -= __LINE__; src}
 eom
@@ -368,6 +371,7 @@ eom
         # power_assert 3 requires ruby 3.1 or later
         args << "-W:no-experimental" if RUBY_VERSION < "3.1."
         stdout, stderr, status = EnvUtil.invoke_ruby(args, src, capture_stdout, true, **opt)
+        token_re = Regexp.quote(token_for_pid(token, status.pid))
 
         if sanitizers&.lsan_enabled?
           # LSAN may output messages like the following line into stderr. We should ignore it.
@@ -953,8 +957,12 @@ eom
       end
 
       def new_test_token
-        token = "\e[7;1m#{$$.to_s}:#{Time.now.strftime('%s.%L')}:#{rand(0x10000).to_s(16)}:\e[m"
-        return token.dump, Regexp.quote(token)
+        token = "\e[7;1m<PID>:#{Time.now.strftime('%s.%L')}:#{rand(0x10000).to_s(16)}:\e[m"
+        return token
+      end
+
+      def token_for_pid(token, pid)
+        token.sub("<PID>", pid.to_s)
       end
 
       # Platform predicates
