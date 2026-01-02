@@ -414,6 +414,7 @@ eom
         end
         assert(status.success?, FailDesc[status, "assert_separately failed", stderr])
         raise marshal_error if marshal_error
+        assert(assertions > 0, "No assertions run in separated runner:#{res.inspect}", )
       end
 
       # Run Ractor-related test without influencing the main test suite
@@ -444,6 +445,7 @@ eom
           Ractor.new {} # trigger initial warning
           $VERBOSE = previous_verbose
           #{src}
+          assert(true)
         RUBY
       end
 
