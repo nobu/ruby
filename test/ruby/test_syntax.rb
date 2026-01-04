@@ -1761,6 +1761,27 @@ eom
     assert_equal([:begin, :rescue, :ensure], result)
   end
 
+  def test_return_value_in_ensure
+    expect = rand(100)
+    eval("#{<<-"begin;"}\n#{<<-"end;"}")
+    begin;
+      begin
+        expect + 1
+      ensure => retval
+        assert_equal(expect + 1, retval)
+      end
+    end;
+    retval = "foo"
+    assert_raise_with_message(RuntimeError, "[Feature #21822]") {eval("#{<<-"begin;"}\n#{<<-"end;"}")}
+    begin;
+      begin
+        raise "[Feature #21822]"
+      ensure => retval
+        assert_equal("foo", retval)
+      end
+    end;
+  end
+
   def test_return_in_loop
     obj = Object.new
     def obj.test

@@ -1082,6 +1082,7 @@ static rb_node_retry_t *rb_node_retry_new(struct parser_params *p, const YYLTYPE
 static rb_node_begin_t *rb_node_begin_new(struct parser_params *p, NODE *nd_body, const YYLTYPE *loc);
 static rb_node_rescue_t *rb_node_rescue_new(struct parser_params *p, NODE *nd_head, NODE *nd_resq, NODE *nd_else, const YYLTYPE *loc);
 static rb_node_resbody_t *rb_node_resbody_new(struct parser_params *p, NODE *nd_args, NODE *nd_exc_var, NODE *nd_body, NODE *nd_next, const YYLTYPE *loc);
+RBIMPL_ATTR_MAYBE_UNUSED()
 static rb_node_ensure_t *rb_node_ensure_new(struct parser_params *p, NODE *nd_head, NODE *nd_ensr, const YYLTYPE *loc);
 static rb_node_and_t *rb_node_and_new(struct parser_params *p, NODE *nd_1st, NODE *nd_2nd, const YYLTYPE *loc, const YYLTYPE *operator_loc);
 static rb_node_or_t *rb_node_or_new(struct parser_params *p, NODE *nd_1st, NODE *nd_2nd, const YYLTYPE *loc, const YYLTYPE *operator_loc);
@@ -2769,7 +2770,7 @@ rb_parser_ary_free(rb_parser_t *p, rb_parser_ary_t *ary)
 %type <node> command command_call command_call_value method_call
 %type <node> expr_value expr_value_do arg_value primary_value rel_expr
 %type <node_fcall> fcall
-%type <node> if_tail opt_else case_body case_args cases opt_rescue exc_list exc_var opt_ensure
+%type <node> if_tail opt_else case_body case_args cases opt_rescue exc_list exc_var opt_ensure ensure_var
 %type <node> args arg_splat call_args opt_call_args
 %type <node> paren_args opt_paren_args
 %type <node_args> args_tail block_args_tail
@@ -5899,12 +5900,24 @@ exc_var		: tASSOC lhs
                 | none
                 ;
 
-opt_ensure	: k_ensure stmts terms?
+ensure_var	: tASSOC lhs then
                     {
-                        p->ctxt.in_rescue = $1.in_rescue;
-                        $$ = $2;
-                        void_expr(p, void_stmts(p, $$));
-                    /*% ripper: ensure!($:2) %*/
+                        $$ = $lhs;
+                    /*% ripper: $:lhs %*/
+                    }
+                | none
+                ;
+
+opt_ensure	: k_ensure ensure_var stmts terms?
+                    {
+                        p->ctxt.in_rescue = $k_ensure.in_rescue;
+                        void_expr(p, void_stmts(p, $stmts));
+
+                        rb_node_ensure_t *n = NODE_NEW_INTERNAL(NODE_ENSURE, rb_node_ensure_t);
+                        n->nd_head = $ensure_var;
+                        n->nd_ensr = $stmts;
+                        $$ = &n->node;
+                    /*% ripper: ensure!($:stmts, $:ensure_var) %*/
                     }
                 | none
                 ;
@@ -14845,7 +14858,11 @@ new_bodystmt(struct parser_params *p, NODE *head, NODE *rescue, NODE *rescue_els
         nd_set_line(result, rescue->nd_loc.beg_pos.lineno);
     }
     if (ensure) {
-        result = NEW_ENSURE(result, ensure, loc);
+        nd_set_loc(ensure, loc);
+        nd_set_node_id(ensure, parser_get_node_id(p));
+        NODE **var = &((rb_node_ensure_t *)ensure)->nd_head;
+        *var = *var ? node_assign(p, *var, result, NO_LEX_CTXT, &(*var)->nd_loc) : result;
+        result = ensure;
     }
     fixpos(result, head);
     return result;

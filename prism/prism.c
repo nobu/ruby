@@ -14514,9 +14514,16 @@ parse_rescues(pm_parser_t *parser, size_t opening_newline_index, const pm_token_
 
     if (match1(parser, PM_TOKEN_KEYWORD_ENSURE)) {
         if (opening != NULL) parser_warn_indentation_mismatch(parser, opening_newline_index, opening, false, false);
-        pm_token_t ensure_keyword = parser->current;
+        pm_node_t *ensure_reference = NULL;
+        pm_token_t ensure_keyword = parser->current, operator;
 
         parser_lex(parser);
+        if (match1(parser, PM_TOKEN_EQUAL_GREATER)) {
+            parser_lex(parser);
+            operator = parser->previous;
+            ensure_reference = parse_expression(parser, PM_BINDING_POWER_INDEX, false, false, PM_ERR_ENSURE_VARIABLE, (uint16_t) (depth + 1));
+        }
+
         accept2(parser, PM_TOKEN_NEWLINE, PM_TOKEN_SEMICOLON);
 
         pm_statements_node_t *ensure_statements = NULL;
@@ -14543,6 +14550,26 @@ parse_rescues(pm_parser_t *parser, size_t opening_newline_index, const pm_token_
 
         pm_ensure_node_t *ensure_clause = pm_ensure_node_create(parser, &ensure_keyword, ensure_statements, &parser->current);
         pm_begin_node_ensure_clause_set(parent_node, ensure_clause);
+        if (ensure_reference) {
+            pm_statements_node_t *statements = parent_node->statements;
+            pm_node_t *value;
+            switch (statements->body.size) {
+                case 0:
+                    value = UP(pm_nil_node_create(parser, &(pm_token_t) {PM_TOKEN_KEYWORD_NIL}));
+                    break;
+                case 1:
+                    value = statements->body.nodes[0];
+                    statements->body.size = 0;
+                    break;
+                default:
+                    value = UP(statements);
+                    statements = pm_statements_node_create(parser);
+                    parent_node->statements = statements;
+                    break;
+            }
+            value = parse_write(parser, ensure_reference, &operator, value);
+            pm_statements_node_body_append(parser, statements, value, true);
+        }
     }
 
     if (match1(parser, PM_TOKEN_KEYWORD_END)) {

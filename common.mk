@@ -912,6 +912,7 @@ yes-test-all: $(PRECHECK_TEST_ALL)
 	$(ACTIONS_GROUP)
 	$(gnumake_recursive)$(Q)$(exec) $(RUNRUBY) -r$(tooldir)/lib/_tmpdir \
 	"$(TESTSDIR)/runner.rb" --ruby="$(RUNRUBY)" \
+	-x prism/ruby/ripper \
 	$(TEST_EXCLUDES) $(TESTOPTS) $(TESTS)
 	$(ACTIONS_ENDGROUP)
 TESTS_BUILD = mkmf
