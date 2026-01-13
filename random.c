@@ -1737,6 +1737,8 @@ random_s_rand(int argc, VALUE *argv, VALUE obj)
 }
 
 #define USE_HASH_SIP 1
+#define USE_HASH_XXH3 2
+#define USE_HASH_RAPID 3
 #ifdef MEMHASH
 # define USE_HASH_PASTE(m) TOKEN_PASTE(USE_HASH_, m)
 # define USE_HASH USE_HASH_PASTE(MEMHASH)
@@ -1763,6 +1765,16 @@ random_s_rand(int argc, VALUE *argv, VALUE obj)
 #endif
 #include "missing/siphash.c"
 
+#elif USE_HASH == USE_HASH_XXH3
+
+#define XXH_INLINE_ALL
+
+#include "missing/xxhash.h"
+
+#elif USE_HASH == USE_HASH_RAPID
+
+#include "missing/rapidhash.h"
+
 #else
 
 #error No MEMHASH
@@ -1773,6 +1785,9 @@ typedef struct {
     st_index_t hash;
 #if USE_HASH == USE_HASH_SIP
     uint8_t sip[16];
+#elif USE_HASH == USE_HASH_XXH3
+    uint8_t secret[XXH3_SECRET_SIZE_MIN];
+#elif USE_HASH == USE_HASH_RAPID
 #endif
 } hash_salt_t;
 
@@ -1802,8 +1817,12 @@ rb_memhash(const void *ptr, long len)
 {
 #if USE_HASH == USE_HASH_SIP
     uint64_t h = sip_hash13(hash_salt.key.sip, ptr, len);
-    return (st_index_t)h;
+#elif USE_HASH == USE_HASH_XXH3
+    uint64_t h = XXH3_64bits_withSecret(ptr, (size_t)len, hash_salt.key.secret, XXH3_SECRET_SIZE_MIN);
+#elif USE_HASH == USE_HASH_RAPID
+    uint64_t h = rapidhash(ptr, len);
 #endif
+    return (st_index_t)h;
 }
 
 /* Initialize Ruby internal seeds. This function is called at very early stage
