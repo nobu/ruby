@@ -539,6 +539,10 @@ class TestPack < Test::Unit::TestCase
           assert_equal([x], v)
         end
       end
+      assert_equal([x].pack("e"), [x].pack("f<"))
+      assert_equal([x].pack("E"), [x].pack("d<"))
+      assert_equal([x].pack("g"), [x].pack("f>"))
+      assert_equal([x].pack("G"), [x].pack("d>"))
     end
   end
 

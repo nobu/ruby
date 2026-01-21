@@ -34,13 +34,12 @@
  * even if the platform has an implementation specific 64bit type.
  * This behavior is consistent with the document of pack/unpack.
  */
+static const char natstr[] = "sSiIlL"
 #ifdef HAVE_TRUE_LONG_LONG
-static const char natstr[] = "sSiIlLqQjJ";
-# define endstr natstr
-#else
-static const char natstr[] = "sSiIlLjJ";
-static const char endstr[] = "sSiIlLqQjJ";
+    "qQ"
 #endif
+    "jJ";
+static const char endstr[] = "sSiIlLqQjJfFdD";
 
 #ifdef HAVE_TRUE_LONG_LONG
 /* It is intentional to use long long instead of LONG_LONG. */
@@ -114,6 +113,13 @@ typedef union {
 #define HTOVD(x)	((x).u = rb_htovd((x).u))
 #define NTOHD(x)	((x).u = rb_ntohd((x).u))
 #define VTOHD(x)	((x).u = rb_vtohd((x).u))
+
+#define CONV_EXPLICIT_ENDIAN(explicit_endian, x) \
+    (!(explicit_endian) ? (x).u : \
+     BIGENDIAN_P() == (explicit_endian == '>') ? (x).u : \
+     sizeof((x).u) == 4 ? (x).u = swap32((uint32_t)(x).u) : \
+     sizeof((x).u) == 8 ? (x).u = (uint32_t)swap64((x).u) : \
+     (UNREACHABLE, 0))
 
 #define MAX_INTEGER_PACK_SIZE 8
 
@@ -564,11 +570,12 @@ pack_pack(rb_execution_context_t *ec, VALUE ary, VALUE fmt, VALUE buffer)
           case 'f':		/* single precision float in native format */
           case 'F':		/* ditto */
             while (len-- > 0) {
-                float f;
+                FLOAT_CONVWITH(tmp);
 
                 from = NEXTFROM;
-                f = VALUE_to_float(from);
-                rb_str_buf_cat(res, (char*)&f, sizeof(float));
+                tmp.f = VALUE_to_float(from);
+                CONV_EXPLICIT_ENDIAN(explicit_endian, tmp);
+                rb_str_buf_cat(res, tmp.buf, sizeof(float));
             }
             break;
 
@@ -596,11 +603,12 @@ pack_pack(rb_execution_context_t *ec, VALUE ary, VALUE fmt, VALUE buffer)
           case 'd':		/* double precision float in native format */
           case 'D':		/* ditto */
             while (len-- > 0) {
-                double d;
+                DOUBLE_CONVWITH(tmp);
 
                 from = NEXTFROM;
-                d = RFLOAT_VALUE(rb_to_float(from));
-                rb_str_buf_cat(res, (char*)&d, sizeof(double));
+                tmp.d = RFLOAT_VALUE(rb_to_float(from));
+                CONV_EXPLICIT_ENDIAN(explicit_endian, tmp);
+                rb_str_buf_cat(res, tmp.buf, sizeof(double));
             }
             break;
 
@@ -1259,9 +1267,10 @@ pack_unpack_internal(VALUE str, VALUE fmt, enum unpack_mode mode, long offset)
           case 'F':
             PACK_LENGTH_ADJUST_SIZE(sizeof(float));
             while (len-- > 0) {
-                float tmp;
-                UNPACK_FETCH(&tmp, float);
-                UNPACK_PUSH(DBL2NUM((double)tmp));
+                FLOAT_CONVWITH(tmp);
+                UNPACK_FETCH(&tmp.buf, float);
+                CONV_EXPLICIT_ENDIAN(explicit_endian, tmp);
+                UNPACK_PUSH(DBL2NUM((double)tmp.f));
             }
             PACK_ITEM_ADJUST();
             break;
@@ -1292,9 +1301,10 @@ pack_unpack_internal(VALUE str, VALUE fmt, enum unpack_mode mode, long offset)
           case 'd':
             PACK_LENGTH_ADJUST_SIZE(sizeof(double));
             while (len-- > 0) {
-                double tmp;
-                UNPACK_FETCH(&tmp, double);
-                UNPACK_PUSH(DBL2NUM(tmp));
+                DOUBLE_CONVWITH(tmp);
+                UNPACK_FETCH(tmp.buf, double);
+                CONV_EXPLICIT_ENDIAN(explicit_endian, tmp);
+                UNPACK_PUSH(DBL2NUM(tmp.d));
             }
             PACK_ITEM_ADJUST();
             break;
