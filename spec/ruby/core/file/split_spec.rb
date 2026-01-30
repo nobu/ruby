@@ -45,7 +45,14 @@ describe "File.split" do
 
   it "raises an ArgumentError when not passed a single argument" do
     -> { File.split }.should raise_error(ArgumentError)
-    -> { File.split('string', 'another string') }.should raise_error(ArgumentError)
+  end
+
+  ruby_version_is "4.1" do
+    it "splits the string into directory, basename and extension when the extension argument is given" do
+      File.split("/foo/bar/baz.c", "").should == ["/foo/bar", "baz.c", ""]
+      File.split("/foo/bar/baz.c", ".c").should == ["/foo/bar", "baz", ".c"]
+      File.split("/foo/bar/baz.c", ".*").should == ["/foo/bar", "baz", ".c"]
+    end
   end
 
   it "raises a TypeError if the argument is not a String type" do

@@ -4931,13 +4931,14 @@ enc_find_basename(const char *name, long *baselen, long *alllen, bool mb_enc, rb
     root = name;
 #endif
 
-    while (isdirsep(*name)) {
+    while (name < end && isdirsep(*name)) {
         name++;
     }
 
-    if (!*name) {
+    if (name == end) {
         p = name - 1;
         f = 1;
+        n = 1;
 #if defined DOSISH_DRIVE_LETTER || defined DOSISH_UNC
         if (name != root) {
             /* has slashes */
@@ -5048,9 +5049,7 @@ rb_file_s_basename(int argc, VALUE *argv, VALUE _)
             f = n;
         }
         else {
-            const char *fp;
-            fp = StringValueCStr(fext);
-            if (!(f = rmext(p, f, n, fp, RSTRING_LEN(fext), enc))) {
+            if (!(f = rmext(p, f, n, RSTRING_PTR(fext), RSTRING_LEN(fext), enc))) {
                 f = n;
             }
             RB_GC_GUARD(fext);
@@ -5064,6 +5063,7 @@ rb_file_s_basename(int argc, VALUE *argv, VALUE _)
 }
 
 static VALUE rb_file_dirname_n(VALUE fname, int n);
+static VALUE dirname_part(const char **namep, const char *end, bool mb_enc, rb_encoding *enc, int n);
 
 /*
  *  call-seq:
@@ -5103,15 +5103,22 @@ rb_file_dirname(VALUE fname)
 static VALUE
 rb_file_dirname_n(VALUE fname, int n)
 {
-    const char *name, *root, *p, *end;
-    VALUE dirname;
+    const char *name;
 
     if (n < 0) rb_raise(rb_eArgError, "negative level: %d", n);
     CheckPath(fname, name);
-    end = name + RSTRING_LEN(fname);
 
-    bool mb_enc = !rb_str_enc_fastpath(fname);
-    rb_encoding *enc = rb_str_enc_get(fname);
+    int encidx = ENCODING_GET_INLINED(fname);
+    bool mb_enc = !rb_str_encindex_fastpath(encidx);
+    rb_encoding *enc = rb_enc_from_index(encidx);
+    return dirname_part(&name, name + RSTRING_LEN(fname), mb_enc, enc, n);
+}
+
+static VALUE
+dirname_part(const char **namep, const char *end, bool mb_enc, rb_encoding *enc, int n)
+{
+    VALUE dirname;
+    const char *name = *namep, *root, *p;
 
     root = skiproot(name, end);
 #ifdef DOSISH_UNC
@@ -5135,6 +5142,7 @@ rb_file_dirname_n(VALUE fname, int n)
         }
     }
 
+    *namep = p == root && p > name ? p - 1 : p;
     if (p == name) {
         return rb_enc_str_new(".", 1, enc);
     }
@@ -5314,10 +5322,43 @@ rb_file_s_path(VALUE klass, VALUE fname)
  */
 
 static VALUE
-rb_file_s_split(VALUE klass, VALUE path)
+rb_file_s_split(int argc, VALUE *argv, VALUE klass)
 {
-    FilePathStringValue(path);		/* get rid of converting twice */
-    return rb_assoc_new(rb_file_dirname(path), rb_file_s_basename(1,&path,Qundef));
+    const char *name, *suffix = 0;
+    long sufflen = 0;
+    VALUE path, dir, fext = Qnil;
+    rb_encoding *enc;
+    argc = rb_check_arity(argc, 1, 2);
+    path = argv[0];
+    CheckPath(path, name);
+    if (argc > 1 && !NIL_P(fext = argv[1])) {
+        suffix = StringValueCStr(fext);
+        sufflen = RSTRING_LEN(fext);
+        if (!(enc = rb_enc_compatible(path, fext))) {
+            enc = rb_str_enc_get(path);
+            suffix = 0;
+        }
+    }
+    else {
+        enc = rb_str_enc_get(path);
+    }
+    const char *base = name;
+    const char *end = name + RSTRING_LEN(path);
+    bool mb_enc = !rb_str_encindex_fastpath(rb_enc_to_index(enc));
+    dir = dirname_part(&base, end, mb_enc, enc, 1);
+    long f = 0, n = (long)(end - base);
+    base = enc_find_basename(base, &f, &n, mb_enc, enc);
+    if (!suffix) {
+        return rb_assoc_new(dir, rb_enc_str_new(base, n, enc));
+    }
+    else {
+        long b = rmext(base, f, n, suffix, sufflen, enc);
+        if (!b) b = n;
+        RB_GC_GUARD(fext);
+        VALUE basename = rb_enc_str_new(base, b, enc);
+        VALUE ext = rb_enc_str_new(base + f, n - b, enc);
+        return rb_ary_new_from_args(3, dir, basename, ext);
+    }
 }
 
 static VALUE rb_file_join_ary(VALUE ary);
@@ -7721,7 +7762,7 @@ Init_File(void)
     rb_define_const(rb_cFile, "Separator", separator);
     /* separates directory parts in path */
     rb_define_const(rb_cFile, "SEPARATOR", separator);
-    rb_define_singleton_method(rb_cFile, "split",  rb_file_s_split, 1);
+    rb_define_singleton_method(rb_cFile, "split",  rb_file_s_split, -1);
     rb_define_singleton_method(rb_cFile, "join",   rb_file_s_join, -1);
 
 #ifdef DOSISH

@@ -1356,6 +1356,22 @@ class TestFileExhaustive < Test::Unit::TestCase
     end
   end
 
+  def test_split_ext
+    [
+      regular_file, utf8_file,
+      "/", "//", "dir///base", "dir///base/", "dir///base.c/",
+      "/.dot", "/home/.config/",
+    ].each do |file|
+      ["", ".txt", ".*"].each do |ext|
+        mesg = ->{"(#{file.dump}, #{ext.dump})"}
+        d, b, e = File.split(file, ext)
+        assert_equal(File.dirname(file), d, mesg)
+        assert_equal(File.basename(file, ext), b, mesg)
+        assert_equal(File.basename(file), b + e, mesg)
+      end
+    end
+  end
+
   def test_join
     s = "foo" + File::SEPARATOR + "bar" + File::SEPARATOR + "baz"
     assert_equal(s, File.join("foo", "bar", "baz"))
