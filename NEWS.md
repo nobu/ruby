@@ -11,6 +11,11 @@ Note that each entry is kept to a minimum, see links for details.
 
 Note: We're only listing outstanding class updates.
 
+* Array
+
+    * `Array#pack` accepts a new format `R` and `r` for unpacking unsigned
+      and signed LEB128 encoded integers. [[Feature #21785]]
+
 * Method
 
     * `Method#source_location`, `Proc#source_location`, and
@@ -89,3 +94,4 @@ A lot of work has gone into making Ractors more stable, performant, and usable. 
 
 [Feature #6012]: https://bugs.ruby-lang.org/issues/6012
 [Feature #21390]: https://bugs.ruby-lang.org/issues/21390
+[Feature #21785]: https://bugs.ruby-lang.org/issues/21785
