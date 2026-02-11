@@ -62,7 +62,7 @@ def target_encodings
   encs.delete(db = "encdb")
   encs.each do |e|
     File.foreach("#$srcdir/#{e}.c") do |l|
-      if /^\s*#\s*include\s+(?:"([^\"]+)"|<(ruby\/\sw+.h)>)/ =~ l
+      if /^\s*#\s*include\s+(?:"([^\"]+)"|<(ruby\/\w+.h)>)/ =~ l
         n = $1 || $2
         if /\.c$/ =~ n
           inc_srcs[e] <<= $`
