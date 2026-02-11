@@ -40,7 +40,7 @@ transdirs.each do |transdir|
             if converters[from_to]
               raise ArgumentError,
                     '%s:%d: transcode "%s to %s" is already registered at %s:%d' %
-                    [path, f.lineno, *from_to, *converters[from_to].values_at(3, 4)]
+                    [path, f.lineno, *from_to, *converters[from_to].values_at(1, 2)]
             else
               converters[from_to] = [fn, path, f.lineno]
             end
