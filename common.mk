@@ -316,6 +316,13 @@ showconfig:
 
 EXTS_NOTE = -f $(EXTS_MK) $(mflags) RUBY="$(MINIRUBY)" top_srcdir="$(srcdir)" note
 
+INCS = $(INSNS) {$(VPATH)}node_name.inc {$(VPATH)}known_errors.inc \
+       {$(VPATH)}vm_call_iseq_optimized.inc $(srcdir)/revision.h \
+       $(REVISION_H) \
+       $(UNICODE_DATA_HEADERS) $(ENC_HEADERS) \
+       {$(VPATH)}id.h {$(VPATH)}probes.dmyh
+ALL_INCS = $(INCS) {$(VPATH)}encdb.h {$(VPATH)}transdb.h {$(VPATH)}probes.h
+
 exts: build-ext
 
 EXTS_MK = exts.mk
@@ -328,7 +335,7 @@ $(EXTS_MK): ext/configure-ext.mk $(srcdir)/template/exts.mk.tmpl \
 	$(Q)$(MINIRUBY) $(tooldir)/generic_erb.rb -o $@ -c \
 	    $(srcdir)/template/exts.mk.tmpl --gnumake=$(gnumake) --configure-exts=ext/configure-ext.mk
 
-ext/configure-ext.mk: $(PREP) all-incs $(MKFILES) $(RBCONFIG) $(LIBRUBY) \
+ext/configure-ext.mk: $(PREP) $(ALL_INCS) $(MKFILES) $(RBCONFIG) $(LIBRUBY) \
 		$(srcdir)/template/configure-ext.mk.tmpl
 	$(ECHO) generating makefiles $@
 	$(Q)$(MAKEDIRS) $(@D)
@@ -1217,12 +1224,8 @@ srcs-enc: $(ENC_MK)
 	$(ECHO) making srcs under enc
 	$(Q) $(MAKE) $(MAKE_ENC) srcs
 
-all-incs: incs {$(VPATH)}encdb.h {$(VPATH)}transdb.h {$(VPATH)}probes.h
-incs: $(INSNS) {$(VPATH)}node_name.inc {$(VPATH)}known_errors.inc \
-      {$(VPATH)}vm_call_iseq_optimized.inc $(srcdir)/revision.h \
-      $(REVISION_H) \
-      $(UNICODE_DATA_HEADERS) $(ENC_HEADERS) \
-      {$(VPATH)}id.h {$(VPATH)}probes.dmyh
+all-incs: $(ALL_INCS)
+incs: $(INCS)
 
 insns: $(INSNS)
 
