@@ -81,18 +81,30 @@ File.foreach("#{gem_dir}/bundled_gems") do |line|
 
   end
 
-  if load_path
-    libs = IO.popen([ruby, "-e", "old = $:.dup; require '#{toplib}'; puts $:-old"], &:read)
-    next unless $?.success?
-    ENV["RUBYLIB"] = [libs.split("\n"), rubylib].join(File::PATH_SEPARATOR)
-  else
-    ENV["RUBYLIB"] = rubylib
-  end
+  # Since some gems require libraries in child processes without
+  # activating the gem, we preset necessary paths in RUBYLIB
+  # environment variable.
+  libs = IO.popen([ruby, "-W0", "-e", "#{<<-"begin;"}\n#{<<-'end;'}", "--", gem], &:read)
+  begin;
+    old = $:.dup
+    lib = ARGV[0].dup
+    begin
+      require lib
+    rescue LoadError => e
+      retry if e.path == lib and lib.tr!('-', '/')
+      raise
+    end
+    puts $:-old
+  end;
+  next unless $?.success?
+  libs = libs.split("\n")
+  ENV["RUBYLIB"] = [libs, rubylib].join(File::PATH_SEPARATOR)
 
   print (github_actions ? "::group::" : "\n")
   puts colorize.decorate("Testing the #{gem} gem", "note")
   print "[command]" if github_actions
   p test_command
+  print "RUBYLIB: ", libs.join("\n         "), "\n" unless libs.empty?
   start_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
   timeouts = {nil => first_timeout, INT: 30, TERM: 10, KILL: nil}
   if /mingw|mswin/ =~ RUBY_PLATFORM
