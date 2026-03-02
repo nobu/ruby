@@ -2406,7 +2406,7 @@ ractor_local_value_store_if_absent(rb_execution_context_t *ec, VALUE self, VALUE
 // shareable_proc
 
 static VALUE
-ractor_shareable_proc(rb_execution_context_t *ec, VALUE replace_self, bool is_lambda)
+ractor_shareable_proc(rb_execution_context_t *ec, VALUE self, VALUE replace_self, VALUE is_lambda)
 {
     if (!rb_ractor_shareable_p(replace_self)) {
         rb_raise(rb_eRactorIsolationError, "self should be shareable: %" PRIsVALUE, replace_self);
