@@ -1736,6 +1736,16 @@ random_s_rand(int argc, VALUE *argv, VALUE obj)
     return v;
 }
 
+#define USE_HASH_SIP 1
+#ifdef MEMHASH
+# define USE_HASH_PASTE(m) TOKEN_PASTE(USE_HASH_, m)
+# define USE_HASH USE_HASH_PASTE(MEMHASH)
+#else
+# define USE_HASH USE_HASH_SIP
+#endif
+
+#if USE_HASH == USE_HASH_SIP
+
 #define SIP_HASH_STREAMING 0
 #define sip_hash13 ruby_sip_hash13
 #if !defined _WIN32 && !defined BYTE_ORDER
@@ -1751,11 +1761,19 @@ random_s_rand(int argc, VALUE *argv, VALUE obj)
 #   define BIG_ENDIAN    4321
 # endif
 #endif
-#include "siphash.c"
+#include "missing/siphash.c"
+
+#else
+
+#error No MEMHASH
+
+#endif
 
 typedef struct {
     st_index_t hash;
+#if USE_HASH == USE_HASH_SIP
     uint8_t sip[16];
+#endif
 } hash_salt_t;
 
 static union {
@@ -1782,11 +1800,13 @@ rb_hash_start(st_index_t h)
 st_index_t
 rb_memhash(const void *ptr, long len)
 {
+#if USE_HASH == USE_HASH_SIP
     sip_uint64_t h = sip_hash13(hash_salt.key.sip, ptr, len);
 #ifdef HAVE_UINT64_T
     return (st_index_t)h;
 #else
     return (st_index_t)(h.u32[0] ^ h.u32[1]);
+#endif
 #endif
 }
 
