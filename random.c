@@ -1801,12 +1801,8 @@ st_index_t
 rb_memhash(const void *ptr, long len)
 {
 #if USE_HASH == USE_HASH_SIP
-    sip_uint64_t h = sip_hash13(hash_salt.key.sip, ptr, len);
-#ifdef HAVE_UINT64_T
+    uint64_t h = sip_hash13(hash_salt.key.sip, ptr, len);
     return (st_index_t)h;
-#else
-    return (st_index_t)(h.u32[0] ^ h.u32[1]);
-#endif
 #endif
 }
 
