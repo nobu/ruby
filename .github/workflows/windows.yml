@@ -85,7 +85,6 @@ jobs:
           iwr -useb get.scoop.sh | iex
           Join-Path (Resolve-Path ~).Path "scoop\shims" >> $Env:GITHUB_PATH
           scoop install vcpkg
-          scoop install uutils-coreutils@0.5.0
         shell: pwsh
 
       - name: Restore vcpkg artifact
@@ -115,11 +114,7 @@ jobs:
         run: |
           ::- Set up VC ${{ matrix.vc }}
 
-          ::- Using sort.exe located in the same directory as comm.exe
-          ::- should probably work just fine.
-          for %%I in (comm.exe) do set "sort=%%~dp$PATH:I\sort.exe"
-
-          set | "%sort%" > old.env
+          set > old.env
           call ..\src\win32\vssetup.cmd ^
             -arch=${{ matrix.target || 'amd64' }} ^
             ${{ matrix.vcvars && '-vcvars_ver=' || '' }}${{ matrix.vcvars }}
@@ -129,9 +124,15 @@ jobs:
           set MAKEFLAGS=l
           set /a TEST_JOBS=(15 * %NUMBER_OF_PROCESSORS% / 10) > nul
           set RUBY_OPT_DIR=%GITHUB_WORKSPACE:\=/%/src/vcpkg_installed/%VCPKG_DEFAULT_TRIPLET%
-          set | "%sort%" > new.env
-          comm -13 old.env new.env >> %GITHUB_ENV%
-          del *.env
+          set > new.env
+
+      - name: Add envs
+        run: |
+          set old.env new.env
+          for e do sort -o "$e" "$e"; done
+          comm -13 "$@" >> ${GITHUB_ENV}
+          rm -f "$@"
+        shell: bash
 
       - name: baseruby version
         run: ruby -v
