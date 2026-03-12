@@ -115,6 +115,7 @@ jobs:
           ::- Set up VC ${{ matrix.vc }}
 
           set > old.env
+          path > old-path.env
           call ..\src\win32\vssetup.cmd ^
             -arch=${{ matrix.target || 'amd64' }} ^
             ${{ matrix.vcvars && '-vcvars_ver=' || '' }}${{ matrix.vcvars }}
@@ -125,13 +126,19 @@ jobs:
           set /a TEST_JOBS=(15 * %NUMBER_OF_PROCESSORS% / 10) > nul
           set RUBY_OPT_DIR=%GITHUB_WORKSPACE:\=/%/src/vcpkg_installed/%VCPKG_DEFAULT_TRIPLET%
           set > new.env
+          path > new-path.env
 
       - name: Add envs
         run: |
           set old.env new.env
           for e do sort -o "$e" "$e"; done
-          comm -13 "$@" >> ${GITHUB_ENV}
+          comm -13 "$@" | grep -v ^PATH= | tr -d '\013' >> ${GITHUB_ENV}
           rm -f "$@"
+          set -x
+          old=$(< old-path.env); old=${old%$'\r'}; old=${old#PATH=}; rm old-path.env
+          new=$(< new-path.env); new=${new%$'\r'}; new=${new#PATH=}; rm new-path.env
+          new=";${new};"; new="${new%%$old*};${new#*$old}"; new="${new#;}"; new="${new%;}"
+          echo "$new" | tr ';' '\012' >> ${GITHUB_PATH}
         shell: bash
 
       - name: baseruby version
