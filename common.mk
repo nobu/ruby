@@ -688,7 +688,6 @@ clean-local:: clean-runnable
 	$(Q)$(RM) GNUmakefile.old Makefile.old $(arch)-fake.rb bisect.sh $(ENC_TRANS_D) builtin_binary.rbbin
 	$(Q)$(RM) $(PRISM_BUILD_DIR)/.time $(PRISM_BUILD_DIR)/*/.time yjit_exit_locations.dump
 	$(Q)$(RM) $(noarch_config_h)
-	-$(Q)$(RMALL) dump_ast$(BUILD_EXEEXT)*
 	-$(Q)$(RMALL) target
 	-$(Q) $(RMDIR) enc/jis enc/trans enc $(COROUTINE_H:/Context.h=) coroutine target \
 	  $(PRISM_BUILD_DIR)/*/ $(PRISM_BUILD_DIR) tmp \
@@ -1336,16 +1335,17 @@ dump_ast$(BUILD_EXEEXT): $(tooldir)/dump_ast.c $(LIBPRISM_OBJS)
 	$(ECHO) compiling $@
 	$(Q) $(CC) $(CFLAGS) $(OUTFLAG)$@ $(INCFLAGS) $(tooldir)/dump_ast.c $(LIBPRISM_OBJS)
 
-build-tool/Makefile: $(tooldir)/dump_ast.mkmf.rb prism-srcs prism-incs
-	+$(BASERUBY) -s $(tooldir)/dump_ast.mkmf.rb "-INCFLAGS=$(INCFLAGS)" "-make=$(MAKE)" build-tool $(tooldir)/dump_ast.c dump_ast.$(OBJEXT) $(LIBPRISM_OBJS)
+native-dump_ast.mk: $(tooldir)/dump_ast.mkmf.rb prism-srcs prism-incs
+	+$(BASERUBY) -s $(tooldir)/dump_ast.mkmf.rb "-INCFLAGS=$(INCFLAGS)" "-make=$(MAKE)" native-dump_ast $(tooldir)/dump_ast.c $(LIBPRISM_OBJS) > $@
 
-build-tool/dump_ast$(BUILD_EXEEXT): build-tool/Makefile
-	cd build-tool && MAKEFLAGS= MFLAGS= && unset MAKEFLAGS MFLAGS && $(MAKE)
+native-dump_ast$(BUILD_EXEEXT): native-dump_ast.mk
+	MAKEFLAGS= MFLAGS= && unset MAKEFLAGS MFLAGS && $(MAKE) -f native-dump_ast.mk
 
 clean-local:: clean-build-tool
 clean-build-tool:
-	- cd build-tool && $(MAKE) clean 2> $(NULL) || $(NULLCMD)
-	- $(RMDIR) build-tool
+	-$(Q)$(RMALL) dump_ast$(BUILD_EXEEXT) dump_ast$(BUILD_EXEEXT).*
+	-$(Q)$(MAKE) -f native-dump_ast.mk clean 2> $(NULL) || $(NULLCMD)
+	-$(Q)$(RM) native-dump_ast.mk
 
 $(srcdir)/revision.h$(no_baseruby:no=~disabled~): $(REVISION_H)
 

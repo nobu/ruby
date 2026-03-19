@@ -110,7 +110,7 @@ AS_IF([test "$HAVE_BASERUBY" = no], [
 ])
 AC_SUBST(BASERUBY)
 AC_SUBST(HAVE_BASERUBY)
-AS_IF([test "$cross_compiling" = yes],
+AS_IF([test "$cross_compiling" != no],
     [X_BUILD_EXEEXT=`$BASERUBY -rrbconfig -e ['puts RbConfig::CONFIG["EXEEXT"]']`],
     [X_BUILD_EXEEXT='$(EXEEXT)']
 )
@@ -120,7 +120,7 @@ AC_ARG_WITH(dump-ast,
 	AS_HELP_STRING([--with-dump-ast=DUMP_AST], [use DUMP_AST as dump_ast; for cross-compiling with a host-built dump_ast]),
 	[DUMP_AST=$withval DUMP_AST_TARGET='$(empty)'],
 	[AS_IF([test "$cross_compiling" = yes], [
-	    DUMP_AST='build-tool/dump_ast$(BUILD_EXEEXT)'
+	    DUMP_AST='./native-dump_ast$(BUILD_EXEEXT)'
 	], [
 	    DUMP_AST='./dump_ast$(BUILD_EXEEXT)'
 	])

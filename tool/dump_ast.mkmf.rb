@@ -1,37 +1,24 @@
 #!ruby -s
-require 'mkmf'
-require 'pathname'
-require 'fileutils'
 
-workdir, src, *objs = ARGV
-src = Pathname(src)
-tooldir = src.parent.relative_path_from(workdir)
-srcdir = tooldir.parent
-target = src.basename.sub_ext('')
+require 'rbconfig'
+
+# Achieve the configurations on build OS.
+cc, outflag, exeext = RbConfig::CONFIG.values_at(*%w"CC OUTFLAG EXEEXT")
+
+target, src, *objs = ARGV
+srcdir = File.dirname(File.dirname(src))
 dirs = objs.map {|obj| File.dirname(obj)}.uniq - %w[.]
-link = MakeMakefile::TRY_LINK.sub(MakeMakefile::CONFTEST+$EXEEXT, '$(@)')
-prismdir= "$(srcdir)/#{dirs.first}"
-$VPATH = ["$(srcdir)", "$(srcdir)/#{tooldir.basename}", prismdir, tooldir]
-$INCFLAGS << " -I#{prismdir}"
-$CPPFLAGS = $CFLAGS = $INCFLAGS
+srcs = objs.map {|obj| '$(srcdir)/' + obj.sub(/\.[^.]+\z/, '.c')}
 
-include FileUtils::Verbose
-mkpath(workdir)
-Dir.chdir(workdir) {
-  mkpath(dirs)
-  File.write('Makefile', [MakeMakefile.configuration(srcdir.to_s), <<~MAKEFILE].join(""))
-    target = #{target}#{$EXEEXT}
-    objs = #{objs.join(' ')}
+print(<<~MAKEFILE)
+srcdir = #{srcdir}
+target = #{target}#{exeext}
+srcs = #{src} #{srcs.join(' ')}
+CC = #{cc}
 
-    $(target): $(objs)
-    \t#{link} $(objs)
+$(target): $(srcs)
+\t$(CC) #{outflag}$@ -I$(srcdir)/prism -I$(srcdir) $(srcs)
 
-    objs: $(objs)
-    .c.#{$OBJEXT}:
-    \t#{MakeMakefile::COMPILE_C}
-
-    clean:
-    \t$(RM) $(target) $(objs) Makefile
-    \t$(RMDIRS) #{dirs.join(' ')}
-  MAKEFILE
-}
+clean:
+\t$(RMALL) $(target) $(target).*
+MAKEFILE

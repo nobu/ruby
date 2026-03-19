@@ -35,7 +35,7 @@ s,@RMDIRS@,$(RMDIR) -p,g
 s,@RUBY@,$(BASERUBY),g
 s,@RUNRUBY@,$(MINIRUBY),g
 s,@X_BUILD_EXEEXT@,,g
-s,@X_DUMP_AST@,build-tool/dump_ast$(BUILD_EXEEXT),g
+s,@X_DUMP_AST@,native-dump_ast$(BUILD_EXEEXT),g
 s,@X_DUMP_AST_TARGET@,$(DUMP_AST),g
 s,@arch@,noarch,g
 s,@bindir@,,g
