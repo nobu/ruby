@@ -213,8 +213,7 @@ class VCS
   end
 
   def after_export(dir)
-    FileUtils.rm_rf(Dir.glob("#{dir}/.git*"))
-    FileUtils.rm_rf(Dir.glob("#{dir}/.mailmap"))
+    # Files to be removed should be excluded at checkout.
   end
 
   def revision_handler(rev)
@@ -463,7 +462,11 @@ class VCS
     end
 
     def export(revision, url, dir, keep_temp = false)
-      system(COMMAND, "clone", "-c", "advice.detachedHead=false", "-s", (@srcdir || '.').to_s, "-b", url, dir) or return
+      git_dir = cmd_read([COMMAND, "rev-parse", "--absolute-git-dir"])
+      git_dir&.chomp!
+      FileUtils.mkpath(dir)
+      excludes = %w":^/.git* :^/.mailmap*"
+      system(COMMAND, "--git-dir=#{git_dir}", "checkout", url, "--", *excludes, chdir: dir) or return
       GIT.new(File.expand_path(dir))
     end
 
