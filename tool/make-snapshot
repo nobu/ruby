@@ -394,11 +394,12 @@ def package(vcs, rev, destdir, tmp = nil)
     end
   end
 
-  Dir.chdir(v) do
-    unless File.exist?("ChangeLog")
-      vcs.export_changelog(url, nil, revision, "ChangeLog")
-    end
+  changelog = File.join(v, "ChangeLog")
+  unless File.exist?(changelog)
+    vcs.export_changelog(url, nil, revision, changelog)
+  end
 
+  Dir.chdir(v) do
     unless touch_all(modified, "**/*", File::FNM_DOTMATCH)
       modified = nil
       colors = %w[red yellow green cyan blue magenta]
