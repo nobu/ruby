@@ -561,8 +561,14 @@ ABI_VERSION_HDR = $(hdrdir)/ruby/internal/abi.h
 
 !if defined(DUMP_AST)
 DUMP_AST_TARGET = $(empty)
-!else
+!else if defined(RUBY_DUMP_AST)
+DUMP_AST = $(RUBY_DUMP_AST)
+DUMP_AST_TARGET = $(empty)
+!else if "$(CROSS_COMPILING)" == "no"
 DUMP_AST = dump_ast$(BUILD_EXEEXT)
+DUMP_AST_TARGET = $(DUMP_AST)
+!else
+DUMP_AST = ruby-dump_ast$(BUILD_EXEEXT)
 DUMP_AST_TARGET = $(DUMP_AST)
 !endif
 
