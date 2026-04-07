@@ -450,6 +450,8 @@ impl Type {
             Some(cruby::RUBY_T_STRING)
         } else if self.bit_equal(types::Hash) {
             Some(cruby::RUBY_T_HASH)
+        } else if self.is_subtype(types::TypedTData) {
+            Some(cruby::RUBY_T_DATA)
         } else {
             // Note that types::TypedTData is narrower than T_DATA, so not here.
             None
