@@ -1320,6 +1320,7 @@ preludes: {$(VPATH)}miniprelude.c
 
 {$(srcdir)}.rb.$(HAVE_BASERUBY:yes=)rbinc:
 	$(ECHO) making $@
+	$(Q) $(DUMP_AST_TARGET)
 	$(Q) $(BASERUBY) $(tooldir)/mk_builtin_loader.rb $(DUMP_AST) $(SRC_FILE)
 
 $(BUILTIN_BINARY:yes=built)in_binary.rbbin: $(PREP) $(BUILTIN_RB_SRCS) $(srcdir)/template/builtin_binary.rbbin.tmpl
@@ -1330,7 +1331,7 @@ $(BUILTIN_BINARY:yes=built)in_binary.rbbin: $(PREP) $(BUILTIN_RB_SRCS) $(srcdir)
 $(BUILTIN_BINARY:no=builtin)_binary.rbbin:
 	$(Q) echo> $@ // empty $(@F)
 
-$(BUILTIN_RB_INCS): $(tooldir)/mk_builtin_loader.rb $(DUMP_AST_TARGET)
+$(BUILTIN_RB_INCS): $(tooldir)/mk_builtin_loader.rb
 
 dump_ast$(BUILD_EXEEXT): $(tooldir)/dump_ast.c $(LIBPRISM_OBJS)
 	$(ECHO) compiling $@

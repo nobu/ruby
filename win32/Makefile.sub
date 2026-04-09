@@ -563,7 +563,7 @@ ABI_VERSION_HDR = $(hdrdir)/ruby/internal/abi.h
 DUMP_AST_TARGET = $(empty)
 !else
 DUMP_AST = dump_ast$(BUILD_EXEEXT)
-DUMP_AST_TARGET = $(DUMP_AST)
+DUMP_AST_TARGET = $(MAKE) $(DUMP_AST)
 !endif
 
 !include $(srcdir)/common.mk
@@ -1413,8 +1413,9 @@ loadpath: verconf.h
 !if [exit > rbincs.mk]
 !else if [for %I in ($(BUILTIN_RB_SRCS)) do \
 	@for %J in (\
-"%~nI.rbinc: %I $$(tooldir)/mk_builtin_loader.rb $$(DUMP_AST_TARGET)" \
+"%~nI.rbinc: %I $$(tooldir)/mk_builtin_loader.rb" \
 "	$$(ECHO) making $$@" \
+"	$(Q) $$(DUMP_AST_TARGET)" \
 "	$$(Q) $$(BASERUBY) $$(tooldir)/mk_builtin_loader.rb $$(DUMP_AST) %I" \
 "" \
 ) do @echo.%~J>>rbincs.mk]
