@@ -7812,31 +7812,18 @@ pipe_open(VALUE execarg_obj, const char *modestr, enum rb_io_mode fmode,
 }
 #endif
 
-static int
-is_popen_fork(VALUE prog)
+static VALUE
+execarg_new_cmd(VALUE prog)
 {
     if (RSTRING_LEN(prog) == 1 && RSTRING_PTR(prog)[0] == '-') {
 #if !defined(HAVE_WORKING_FORK)
         rb_raise(rb_eNotImpError,
                  "fork() function is unimplemented on this machine");
 #else
-        return TRUE;
+        return Qnil;
 #endif
     }
-    return FALSE;
-}
-
-static VALUE
-pipe_open_s(VALUE prog, const char *modestr, enum rb_io_mode fmode,
-            const struct rb_io_encoding *convconfig)
-{
-    int argc = 1;
-    VALUE *argv = &prog;
-    VALUE execarg_obj = Qnil;
-
-    if (!is_popen_fork(prog))
-        execarg_obj = rb_execarg_new(argc, argv, TRUE, FALSE);
-    return pipe_open(execarg_obj, modestr, fmode, convconfig);
+    return rb_execarg_new(1, &prog, TRUE, FALSE);
 }
 
 static VALUE
@@ -8054,9 +8041,7 @@ rb_io_popen(VALUE pname, VALUE pmode, VALUE env, VALUE opt)
     }
     else {
         StringValue(pname);
-        execarg_obj = Qnil;
-        if (!is_popen_fork(pname))
-            execarg_obj = rb_execarg_new(1, &pname, TRUE, FALSE);
+        execarg_obj = execarg_new_cmd(pname);
     }
     if (!NIL_P(execarg_obj)) {
         if (!NIL_P(opt))
@@ -10663,13 +10648,14 @@ argf_readlines(int argc, VALUE *argv, VALUE argf)
 static VALUE
 rb_f_backquote(VALUE obj, VALUE str)
 {
+    const int mode = FMODE_READABLE|DEFAULT_TEXTMODE;
     VALUE port;
     VALUE result;
     rb_io_t *fptr;
 
     StringValue(str);
     rb_last_status_clear();
-    port = pipe_open_s(str, "r", FMODE_READABLE|DEFAULT_TEXTMODE, NULL);
+    port = pipe_open(execarg_new_cmd(str), "r", mode, NULL);
     if (NIL_P(port)) return rb_str_new(0,0);
 
     GetOpenFile(port, fptr);
