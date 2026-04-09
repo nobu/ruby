@@ -28,18 +28,57 @@ print_error(const pm_diagnostic_t *diagnostic, void *data)
 }
 
 int
-main(int argc, const char *argv[]) {
-    if (argc != 2) {
-        fprintf(stderr, "Usage: %s <filename>\n", argv[0]);
+main(int argc, const char *argv[])
+{
+    const char *filepath = 0;
+
+    for (int i = 1; i < argc; ++i) {
+        const char *arg = argv[i];
+        if (arg[0] != '-') {
+            if (filepath) {
+                fprintf(stderr, "too many filename\n");
+                goto usage;
+            }
+            filepath = arg;
+        }
+        else if (arg[1] == '-') {
+            if (!arg[2]) break;
+            if (strcmp(arg + 2, "version") == 0) {
+              version:
+                printf("Prism %s\n", PRISM_VERSION);
+                return EXIT_SUCCESS;
+            }
+            else {
+                fprintf(stderr, "unknown option %s\n", arg);
+                goto usage;
+            }
+        }
+        else {
+            while (*++arg) {
+                switch (*arg) {
+                  case 'v':
+                    goto version;
+                  default:
+                    fprintf(stderr, "unknown option -%c\n", *arg);
+                    goto usage;
+                }
+            }
+        }
+    }
+
+    if (!filepath) {
+      usage:
+        fprintf(stderr, "Usage: %s [options]... <filename>\n"
+                "Options:\n"
+                "  -v, --version: show Prism version\n"
+                "", argv[0]);
         return EXIT_FAILURE;
     }
 
-    const char *filepath = argv[1];
     pm_source_init_result_t init_result;
     pm_source_t *source = pm_source_mapped_new(filepath, 0, &init_result);
 
-    if (init_result != PM_SOURCE_INIT_SUCCESS)
-    {
+    if (init_result != PM_SOURCE_INIT_SUCCESS) {
         fprintf(stderr, "unable to map file: %s\n", filepath);
         return EXIT_FAILURE;
     }
