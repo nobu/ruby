@@ -2567,6 +2567,7 @@ static: #{$extmk && !$static ? "all" : %[$(STATIC_LIB)#{$extout ? " install-rb" 
         mfile.print "\t$(INSTALL_PROG) #{fseprepl[f]} #{dir}\n"
         if defined?($installed_list)
           mfile.print "\t@echo #{dir}/#{File.basename(f)}>>$(INSTALLED_LIST)\n"
+          mfile.print "\t-$(Q)$(RM) mkmf.log\n"
         end
       end
       mfile.print "clean-static::\n"
