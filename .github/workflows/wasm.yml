@@ -120,20 +120,22 @@ jobs:
         working-directory: src
 
       - name: Run configure
-        run: |
-          ../src/configure \
-            --host wasm32-unknown-wasi \
-            --with-baseruby=$PWD/../baseruby/install/bin/ruby \
-            --with-dump-ast=$PWD/../baseruby/dump_ast \
-            --with-static-linked-ext \
-            --with-ext=cgi/escape,continuation,coverage,date,digest/bubblebabble,digest,digest/md5,digest/rmd160,digest/sha1,digest/sha2,etc,fcntl,json,json/generator,json/parser,objspace,pathname,rbconfig/sizeof,ripper,stringio,strscan,monitor \
-            LDFLAGS=" \
-              -Xlinker --stack-first \
-              -Xlinker -z -Xlinker stack-size=16777216 \
-            " \
-            optflags="${{ matrix.entry.optflags }}" \
-            debugflags="${{ matrix.entry.debugflags }}" \
-            wasmoptflags="${{ matrix.entry.wasmoptflags }} ${{ matrix.entry.debugflags }}"
+        run: >-
+          ../src/configure
+          --host wasm32-unknown-wasi
+          --with-baseruby=$PWD/../baseruby/install/bin/ruby
+          --with-dump-ast=$PWD/../baseruby/dump_ast
+          --with-static-linked-ext
+          --with-ext=${EXTS}
+          LDFLAGS="
+          -Xlinker --stack-first
+          -Xlinker -z -Xlinker stack-size=16777216
+          "
+          optflags="${{ matrix.entry.optflags }}"
+          debugflags="${{ matrix.entry.debugflags }}"
+          wasmoptflags="${{ matrix.entry.wasmoptflags }} ${{ matrix.entry.debugflags }}"
+        env:
+          EXTS: cgi/escape,continuation,coverage,date,digest,digest/*,erb/escape,etc,fcntl,json,json/*,objspace,rbconfig/sizeof,ripper,stringio,strscan
 
       # miniruby may not be built when cross-compling
       - run: make mini ruby
