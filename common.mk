@@ -1300,7 +1300,7 @@ $(MINIPRELUDE_C): $(COMPILE_PRELUDE) $(BUILTIN_RB_SRCS)
 	$(Q) $(BASERUBY) $(tooldir)/generic_erb.rb -I$(srcdir) -o $@ \
 		$(srcdir)/template/prelude.c.tmpl $(BUILTIN_RB_SRCS)
 
-golf_prelude.rbbin: {$(srcdir)}golf_prelude.rb $(tooldir)/mk_rbbin.rb $(PREP)
+golf_prelude.rbbin: {$(srcdir)}golf_prelude.rb $(PREP) $(srcdir)/template/builtin_binary.rbbin.tmpl
 
 MAINCPPFLAGS = $(ENABLE_DEBUG_ENV:yes=-DRUBY_DEBUG_ENV=1)
 
@@ -1321,7 +1321,8 @@ preludes: {$(VPATH)}miniprelude.c
 
 {$(srcdir)}.rb.rbbin:
 	$(ECHO) making $@
-	$(Q) $(MINIRUBY) $(tooldir)/mk_rbbin.rb $(SRC_FILE) > $(OS_DEST_FILE)
+	$(Q) $(MINIRUBY) $(tooldir)/generic_erb.rb -o $@ \
+		$(srcdir)/template/builtin_binary.rbbin.tmpl $<
 
 {$(srcdir)}.rb.$(HAVE_BASERUBY:yes=)rbinc:
 	$(ECHO) making $@
