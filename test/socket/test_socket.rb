@@ -765,6 +765,7 @@ class TestSocket < Test::Unit::TestCase
     opts = %w[-rsocket -W1]
     assert_separately opts, <<~RUBY
     begin
+      delay = #{EnvUtil.apply_timeout_scale(10)}
       begin
         # Verify that "localhost" can be resolved to an IPv6 address
         Socket.getaddrinfo("localhost", 0, Socket::AF_INET6)
@@ -779,7 +780,7 @@ class TestSocket < Test::Unit::TestCase
       Addrinfo.define_singleton_method(:getaddrinfo) do |_, _, family, *_|
         case family
         when Socket::AF_INET6 then [Addrinfo.tcp("::1", port)]
-        when Socket::AF_INET then sleep(10); [Addrinfo.tcp("127.0.0.1", port)]
+        when Socket::AF_INET then sleep(delay); [Addrinfo.tcp("127.0.0.1", port)]
         end
       end
 
@@ -797,13 +798,14 @@ class TestSocket < Test::Unit::TestCase
     opts = %w[-rsocket -W1]
     assert_separately opts, <<~RUBY
     begin
+      delay = #{EnvUtil.apply_timeout_scale(10)}
       server = TCPServer.new("127.0.0.1", 0)
       _, port, = server.addr
       server_thread = Thread.new { server.accept }
 
       Addrinfo.define_singleton_method(:getaddrinfo) do |_, _, family, *_|
         case family
-        when Socket::AF_INET6 then sleep(10); [Addrinfo.tcp("::1", port)]
+        when Socket::AF_INET6 then sleep(delay); [Addrinfo.tcp("::1", port)]
         when Socket::AF_INET then [Addrinfo.tcp("127.0.0.1", port)]
         end
       end
@@ -856,6 +858,7 @@ class TestSocket < Test::Unit::TestCase
     opts = %w[-rsocket -W1]
     assert_separately opts, <<~RUBY
     begin
+      delay = #{EnvUtil.apply_timeout_scale(0.001)}
       ipv4_address = "127.0.0.1"
       server = Socket.new(Socket::AF_INET, :STREAM)
       server.bind(Socket.pack_sockaddr_in(0, ipv4_address))
@@ -865,7 +868,7 @@ class TestSocket < Test::Unit::TestCase
       Addrinfo.define_singleton_method(:getaddrinfo) do |_, _, family, *_|
         case family
         when Socket::AF_INET6 then [Addrinfo.tcp("::1", port)]
-        when Socket::AF_INET then sleep(0.001); [Addrinfo.tcp(ipv4_address, port)]
+        when Socket::AF_INET then sleep(delay); [Addrinfo.tcp(ipv4_address, port)]
         end
       end
 
@@ -950,6 +953,7 @@ class TestSocket < Test::Unit::TestCase
     opts = %w[-rsocket -W1]
     assert_separately opts, <<~RUBY
     begin
+      delay = #{EnvUtil.apply_timeout_scale(0.001)}
       begin
         # Verify that "localhost" can be resolved to an IPv6 address
         Socket.getaddrinfo("localhost", 0, Socket::AF_INET6)
@@ -964,7 +968,7 @@ class TestSocket < Test::Unit::TestCase
       Addrinfo.define_singleton_method(:getaddrinfo) do |_, _, family, *_|
         case family
         when Socket::AF_INET6 then [Addrinfo.tcp("::1", port)]
-        when Socket::AF_INET then sleep(0.001); raise SocketError
+        when Socket::AF_INET then sleep(delay); raise SocketError
         end
       end
 
@@ -985,13 +989,14 @@ class TestSocket < Test::Unit::TestCase
     opts = %w[-rsocket -W1]
     assert_separately opts, <<~RUBY
     begin
+      delay = #{EnvUtil.apply_timeout_scale(0.01)}
       server = TCPServer.new("localhost", 0)
       _, port, = server.addr
 
       Addrinfo.define_singleton_method(:getaddrinfo) do |_, _, family, *_|
         case family
         when Socket::AF_INET6 then raise SocketError
-        when Socket::AF_INET then sleep(0.01); raise SocketError, "Last hostname resolution error"
+        when Socket::AF_INET then sleep(delay); raise SocketError, "Last hostname resolution error"
         end
       end
 
@@ -1007,12 +1012,13 @@ class TestSocket < Test::Unit::TestCase
   def test_tcp_socket_hostname_resolution_failed_after_connection_failure
     opts = %w[-rsocket -W1]
     assert_separately opts, <<~RUBY
+    delay = #{EnvUtil.apply_timeout_scale(0.1)}
     server = TCPServer.new("127.0.0.1", 0)
     port = server.connect_address.ip_port
 
     Addrinfo.define_singleton_method(:getaddrinfo) do |_, _, family, *_|
       case family
-      when Socket::AF_INET6 then sleep(0.1); raise Socket::ResolutionError
+      when Socket::AF_INET6 then sleep(delay); raise Socket::ResolutionError
       when Socket::AF_INET then [Addrinfo.tcp("127.0.0.1", port)]
       end
     end
