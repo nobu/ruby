@@ -70,9 +70,9 @@ module Path
   alias ln_dir_safe ln_safe
   alias ln_exe ln_safe
 
-  def ln_relative(src, dest, executable = false)
+  def ln_relative(src, dest, executable = false, target_directory: File.directory?(dest))
     return if File.identical?(src, dest)
-    parent = File.dirname(dest)
+    parent = target_directory ? dest : File.dirname(dest)
     File.directory?(parent) or mkdir_p(parent)
     if executable
       return (ln_exe(relative(src, parent), dest, src) if File.exist?(src))

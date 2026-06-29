@@ -71,3 +71,8 @@ ln_dir_relative(archdir, rubyarchdir)
 vendordir.sub!(rubyarchdir, archdir)
 ln_dir_relative("#{top_srcdir}/lib", vendordir)
 ln_relative("rbconfig.rb", "#{archdir}/rbconfig.rb")
+mod_gc = Dir.glob("gc/*/*.#{config["DLEXT"]}")
+unless mod_gc.empty?
+  mkdir_p(gc_mod_dir = "#{archdir}/gc")
+  mod_gc.each {|mod|ln_relative(mod, gc_mod_dir, target_directory: true)}
+end
