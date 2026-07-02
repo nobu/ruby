@@ -195,6 +195,17 @@ range_eq(VALUE range, VALUE obj)
 /* compares _a_ and _b_ and returns:
  * < 0: a < b
  * = 0: a = b
+ * > 0: a > b
+ */
+static int
+r_cmp(VALUE a, VALUE b)
+{
+    return OPTIMIZED_CMP(a, b);
+}
+
+/* compares _a_ and _b_ and returns:
+ * < 0: a < b
+ * = 0: a = b
  * > 0: a > b or non-comparable
  */
 static int
@@ -2594,6 +2605,127 @@ range_overlap(VALUE range, VALUE other)
     return Qtrue;
 }
 
+/*
+ * call-seq:
+ *    clamp(min, max) ->  range
+ *    clamp(range)    ->  range
+ *
+ * Returns a new range whose begin and end values are clamped to
+ * _min_ and _max_, or to _range.begin_ and _range.end_.
+ *
+ * The returned range excludes its end if any of the following is true:
+ *
+ * - In <code>clamp(min, max)</code> form, +self+ excludes its end and
+ *   +self.end+ is not +nil+.
+ * - The returned end value is an excluded end value of _range_.
+ * - Both begin and end values are clamped to the lower bound, or both
+ *   are clamped to the upper bound.  In this case the returned begin
+ *   and end values are equal, so the returned range is empty.
+ *
+ * Otherwise, the returned range includes its end.
+ *
+ * Examples:
+ *
+ *   (1..10).clamp(3, 7)       # => 3..7
+ *   (1...10).clamp(3, 7)      # => 3...7
+ *   (0...).clamp(0, 10)       # => 0..10
+ *
+ *   (1..10).clamp(3..7)       # => 3..7
+ *   (1..10).clamp(3...7)      # => 3...7
+ *   (1..5).clamp(3...7)       # => 3..5
+ *
+ *   (..10).clamp(3, 7)        # => 3..7
+ *   (...10).clamp(3, 7)       # => 3...7
+ *   (..10).clamp(3...7)       # => 3...7
+ *   (..5).clamp(3...7)        # => 3..5
+ *
+ *   (1..10).clamp(20..30)     # => 20...20
+ *   (1..10).clamp(-10..0)     # => 0...0
+ *   (..10).clamp(20..30)      # => 20...20
+ *
+ *   (1..10).clamp(..7)     # => 1..7
+ *   (1..10).clamp(...7)    # => 1...7
+ *   (1..5).clamp(...7)     # => 1..5
+ *
+ *   (1..10).clamp(3..)     # => 3..10
+ *   (1..10).clamp(3...)    # => 3..10
+ *   (1..).clamp(3..)       # => 3..
+ *   (1...).clamp(3...)     # => 3...
+ */
+
+static VALUE
+range_clamp(int argc, VALUE *argv, VALUE self)
+{
+    VALUE self_beg = RANGE_BEG(self);
+    VALUE self_end = RANGE_END(self);
+    int self_excl = EXCL(self);
+    VALUE min, max;
+    int clamp_beg = 0, clamp_end = 0, excl = 0;
+
+    argc = rb_scan_args(argc, argv, "11", &min, &max);
+    if (argc == 1) {
+        VALUE range = min;
+        if (!rb_range_values(range, &min, &max, &excl)) {
+            rb_raise(rb_eTypeError, "wrong argument type %s (expected Range)",
+                     rb_builtin_class_name(range));
+        }
+    }
+    else if (!NIL_P(self_end)) {
+        excl = self_excl;
+    }
+    if (!NIL_P(min) && !NIL_P(max) && r_cmp(min, max) > 0) {
+        rb_raise(rb_eArgError, "min argument must be less than or equal to max argument");
+    }
+
+    if (!NIL_P(min)) {
+        if (NIL_P(self_beg) || r_cmp(self_beg, min) < 0) {
+            clamp_beg = -1;
+        }
+        if (!NIL_P(self_end) && r_cmp(self_end, min) < 0) {
+            clamp_end = -1;
+        }
+    }
+    if (!NIL_P(max)) {
+        if (!NIL_P(self_beg) && (clamp_beg == 0 && r_cmp(self_beg, max) > 0)) {
+            clamp_beg = +1;
+        }
+        if (NIL_P(self_end)) {
+            clamp_end = +1;
+        }
+        else if (clamp_end == 0) {
+            clamp_end = r_cmp(self_end, max);
+            if (clamp_end == 0) {
+                if (excl) self_excl = TRUE;
+            }
+            else if (clamp_end < 0) {
+                clamp_end = 0;
+            }
+            else {
+                ASSUME(clamp_end == +1);
+            }
+        }
+    }
+    switch (clamp_beg) {
+      case -1:
+        self_beg = min;
+        break;
+      case +1:
+        self_beg = max;
+        break;
+    }
+    switch (clamp_end) {
+      case -1:
+        self_end = min;
+        break;
+      case +1:
+        if (!NIL_P(max)) self_excl = excl;
+        self_end = max;
+        break;
+    }
+    if (clamp_beg && clamp_beg == clamp_end) self_excl = TRUE;
+    return rb_range_new(self_beg, self_end, self_excl);
+}
+
 /* A \Range object represents a collection of values
  * that are between given begin and end values.
  *
@@ -2783,6 +2915,7 @@ range_overlap(VALUE range, VALUE other)
  * === Methods for Creating a \Range
  *
  * - ::new: Returns a new range.
+ * - #clamp: Returns a new range with clamped begin and end values.
  *
  * === Methods for Querying
  *
@@ -2878,4 +3011,5 @@ Init_Range(void)
     rb_define_method(rb_cRange, "cover?", range_cover, 1);
     rb_define_method(rb_cRange, "count", range_count, -1);
     rb_define_method(rb_cRange, "overlap?", range_overlap, 1);
+    rb_define_method(rb_cRange, "clamp", range_clamp, -1);
 }

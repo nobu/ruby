@@ -1548,4 +1548,37 @@ class TestRange < Test::Unit::TestCase
     assert_not_operator((1...3), :overlap?, (3..4))
     assert_not_operator((...3), :overlap?, (3..))
   end
+
+  def test_clamp
+    assert_equal(3..7, (1..10).clamp(3, 7))
+    assert_equal(3...7, (1...10).clamp(3, 7))
+    assert_equal(0..10, (0...).clamp(0, 10))
+
+    assert_equal(3..7, (1..10).clamp(3..7))
+    assert_equal(3...7, (1..10).clamp(3...7))
+    assert_equal(3..5, (1..5).clamp(3...7))
+
+    assert_equal(3...10, (1..10).clamp(3...10))
+
+    assert_equal(3..7, (..10).clamp(3, 7))
+    assert_equal(3...7, (...10).clamp(3, 7))
+    assert_equal(3...7, (..10).clamp(3...7))
+    assert_equal(3..5, (..5).clamp(3...7))
+
+    assert_equal(20...20, (1..10).clamp(20..30))
+    assert_equal(0...0, (1..10).clamp(-10..0))
+    assert_equal(20...20, (..10).clamp(20..30))
+
+    assert_equal(1..7, (1..10).clamp(..7))
+    assert_equal(1...7, (1..10).clamp(...7))
+    assert_equal(1..5, (1..5).clamp(...7))
+
+    assert_equal(3..10, (1..10).clamp(3..))
+    assert_equal(3..10, (1..10).clamp(3...))
+    assert_equal(3.., (1..).clamp(3..))
+    assert_equal(3..., (1...).clamp(3...))
+
+    assert_raise(ArgumentError) {(1..3).clamp(1, "z")}
+    assert_raise(ArgumentError) {(1..3).clamp("a", "z")}
+  end
 end
