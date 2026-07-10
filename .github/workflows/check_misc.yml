@@ -60,7 +60,6 @@ jobs:
           git diff --color --no-ext-diff --ignore-submodules --exit-code -- man
         env:
           GITHUB_OLD_SHA: ${{ github.event.pull_request.base.sha }}
-        if: ${{ startsWith(github.event_name, 'pull') }}
 
       - name: Check for bash specific substitution in configure.ac
         run: |
