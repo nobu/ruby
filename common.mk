@@ -1961,11 +1961,12 @@ yes-test-all no-test-all: sudo-precheck
 sudo-precheck: PHONY
 	@$(SUDO) echo > $(NULL)
 
+MANPAGES = 'man/*.1'
 update-man-date: PHONY
-	$(Q) $(BASERUBY) -I"$(tooldir)/lib" -rvcs -i -p \
-	-e 'BEGIN{@vcs=VCS.detect(ARGV.shift)}' \
+	$(Q) $(BASERUBY) -I"$(tooldir)/lib" -rvcs -C "$(srcdir)" -i -p \
+	-e 'BEGIN{@vcs=VCS.detect; ARGV.replace(Dir.glob(*ARGV))}' \
 	-e '$$_.sub!(/^(\.Dd ).*/){$$1+@vcs.author_date(@vcs.relative_to(ARGF.path)).strftime("%B %d, %Y")}' \
-	"$(srcdir)" "$(srcdir)"/man/*.1
+	$(MANPAGES)
 
 .PHONY: ChangeLog
 ChangeLog:
