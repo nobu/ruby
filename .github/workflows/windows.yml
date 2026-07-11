@@ -155,7 +155,7 @@ jobs:
       - name: Configure
         run: >-
           ../src/win32/configure.bat --disable-install-doc
-          --with-opt-dir=%RUBY_OPT_DIR%
+          --path=%RUBY_OPT_DIR%
           --with-gmp
 
       - run: nmake prepare-vcpkg
