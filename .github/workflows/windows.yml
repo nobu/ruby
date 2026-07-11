@@ -26,13 +26,9 @@ jobs:
       matrix:
         include:
           - os: 2022
-            test_task: check
-          - os: 2022
-            test_task: test-bundled-gems
+            test_task: btest
           - os: 2025-vs2026
-            test_task: check
-          - os: 2025-vs2026
-            test_task: test-bundled-gems
+            test_task: btest
           - os: 11-arm
             test_task: 'btest test-basic test-tool' # check and test-spec are broken yet.
             target: arm64
