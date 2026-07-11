@@ -27,15 +27,18 @@ jobs:
         include:
           - os: 2022
             test_task: check
+            binary_package: true
           - os: 2022
             test_task: test-bundled-gems
           - os: 2025-vs2026
             test_task: check
+            binary_package: true
           - os: 2025-vs2026
             test_task: test-bundled-gems
           - os: 11-arm
             test_task: 'btest test-basic test-tool' # check and test-spec are broken yet.
             target: arm64
+            binary_package: true
       fail-fast: false
 
     runs-on: windows-${{ matrix.os }}
@@ -195,12 +198,13 @@ jobs:
         timeout-minutes: 70
 
       - run: nmake binary-package
-        if: ${{ matrix.test_task == 'check' }}
+        id: binary-package
+        if: ${{ matrix.binary_package }}
         timeout-minutes: 10
 
       - name: Verify binary package
         shell: pwsh
-        if: ${{ matrix.test_task == 'check' }}
+        if: ${{ steps.binary-package.outcome == 'success' }}
         run: |
           $zip = Get-Item ruby-*-mswin*.zip
           $dest = Join-Path $env:RUNNER_TEMP "binpkg"
@@ -213,7 +217,13 @@ jobs:
           if (Get-ChildItem "$root\bin" -Filter "vcruntime140*.dll") { throw "the VC runtime must not be bundled" }
           if (!(Get-ChildItem "$root\LICENSES" -ErrorAction SilentlyContinue)) { throw "LICENSES missing" }
           $env:PATH = "$env:SystemRoot\System32"
-          & "$root\bin\ruby.exe" -v -ropenssl -rfiddle -rpsych -rzlib -e 'abort "configure_args has an absolute path: #{RbConfig::CONFIG[%q(configure_args)]}" if RbConfig::CONFIG[%q(configure_args)] =~ /\b[A-Za-z]:[\/\\]/; puts %q(binary package OK)'
+          & "$root\bin\ruby.exe" -v -ropenssl -rfiddle -rpsych -rzlib `
+            -e "abort unless RbConfig::MAKEFILE_CONFIG.all? {|var, val|" `
+            -e   "next true if %w(DESTDIR prefix topdir).include?(var)" `
+            -e   "next true unless /\b[A-Za-z]:[\/\\]/.match?(val)" `
+            -e   "warn %[#{var} has an absolute path: #{val}]" `
+            -e "}" `
+            -e "puts %q(binary package OK)"
           if ($LASTEXITCODE -ne 0) { throw "smoke test failed" }
         timeout-minutes: 5
 
