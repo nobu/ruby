@@ -2011,6 +2011,28 @@ open_dir_handle(const WCHAR *filename, WIN32_FIND_DATAW *fd)
     return fh;
 }
 
+static bool
+is_logical_drive(WCHAR c)
+{
+
+    if (ISALPHA(c)) {
+        return ((1 << ((c & 0x5f) - 'A')) & GetLogicalDrives()) != 0;
+    }
+    else {
+        DWORD ndrive = GetLogicalDriveStringsW(0, NULL);
+        WCHAR drives[ndrive];
+        if (!GetLogicalDriveStringsW(ndrive, drives)) return false;
+        /* "C:\\" "\0" "D:\\" "\0" ... "\0" */
+        for (WCHAR *p = drives; *p; p += wcslen(p) + 1) {
+            if (*p++ != c) continue;
+            if (*p++ != L':') continue;
+            if (*p++ != L'\\') continue;
+            if (!*p) return true;
+        }
+        return false;
+    }
+}
+
 /* License: Artistic or GPL */
 static DIR *
 w32_wopendir(const WCHAR *wpath)
@@ -2026,6 +2048,11 @@ w32_wopendir(const WCHAR *wpath)
     WCHAR *tmpW;
     char *tmp;
 
+    if (!wpath[0]) {
+        errno = ENOENT;
+        return NULL;
+    }
+
     //
     // check to see if we've got a directory
     //
@@ -2033,8 +2060,7 @@ w32_wopendir(const WCHAR *wpath)
         return NULL;
     }
     if (!(sbuf.st_mode & S_IFDIR) &&
-        (!ISALPHA(wpath[0]) || wpath[1] != L':' || wpath[2] != L'\0' ||
-         ((1 << ((wpath[0] & 0x5f) - 'A')) & GetLogicalDrives()) == 0)) {
+        (wpath[1] != L':' || wpath[2] != L'\0' || is_logical_drive(wpath[0]))) {
         errno = ENOTDIR;
         return NULL;
     }
