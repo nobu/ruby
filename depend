@@ -10890,6 +10890,7 @@ parse.$(OBJEXT): $(top_srcdir)/internal/string.h
 parse.$(OBJEXT): $(top_srcdir)/internal/struct.h
 parse.$(OBJEXT): $(top_srcdir)/internal/symbol.h
 parse.$(OBJEXT): $(top_srcdir)/internal/thread.h
+parse.$(OBJEXT): $(top_srcdir)/internal/util.h
 parse.$(OBJEXT): $(top_srcdir)/internal/variable.h
 parse.$(OBJEXT): $(top_srcdir)/internal/vm.h
 parse.$(OBJEXT): $(top_srcdir)/internal/warnings.h
@@ -15903,6 +15904,7 @@ ruby_parser.$(OBJEXT): $(top_srcdir)/internal/ruby_parser.h
 ruby_parser.$(OBJEXT): $(top_srcdir)/internal/serial.h
 ruby_parser.$(OBJEXT): $(top_srcdir)/internal/static_assert.h
 ruby_parser.$(OBJEXT): $(top_srcdir)/internal/string.h
+ruby_parser.$(OBJEXT): $(top_srcdir)/internal/util.h
 ruby_parser.$(OBJEXT): $(top_srcdir)/internal/vm.h
 ruby_parser.$(OBJEXT): {$(VPATH)}assert.h
 ruby_parser.$(OBJEXT): {$(VPATH)}backward/2/assume.h

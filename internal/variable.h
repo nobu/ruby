@@ -15,6 +15,8 @@
 #include "ruby/ruby.h"          /* for VALUE */
 #include "shape.h"              /* for shape_id_t */
 
+typedef struct rb_box_struct rb_box_t;
+
 /* variable.c */
 void rb_gc_mark_global_tbl(void);
 void rb_gc_update_global_tbl(void);

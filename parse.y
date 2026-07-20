@@ -24,6 +24,7 @@
 #endif
 
 #include "ruby/internal/config.h"
+#include "internal/thread.h"
 
 #include <errno.h>
 
@@ -46,6 +47,7 @@
 #include "internal/complex.h"
 #include "internal/encoding.h"
 #include "internal/error.h"
+#include "internal/gc.h"
 #include "internal/hash.h"
 #include "internal/io.h"
 #include "internal/numeric.h"
@@ -55,7 +57,6 @@
 #include "internal/ruby_parser.h"
 #include "internal/symbol.h"
 #include "internal/thread.h"
-#include "internal/variable.h"
 #include "node.h"
 #include "parser_node.h"
 #include "probes.h"

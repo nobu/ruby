@@ -52,23 +52,6 @@
 #undef RSTRUCT_SET
 #undef RSTRUCT_GET
 
-/* Also,  we  keep  the  following  macros  here.   They  are  expected  to  be
- * overridden in each headers. */
-
-/* internal/array.h */
-#define rb_ary_new_from_args(...) rb_nonexistent_symbol(__VA_ARGS__)
-
-/* internal/string.h */
-#define rb_fstring_cstr(...) rb_nonexistent_symbol(__VA_ARGS__)
-
-/* internal/symbol.h */
-#define rb_sym_intern_ascii_cstr(...) rb_nonexistent_symbol(__VA_ARGS__)
-
-/* internal/vm.h */
-#define rb_funcallv(...) rb_nonexistent_symbol(__VA_ARGS__)
-#define rb_method_basic_definition_p(...) rb_nonexistent_symbol(__VA_ARGS__)
-
-
 /* MRI debug support */
 
 /* gc.c */
