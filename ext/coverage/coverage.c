@@ -8,12 +8,9 @@
 
 ************************************************/
 
-#include "internal/gc.h"
+#include "internal/coverage.h"
 #include "internal/hash.h"
-#include "internal/thread.h"
-#include "internal/sanitizers.h"
 #include "ruby.h"
-#include "vm_core.h"
 
 static enum {
     IDLE,
@@ -41,13 +38,13 @@ rb_coverage_supported(VALUE self, VALUE _mode)
 {
     ID mode = RB_SYM2ID(_mode);
 
-    return RBOOL(
+    return (
         mode == rb_intern("lines") ||
         mode == rb_intern("oneshot_lines") ||
         mode == rb_intern("branches") ||
         mode == rb_intern("methods") ||
         mode == rb_intern("eval")
-    );
+    ) ? Qtrue : Qfalse;
 }
 
 /*
@@ -239,70 +236,30 @@ branch_coverage(VALUE branches)
     return b.result;
 }
 
-static int
-method_coverage_i(void *vstart, void *vend, size_t stride, void *data)
+static void
+method_coverage_i(const struct rb_coverage_method_data *method, void *data)
 {
-    /*
-     * ObjectSpace.each_object(Module){|mod|
-     *   mod.instance_methods.each{|mid|
-     *     m = mod.instance_method(mid)
-     *     if loc = m.source_location
-     *       p [m.name, loc, $g_method_cov_counts[m]]
-     *     end
-     *   }
-     * }
-     */
-    VALUE ncoverages = *(VALUE*)data, v;
+    VALUE ncoverages = *(VALUE *)data;
+    VALUE ncoverage = rb_hash_aref(ncoverages, method->path);
 
-    for (v = (VALUE)vstart; v != (VALUE)vend; v += stride) {
-        void *poisoned = rb_asan_poisoned_object_p(v);
-        rb_asan_unpoison_object(v, false);
+    if (!NIL_P(ncoverage)) {
+        VALUE methods = rb_hash_aref(ncoverage, ID2SYM(rb_intern("methods")));
+        VALUE key = rb_ary_new_from_args(6, method->owner, method->method_id,
+                                         method->first_lineno, method->first_column,
+                                         method->last_lineno, method->last_column);
+        VALUE rcount = method->count;
+        VALUE previous = rb_hash_aref(methods, key);
 
-        if (RB_TYPE_P(v, T_IMEMO) && imemo_type(v) == imemo_ment) {
-            const rb_method_entry_t *me = (rb_method_entry_t *) v;
-            VALUE path, first_lineno, first_column, last_lineno, last_column;
-            VALUE data[5], ncoverage, methods;
-            VALUE methods_id = ID2SYM(rb_intern("methods"));
-            VALUE klass;
-            const rb_method_entry_t *me2 = rb_resolve_me_location(me, data);
-            if (me != me2) continue;
-            klass = me->owner;
-            if (RB_TYPE_P(klass, T_ICLASS)) {
-                rb_bug("T_ICLASS");
-            }
-            path = data[0];
-            first_lineno = data[1];
-            first_column = data[2];
-            last_lineno = data[3];
-            last_column = data[4];
-            if (FIX2LONG(first_lineno) <= 0) continue;
-            ncoverage = rb_hash_aref(ncoverages, path);
-            if (NIL_P(ncoverage)) continue;
-            methods = rb_hash_aref(ncoverage, methods_id);
-
-            {
-                VALUE method_id = ID2SYM(me->def->original_id);
-                VALUE rcount = rb_hash_aref(me2counter, (VALUE) me);
-                VALUE key = rb_ary_new_from_args(6, klass, method_id, first_lineno, first_column, last_lineno, last_column);
-                VALUE rcount2 = rb_hash_aref(methods, key);
-
-                if (NIL_P(rcount)) rcount = LONG2FIX(0);
-                if (NIL_P(rcount2)) rcount2 = LONG2FIX(0);
-                if (!POSFIXABLE(FIX2LONG(rcount) + FIX2LONG(rcount2))) {
-                    rcount = LONG2FIX(FIXNUM_MAX);
-                }
-                else {
-                    rcount = LONG2FIX(FIX2LONG(rcount) + FIX2LONG(rcount2));
-                }
-                rb_hash_aset(methods, key, rcount);
-            }
+        if (NIL_P(rcount)) rcount = LONG2FIX(0);
+        if (NIL_P(previous)) previous = LONG2FIX(0);
+        if (!POSFIXABLE(FIX2LONG(rcount) + FIX2LONG(previous))) {
+            rcount = LONG2FIX(FIXNUM_MAX);
         }
-
-        if (poisoned) {
-            rb_asan_poison_object(v);
+        else {
+            rcount = LONG2FIX(FIX2LONG(rcount) + FIX2LONG(previous));
         }
+        rb_hash_aset(methods, key, rcount);
     }
-    return 0;
 }
 
 static int
@@ -368,7 +325,7 @@ rb_coverage_peek_result(VALUE klass)
     rb_hash_foreach(coverages, coverage_peek_result_i, ncoverages);
 
     if (current_mode & COVERAGE_TARGET_METHODS) {
-        rb_objspace_each_objects(method_coverage_i, &ncoverages);
+        rb_coverage_each_method(method_coverage_i, &ncoverages);
     }
 
     rb_hash_freeze(ncoverages);

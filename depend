@@ -294,6 +294,7 @@ ast.$(OBJEXT): $(top_srcdir)/internal/box.h
 ast.$(OBJEXT): $(top_srcdir)/internal/compar.h
 ast.$(OBJEXT): $(top_srcdir)/internal/compilers.h
 ast.$(OBJEXT): $(top_srcdir)/internal/complex.h
+ast.$(OBJEXT): $(top_srcdir)/internal/coverage.h
 ast.$(OBJEXT): $(top_srcdir)/internal/fixnum.h
 ast.$(OBJEXT): $(top_srcdir)/internal/gc.h
 ast.$(OBJEXT): $(top_srcdir)/internal/imemo.h
@@ -435,6 +436,7 @@ ast.$(OBJEXT): {$(VPATH)}internal/core/rregexp.h
 ast.$(OBJEXT): {$(VPATH)}internal/core/rstring.h
 ast.$(OBJEXT): {$(VPATH)}internal/core/rstruct.h
 ast.$(OBJEXT): {$(VPATH)}internal/core/rtypeddata.h
+ast.$(OBJEXT): {$(VPATH)}internal/coverage.h
 ast.$(OBJEXT): {$(VPATH)}internal/ctype.h
 ast.$(OBJEXT): {$(VPATH)}internal/dllexport.h
 ast.$(OBJEXT): {$(VPATH)}internal/dosish.h
@@ -760,6 +762,7 @@ box.$(OBJEXT): $(top_srcdir)/internal/basic_operators.h
 box.$(OBJEXT): $(top_srcdir)/internal/box.h
 box.$(OBJEXT): $(top_srcdir)/internal/class.h
 box.$(OBJEXT): $(top_srcdir)/internal/compilers.h
+box.$(OBJEXT): $(top_srcdir)/internal/coverage.h
 box.$(OBJEXT): $(top_srcdir)/internal/error.h
 box.$(OBJEXT): $(top_srcdir)/internal/eval.h
 box.$(OBJEXT): $(top_srcdir)/internal/file.h
@@ -906,6 +909,7 @@ box.$(OBJEXT): {$(VPATH)}internal/core/rregexp.h
 box.$(OBJEXT): {$(VPATH)}internal/core/rstring.h
 box.$(OBJEXT): {$(VPATH)}internal/core/rstruct.h
 box.$(OBJEXT): {$(VPATH)}internal/core/rtypeddata.h
+box.$(OBJEXT): {$(VPATH)}internal/coverage.h
 box.$(OBJEXT): {$(VPATH)}internal/ctype.h
 box.$(OBJEXT): {$(VPATH)}internal/dllexport.h
 box.$(OBJEXT): {$(VPATH)}internal/dosish.h
@@ -1023,6 +1027,7 @@ builtin.$(OBJEXT): $(top_srcdir)/internal/array.h
 builtin.$(OBJEXT): $(top_srcdir)/internal/basic_operators.h
 builtin.$(OBJEXT): $(top_srcdir)/internal/box.h
 builtin.$(OBJEXT): $(top_srcdir)/internal/compilers.h
+builtin.$(OBJEXT): $(top_srcdir)/internal/coverage.h
 builtin.$(OBJEXT): $(top_srcdir)/internal/gc.h
 builtin.$(OBJEXT): $(top_srcdir)/internal/imemo.h
 builtin.$(OBJEXT): $(top_srcdir)/internal/sanitizers.h
@@ -1160,6 +1165,7 @@ builtin.$(OBJEXT): {$(VPATH)}internal/core/rregexp.h
 builtin.$(OBJEXT): {$(VPATH)}internal/core/rstring.h
 builtin.$(OBJEXT): {$(VPATH)}internal/core/rstruct.h
 builtin.$(OBJEXT): {$(VPATH)}internal/core/rtypeddata.h
+builtin.$(OBJEXT): {$(VPATH)}internal/coverage.h
 builtin.$(OBJEXT): {$(VPATH)}internal/ctype.h
 builtin.$(OBJEXT): {$(VPATH)}internal/dllexport.h
 builtin.$(OBJEXT): {$(VPATH)}internal/dosish.h
@@ -1676,6 +1682,7 @@ compile.$(OBJEXT): $(top_srcdir)/internal/compar.h
 compile.$(OBJEXT): $(top_srcdir)/internal/compile.h
 compile.$(OBJEXT): $(top_srcdir)/internal/compilers.h
 compile.$(OBJEXT): $(top_srcdir)/internal/complex.h
+compile.$(OBJEXT): $(top_srcdir)/internal/coverage.h
 compile.$(OBJEXT): $(top_srcdir)/internal/encoding.h
 compile.$(OBJEXT): $(top_srcdir)/internal/error.h
 compile.$(OBJEXT): $(top_srcdir)/internal/fixnum.h
@@ -1831,6 +1838,7 @@ compile.$(OBJEXT): {$(VPATH)}internal/core/rregexp.h
 compile.$(OBJEXT): {$(VPATH)}internal/core/rstring.h
 compile.$(OBJEXT): {$(VPATH)}internal/core/rstruct.h
 compile.$(OBJEXT): {$(VPATH)}internal/core/rtypeddata.h
+compile.$(OBJEXT): {$(VPATH)}internal/coverage.h
 compile.$(OBJEXT): {$(VPATH)}internal/ctype.h
 compile.$(OBJEXT): {$(VPATH)}internal/dllexport.h
 compile.$(OBJEXT): {$(VPATH)}internal/dosish.h
@@ -2380,6 +2388,7 @@ cont.$(OBJEXT): $(top_srcdir)/internal/basic_operators.h
 cont.$(OBJEXT): $(top_srcdir)/internal/box.h
 cont.$(OBJEXT): $(top_srcdir)/internal/compilers.h
 cont.$(OBJEXT): $(top_srcdir)/internal/cont.h
+cont.$(OBJEXT): $(top_srcdir)/internal/coverage.h
 cont.$(OBJEXT): $(top_srcdir)/internal/error.h
 cont.$(OBJEXT): $(top_srcdir)/internal/eval.h
 cont.$(OBJEXT): $(top_srcdir)/internal/gc.h
@@ -2523,6 +2532,7 @@ cont.$(OBJEXT): {$(VPATH)}internal/core/rregexp.h
 cont.$(OBJEXT): {$(VPATH)}internal/core/rstring.h
 cont.$(OBJEXT): {$(VPATH)}internal/core/rstruct.h
 cont.$(OBJEXT): {$(VPATH)}internal/core/rtypeddata.h
+cont.$(OBJEXT): {$(VPATH)}internal/coverage.h
 cont.$(OBJEXT): {$(VPATH)}internal/ctype.h
 cont.$(OBJEXT): {$(VPATH)}internal/dllexport.h
 cont.$(OBJEXT): {$(VPATH)}internal/dosish.h
@@ -5447,6 +5457,7 @@ eval.$(OBJEXT): $(top_srcdir)/internal/box.h
 eval.$(OBJEXT): $(top_srcdir)/internal/class.h
 eval.$(OBJEXT): $(top_srcdir)/internal/compilers.h
 eval.$(OBJEXT): $(top_srcdir)/internal/cont.h
+eval.$(OBJEXT): $(top_srcdir)/internal/coverage.h
 eval.$(OBJEXT): $(top_srcdir)/internal/error.h
 eval.$(OBJEXT): $(top_srcdir)/internal/eval.h
 eval.$(OBJEXT): $(top_srcdir)/internal/gc.h
@@ -5595,6 +5606,7 @@ eval.$(OBJEXT): {$(VPATH)}internal/core/rregexp.h
 eval.$(OBJEXT): {$(VPATH)}internal/core/rstring.h
 eval.$(OBJEXT): {$(VPATH)}internal/core/rstruct.h
 eval.$(OBJEXT): {$(VPATH)}internal/core/rtypeddata.h
+eval.$(OBJEXT): {$(VPATH)}internal/coverage.h
 eval.$(OBJEXT): {$(VPATH)}internal/ctype.h
 eval.$(OBJEXT): {$(VPATH)}internal/dllexport.h
 eval.$(OBJEXT): {$(VPATH)}internal/dosish.h
@@ -5951,6 +5963,7 @@ gc.$(OBJEXT): $(top_srcdir)/internal/compilers.h
 gc.$(OBJEXT): $(top_srcdir)/internal/complex.h
 gc.$(OBJEXT): $(top_srcdir)/internal/concurrent_set.h
 gc.$(OBJEXT): $(top_srcdir)/internal/cont.h
+gc.$(OBJEXT): $(top_srcdir)/internal/coverage.h
 gc.$(OBJEXT): $(top_srcdir)/internal/error.h
 gc.$(OBJEXT): $(top_srcdir)/internal/eval.h
 gc.$(OBJEXT): $(top_srcdir)/internal/fixnum.h
@@ -6107,6 +6120,7 @@ gc.$(OBJEXT): {$(VPATH)}internal/core/rregexp.h
 gc.$(OBJEXT): {$(VPATH)}internal/core/rstring.h
 gc.$(OBJEXT): {$(VPATH)}internal/core/rstruct.h
 gc.$(OBJEXT): {$(VPATH)}internal/core/rtypeddata.h
+gc.$(OBJEXT): {$(VPATH)}internal/coverage.h
 gc.$(OBJEXT): {$(VPATH)}internal/ctype.h
 gc.$(OBJEXT): {$(VPATH)}internal/dllexport.h
 gc.$(OBJEXT): {$(VPATH)}internal/dosish.h
@@ -6365,6 +6379,7 @@ goruby.$(OBJEXT): {$(VPATH)}internal/core/rregexp.h
 goruby.$(OBJEXT): {$(VPATH)}internal/core/rstring.h
 goruby.$(OBJEXT): {$(VPATH)}internal/core/rstruct.h
 goruby.$(OBJEXT): {$(VPATH)}internal/core/rtypeddata.h
+goruby.$(OBJEXT): {$(VPATH)}internal/coverage.h
 goruby.$(OBJEXT): {$(VPATH)}internal/ctype.h
 goruby.$(OBJEXT): {$(VPATH)}internal/dllexport.h
 goruby.$(OBJEXT): {$(VPATH)}internal/dosish.h
@@ -6480,6 +6495,7 @@ hash.$(OBJEXT): $(top_srcdir)/internal/box.h
 hash.$(OBJEXT): $(top_srcdir)/internal/class.h
 hash.$(OBJEXT): $(top_srcdir)/internal/compilers.h
 hash.$(OBJEXT): $(top_srcdir)/internal/cont.h
+hash.$(OBJEXT): $(top_srcdir)/internal/coverage.h
 hash.$(OBJEXT): $(top_srcdir)/internal/error.h
 hash.$(OBJEXT): $(top_srcdir)/internal/gc.h
 hash.$(OBJEXT): $(top_srcdir)/internal/hash.h
@@ -6626,6 +6642,7 @@ hash.$(OBJEXT): {$(VPATH)}internal/core/rregexp.h
 hash.$(OBJEXT): {$(VPATH)}internal/core/rstring.h
 hash.$(OBJEXT): {$(VPATH)}internal/core/rstruct.h
 hash.$(OBJEXT): {$(VPATH)}internal/core/rtypeddata.h
+hash.$(OBJEXT): {$(VPATH)}internal/coverage.h
 hash.$(OBJEXT): {$(VPATH)}internal/ctype.h
 hash.$(OBJEXT): {$(VPATH)}internal/dllexport.h
 hash.$(OBJEXT): {$(VPATH)}internal/dosish.h
@@ -7578,6 +7595,7 @@ iseq.$(OBJEXT): $(top_srcdir)/internal/compar.h
 iseq.$(OBJEXT): $(top_srcdir)/internal/compile.h
 iseq.$(OBJEXT): $(top_srcdir)/internal/compilers.h
 iseq.$(OBJEXT): $(top_srcdir)/internal/complex.h
+iseq.$(OBJEXT): $(top_srcdir)/internal/coverage.h
 iseq.$(OBJEXT): $(top_srcdir)/internal/error.h
 iseq.$(OBJEXT): $(top_srcdir)/internal/file.h
 iseq.$(OBJEXT): $(top_srcdir)/internal/fixnum.h
@@ -7729,6 +7747,7 @@ iseq.$(OBJEXT): {$(VPATH)}internal/core/rregexp.h
 iseq.$(OBJEXT): {$(VPATH)}internal/core/rstring.h
 iseq.$(OBJEXT): {$(VPATH)}internal/core/rstruct.h
 iseq.$(OBJEXT): {$(VPATH)}internal/core/rtypeddata.h
+iseq.$(OBJEXT): {$(VPATH)}internal/coverage.h
 iseq.$(OBJEXT): {$(VPATH)}internal/ctype.h
 iseq.$(OBJEXT): {$(VPATH)}internal/dllexport.h
 iseq.$(OBJEXT): {$(VPATH)}internal/dosish.h
@@ -7851,6 +7870,7 @@ jit.$(OBJEXT): $(top_srcdir)/internal/box.h
 jit.$(OBJEXT): $(top_srcdir)/internal/class.h
 jit.$(OBJEXT): $(top_srcdir)/internal/compile.h
 jit.$(OBJEXT): $(top_srcdir)/internal/compilers.h
+jit.$(OBJEXT): $(top_srcdir)/internal/coverage.h
 jit.$(OBJEXT): $(top_srcdir)/internal/fixnum.h
 jit.$(OBJEXT): $(top_srcdir)/internal/gc.h
 jit.$(OBJEXT): $(top_srcdir)/internal/hash.h
@@ -7992,6 +8012,7 @@ jit.$(OBJEXT): {$(VPATH)}internal/core/rregexp.h
 jit.$(OBJEXT): {$(VPATH)}internal/core/rstring.h
 jit.$(OBJEXT): {$(VPATH)}internal/core/rstruct.h
 jit.$(OBJEXT): {$(VPATH)}internal/core/rtypeddata.h
+jit.$(OBJEXT): {$(VPATH)}internal/coverage.h
 jit.$(OBJEXT): {$(VPATH)}internal/ctype.h
 jit.$(OBJEXT): {$(VPATH)}internal/dllexport.h
 jit.$(OBJEXT): {$(VPATH)}internal/dosish.h
@@ -8112,6 +8133,7 @@ load.$(OBJEXT): $(top_srcdir)/internal/box.h
 load.$(OBJEXT): $(top_srcdir)/internal/compar.h
 load.$(OBJEXT): $(top_srcdir)/internal/compilers.h
 load.$(OBJEXT): $(top_srcdir)/internal/complex.h
+load.$(OBJEXT): $(top_srcdir)/internal/coverage.h
 load.$(OBJEXT): $(top_srcdir)/internal/dir.h
 load.$(OBJEXT): $(top_srcdir)/internal/error.h
 load.$(OBJEXT): $(top_srcdir)/internal/eval.h
@@ -8261,6 +8283,7 @@ load.$(OBJEXT): {$(VPATH)}internal/core/rregexp.h
 load.$(OBJEXT): {$(VPATH)}internal/core/rstring.h
 load.$(OBJEXT): {$(VPATH)}internal/core/rstruct.h
 load.$(OBJEXT): {$(VPATH)}internal/core/rtypeddata.h
+load.$(OBJEXT): {$(VPATH)}internal/coverage.h
 load.$(OBJEXT): {$(VPATH)}internal/ctype.h
 load.$(OBJEXT): {$(VPATH)}internal/dllexport.h
 load.$(OBJEXT): {$(VPATH)}internal/dosish.h
@@ -9496,6 +9519,7 @@ miniinit.$(OBJEXT): $(top_srcdir)/internal/box.h
 miniinit.$(OBJEXT): $(top_srcdir)/internal/compar.h
 miniinit.$(OBJEXT): $(top_srcdir)/internal/compilers.h
 miniinit.$(OBJEXT): $(top_srcdir)/internal/complex.h
+miniinit.$(OBJEXT): $(top_srcdir)/internal/coverage.h
 miniinit.$(OBJEXT): $(top_srcdir)/internal/eval.h
 miniinit.$(OBJEXT): $(top_srcdir)/internal/fixnum.h
 miniinit.$(OBJEXT): $(top_srcdir)/internal/gc.h
@@ -9641,6 +9665,7 @@ miniinit.$(OBJEXT): {$(VPATH)}internal/core/rregexp.h
 miniinit.$(OBJEXT): {$(VPATH)}internal/core/rstring.h
 miniinit.$(OBJEXT): {$(VPATH)}internal/core/rstruct.h
 miniinit.$(OBJEXT): {$(VPATH)}internal/core/rtypeddata.h
+miniinit.$(OBJEXT): {$(VPATH)}internal/coverage.h
 miniinit.$(OBJEXT): {$(VPATH)}internal/ctype.h
 miniinit.$(OBJEXT): {$(VPATH)}internal/dllexport.h
 miniinit.$(OBJEXT): {$(VPATH)}internal/dosish.h
@@ -13046,6 +13071,7 @@ proc.$(OBJEXT): $(top_srcdir)/internal/basic_operators.h
 proc.$(OBJEXT): $(top_srcdir)/internal/box.h
 proc.$(OBJEXT): $(top_srcdir)/internal/class.h
 proc.$(OBJEXT): $(top_srcdir)/internal/compilers.h
+proc.$(OBJEXT): $(top_srcdir)/internal/coverage.h
 proc.$(OBJEXT): $(top_srcdir)/internal/error.h
 proc.$(OBJEXT): $(top_srcdir)/internal/eval.h
 proc.$(OBJEXT): $(top_srcdir)/internal/gc.h
@@ -13188,6 +13214,7 @@ proc.$(OBJEXT): {$(VPATH)}internal/core/rregexp.h
 proc.$(OBJEXT): {$(VPATH)}internal/core/rstring.h
 proc.$(OBJEXT): {$(VPATH)}internal/core/rstruct.h
 proc.$(OBJEXT): {$(VPATH)}internal/core/rtypeddata.h
+proc.$(OBJEXT): {$(VPATH)}internal/coverage.h
 proc.$(OBJEXT): {$(VPATH)}internal/ctype.h
 proc.$(OBJEXT): {$(VPATH)}internal/dllexport.h
 proc.$(OBJEXT): {$(VPATH)}internal/dosish.h
@@ -15628,6 +15655,7 @@ ruby.$(OBJEXT): $(top_srcdir)/internal/compar.h
 ruby.$(OBJEXT): $(top_srcdir)/internal/compilers.h
 ruby.$(OBJEXT): $(top_srcdir)/internal/complex.h
 ruby.$(OBJEXT): $(top_srcdir)/internal/cont.h
+ruby.$(OBJEXT): $(top_srcdir)/internal/coverage.h
 ruby.$(OBJEXT): $(top_srcdir)/internal/error.h
 ruby.$(OBJEXT): $(top_srcdir)/internal/file.h
 ruby.$(OBJEXT): $(top_srcdir)/internal/fixnum.h
@@ -15779,6 +15807,7 @@ ruby.$(OBJEXT): {$(VPATH)}internal/core/rregexp.h
 ruby.$(OBJEXT): {$(VPATH)}internal/core/rstring.h
 ruby.$(OBJEXT): {$(VPATH)}internal/core/rstruct.h
 ruby.$(OBJEXT): {$(VPATH)}internal/core/rtypeddata.h
+ruby.$(OBJEXT): {$(VPATH)}internal/coverage.h
 ruby.$(OBJEXT): {$(VPATH)}internal/ctype.h
 ruby.$(OBJEXT): {$(VPATH)}internal/dllexport.h
 ruby.$(OBJEXT): {$(VPATH)}internal/dosish.h
@@ -18413,6 +18442,7 @@ thread.$(OBJEXT): $(top_srcdir)/internal/box.h
 thread.$(OBJEXT): $(top_srcdir)/internal/class.h
 thread.$(OBJEXT): $(top_srcdir)/internal/compilers.h
 thread.$(OBJEXT): $(top_srcdir)/internal/cont.h
+thread.$(OBJEXT): $(top_srcdir)/internal/coverage.h
 thread.$(OBJEXT): $(top_srcdir)/internal/error.h
 thread.$(OBJEXT): $(top_srcdir)/internal/eval.h
 thread.$(OBJEXT): $(top_srcdir)/internal/gc.h
@@ -18563,6 +18593,7 @@ thread.$(OBJEXT): {$(VPATH)}internal/core/rregexp.h
 thread.$(OBJEXT): {$(VPATH)}internal/core/rstring.h
 thread.$(OBJEXT): {$(VPATH)}internal/core/rstruct.h
 thread.$(OBJEXT): {$(VPATH)}internal/core/rtypeddata.h
+thread.$(OBJEXT): {$(VPATH)}internal/coverage.h
 thread.$(OBJEXT): {$(VPATH)}internal/ctype.h
 thread.$(OBJEXT): {$(VPATH)}internal/dllexport.h
 thread.$(OBJEXT): {$(VPATH)}internal/dosish.h
@@ -19738,6 +19769,7 @@ vm.$(OBJEXT): $(top_srcdir)/internal/compile.h
 vm.$(OBJEXT): $(top_srcdir)/internal/compilers.h
 vm.$(OBJEXT): $(top_srcdir)/internal/complex.h
 vm.$(OBJEXT): $(top_srcdir)/internal/cont.h
+vm.$(OBJEXT): $(top_srcdir)/internal/coverage.h
 vm.$(OBJEXT): $(top_srcdir)/internal/encoding.h
 vm.$(OBJEXT): $(top_srcdir)/internal/error.h
 vm.$(OBJEXT): $(top_srcdir)/internal/eval.h
@@ -19900,6 +19932,7 @@ vm.$(OBJEXT): {$(VPATH)}internal/core/rregexp.h
 vm.$(OBJEXT): {$(VPATH)}internal/core/rstring.h
 vm.$(OBJEXT): {$(VPATH)}internal/core/rstruct.h
 vm.$(OBJEXT): {$(VPATH)}internal/core/rtypeddata.h
+vm.$(OBJEXT): {$(VPATH)}internal/coverage.h
 vm.$(OBJEXT): {$(VPATH)}internal/ctype.h
 vm.$(OBJEXT): {$(VPATH)}internal/dllexport.h
 vm.$(OBJEXT): {$(VPATH)}internal/dosish.h
@@ -20039,6 +20072,7 @@ vm_backtrace.$(OBJEXT): $(top_srcdir)/internal/basic_operators.h
 vm_backtrace.$(OBJEXT): $(top_srcdir)/internal/box.h
 vm_backtrace.$(OBJEXT): $(top_srcdir)/internal/class.h
 vm_backtrace.$(OBJEXT): $(top_srcdir)/internal/compilers.h
+vm_backtrace.$(OBJEXT): $(top_srcdir)/internal/coverage.h
 vm_backtrace.$(OBJEXT): $(top_srcdir)/internal/error.h
 vm_backtrace.$(OBJEXT): $(top_srcdir)/internal/gc.h
 vm_backtrace.$(OBJEXT): $(top_srcdir)/internal/imemo.h
@@ -20178,6 +20212,7 @@ vm_backtrace.$(OBJEXT): {$(VPATH)}internal/core/rregexp.h
 vm_backtrace.$(OBJEXT): {$(VPATH)}internal/core/rstring.h
 vm_backtrace.$(OBJEXT): {$(VPATH)}internal/core/rstruct.h
 vm_backtrace.$(OBJEXT): {$(VPATH)}internal/core/rtypeddata.h
+vm_backtrace.$(OBJEXT): {$(VPATH)}internal/coverage.h
 vm_backtrace.$(OBJEXT): {$(VPATH)}internal/ctype.h
 vm_backtrace.$(OBJEXT): {$(VPATH)}internal/dllexport.h
 vm_backtrace.$(OBJEXT): {$(VPATH)}internal/dosish.h
@@ -20291,6 +20326,7 @@ vm_dump.$(OBJEXT): $(top_srcdir)/internal/array.h
 vm_dump.$(OBJEXT): $(top_srcdir)/internal/basic_operators.h
 vm_dump.$(OBJEXT): $(top_srcdir)/internal/box.h
 vm_dump.$(OBJEXT): $(top_srcdir)/internal/compilers.h
+vm_dump.$(OBJEXT): $(top_srcdir)/internal/coverage.h
 vm_dump.$(OBJEXT): $(top_srcdir)/internal/gc.h
 vm_dump.$(OBJEXT): $(top_srcdir)/internal/imemo.h
 vm_dump.$(OBJEXT): $(top_srcdir)/internal/sanitizers.h
@@ -20425,6 +20461,7 @@ vm_dump.$(OBJEXT): {$(VPATH)}internal/core/rregexp.h
 vm_dump.$(OBJEXT): {$(VPATH)}internal/core/rstring.h
 vm_dump.$(OBJEXT): {$(VPATH)}internal/core/rstruct.h
 vm_dump.$(OBJEXT): {$(VPATH)}internal/core/rtypeddata.h
+vm_dump.$(OBJEXT): {$(VPATH)}internal/coverage.h
 vm_dump.$(OBJEXT): {$(VPATH)}internal/ctype.h
 vm_dump.$(OBJEXT): {$(VPATH)}internal/dllexport.h
 vm_dump.$(OBJEXT): {$(VPATH)}internal/dosish.h
@@ -20754,6 +20791,7 @@ vm_trace.$(OBJEXT): $(top_srcdir)/internal/bits.h
 vm_trace.$(OBJEXT): $(top_srcdir)/internal/box.h
 vm_trace.$(OBJEXT): $(top_srcdir)/internal/class.h
 vm_trace.$(OBJEXT): $(top_srcdir)/internal/compilers.h
+vm_trace.$(OBJEXT): $(top_srcdir)/internal/coverage.h
 vm_trace.$(OBJEXT): $(top_srcdir)/internal/gc.h
 vm_trace.$(OBJEXT): $(top_srcdir)/internal/hash.h
 vm_trace.$(OBJEXT): $(top_srcdir)/internal/imemo.h
@@ -20893,6 +20931,7 @@ vm_trace.$(OBJEXT): {$(VPATH)}internal/core/rregexp.h
 vm_trace.$(OBJEXT): {$(VPATH)}internal/core/rstring.h
 vm_trace.$(OBJEXT): {$(VPATH)}internal/core/rstruct.h
 vm_trace.$(OBJEXT): {$(VPATH)}internal/core/rtypeddata.h
+vm_trace.$(OBJEXT): {$(VPATH)}internal/coverage.h
 vm_trace.$(OBJEXT): {$(VPATH)}internal/ctype.h
 vm_trace.$(OBJEXT): {$(VPATH)}internal/dllexport.h
 vm_trace.$(OBJEXT): {$(VPATH)}internal/dosish.h
@@ -21218,6 +21257,7 @@ yjit.$(OBJEXT): $(top_srcdir)/internal/compar.h
 yjit.$(OBJEXT): $(top_srcdir)/internal/compile.h
 yjit.$(OBJEXT): $(top_srcdir)/internal/compilers.h
 yjit.$(OBJEXT): $(top_srcdir)/internal/cont.h
+yjit.$(OBJEXT): $(top_srcdir)/internal/coverage.h
 yjit.$(OBJEXT): $(top_srcdir)/internal/fixnum.h
 yjit.$(OBJEXT): $(top_srcdir)/internal/gc.h
 yjit.$(OBJEXT): $(top_srcdir)/internal/hash.h
@@ -21361,6 +21401,7 @@ yjit.$(OBJEXT): {$(VPATH)}internal/core/rregexp.h
 yjit.$(OBJEXT): {$(VPATH)}internal/core/rstring.h
 yjit.$(OBJEXT): {$(VPATH)}internal/core/rstruct.h
 yjit.$(OBJEXT): {$(VPATH)}internal/core/rtypeddata.h
+yjit.$(OBJEXT): {$(VPATH)}internal/coverage.h
 yjit.$(OBJEXT): {$(VPATH)}internal/ctype.h
 yjit.$(OBJEXT): {$(VPATH)}internal/dllexport.h
 yjit.$(OBJEXT): {$(VPATH)}internal/dosish.h
@@ -21488,6 +21529,7 @@ zjit.$(OBJEXT): $(top_srcdir)/internal/compar.h
 zjit.$(OBJEXT): $(top_srcdir)/internal/compile.h
 zjit.$(OBJEXT): $(top_srcdir)/internal/compilers.h
 zjit.$(OBJEXT): $(top_srcdir)/internal/cont.h
+zjit.$(OBJEXT): $(top_srcdir)/internal/coverage.h
 zjit.$(OBJEXT): $(top_srcdir)/internal/fixnum.h
 zjit.$(OBJEXT): $(top_srcdir)/internal/gc.h
 zjit.$(OBJEXT): $(top_srcdir)/internal/hash.h
@@ -21631,6 +21673,7 @@ zjit.$(OBJEXT): {$(VPATH)}internal/core/rregexp.h
 zjit.$(OBJEXT): {$(VPATH)}internal/core/rstring.h
 zjit.$(OBJEXT): {$(VPATH)}internal/core/rstruct.h
 zjit.$(OBJEXT): {$(VPATH)}internal/core/rtypeddata.h
+zjit.$(OBJEXT): {$(VPATH)}internal/coverage.h
 zjit.$(OBJEXT): {$(VPATH)}internal/ctype.h
 zjit.$(OBJEXT): {$(VPATH)}internal/dllexport.h
 zjit.$(OBJEXT): {$(VPATH)}internal/dosish.h

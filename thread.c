@@ -77,6 +77,7 @@
 #include "internal.h"
 #include "internal/class.h"
 #include "internal/cont.h"
+#include "internal/coverage.h"
 #include "internal/error.h"
 #include "internal/eval.h"
 #include "internal/gc.h"
@@ -6093,6 +6094,57 @@ rb_resolve_me_location(const rb_method_entry_t *me, VALUE resolved_location[5])
         resolved_location[4] = end_pos_column;
     }
     return me;
+}
+
+struct method_coverage_arg {
+    rb_coverage_method_callback *callback;
+    void *data;
+};
+
+static int
+method_coverage_i(void *vstart, void *vend, size_t stride, void *data)
+{
+    struct method_coverage_arg *arg = data;
+    VALUE me2counter = GET_VM()->me2counter;
+    VALUE v;
+
+    for (v = (VALUE)vstart; v != (VALUE)vend; v += stride) {
+        void *poisoned = rb_asan_poisoned_object_p(v);
+        rb_asan_unpoison_object(v, false);
+
+        if (RB_TYPE_P(v, T_IMEMO) && imemo_type(v) == imemo_ment) {
+            const rb_method_entry_t *me = (rb_method_entry_t *)v;
+            VALUE location[5];
+            const rb_method_entry_t *resolved_me = rb_resolve_me_location(me, location);
+
+            if (me == resolved_me && FIX2LONG(location[1]) > 0) {
+                struct rb_coverage_method_data method = {
+                    .owner = me->owner,
+                    .method_id = ID2SYM(me->def->original_id),
+                    .path = location[0],
+                    .first_lineno = location[1],
+                    .first_column = location[2],
+                    .last_lineno = location[3],
+                    .last_column = location[4],
+                    .count = rb_hash_aref(me2counter, (VALUE)me),
+                };
+
+                if (RB_TYPE_P(me->owner, T_ICLASS)) rb_bug("T_ICLASS");
+                arg->callback(&method, arg->data);
+            }
+        }
+
+        if (poisoned) rb_asan_poison_object(v);
+    }
+    return 0;
+}
+
+void
+rb_coverage_each_method(rb_coverage_method_callback callback, void *data)
+{
+    struct method_coverage_arg arg = {callback, data};
+
+    rb_objspace_each_objects(method_coverage_i, &arg);
 }
 
 static void
