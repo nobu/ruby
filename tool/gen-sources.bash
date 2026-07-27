@@ -39,7 +39,8 @@ for t in config.status .rbconfig.time Makefile GNUmakefile; do
     [ -z "${nop}" -a -e "$t" ] && echo "exist: $t" && exit 1
 done
 
-${nop} touch config.status .rbconfig.time
+${nop} cp -i tool/prereq.status config.status < /dev/null
+${nop} cp -i /dev/null .rbconfig.time < /dev/null
 clean=(config.status .rbconfig.time)
 for mk in Makefile GNUmakefile; do
     [ ${nop} ] || sed -f "$tooldir/prereq.status" "$template/$mk.in" > $mk
