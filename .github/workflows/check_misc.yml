@@ -30,17 +30,9 @@ jobs:
       - uses: ./.github/actions/setup/directories
         with:
           makeup: true
+          keep-makefiles: true
           # Skip overwriting MATZBOT_AUTO_UPDATE_TOKEN
           checkout: '' # false (ref: https://github.com/actions/runner/issues/2238)
-
-      - name: Re-generate Makefiles
-        run: |
-          # config.status needs to run as a shell script
-          { echo ':&&exit'; cat tool/prereq.status; } > config.status
-          : # same as actions/setup/directories/action.yml
-          for mk in Makefile GNUmakefile; do
-            sed -f tool/prereq.status template/$mk.in > $mk
-          done
 
       - name: Check for code styles
         run: |

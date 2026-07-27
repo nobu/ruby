@@ -1,3 +1,6 @@
+:&&exit
+/^/!b&&exit
+
 s,@EXTOUT@,tmp,g
 s,@ruby_version@,0.0.0,g
 s,@NULLCMD@,:,g

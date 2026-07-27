@@ -3,9 +3,10 @@ set -e
 
 nop=
 dump_ast=
+traps=0
 
 opt= optarg=
-while getopts cd:n-: opt; do
+while getopts cd:kn-: opt; do
     optarg="$OPTARG"
     if [[ "$opt" = - ]]; then
         opt="-${optarg%%=*}"
@@ -18,6 +19,7 @@ while getopts cd:n-: opt; do
         -c|--clean) nop=:;;
         -n|--dry-run) nop=echo;;
         -d|--dump[-_]ast) dump_ast="$optarg" RUBY_DUMP_AST=;;
+        -k|--keep) trap=;;
         --) break;;
         -*) echo "${0##*/}: Unknown option $1" 1>&2; exit 1;;
     esac
@@ -31,7 +33,7 @@ elif srcdir="${tooldir%/*}"; [ "$srcdir" = "$tooldir" ]; then
 fi
 template="${srcdir}/template"
 
-[ "$nop" = echo ] || trap 'rm -fr "${clean[@]}"' 0 2
+[ "$nop" = echo ] || trap 'rm -fr "${clean[@]}"' $trap 2
 
 for t in config.status .rbconfig.time Makefile GNUmakefile; do
     [ -z "${nop}" -a -e "$t" ] && echo "exist: $t" && exit 1
