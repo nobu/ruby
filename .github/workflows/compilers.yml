@@ -59,6 +59,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: { sparse-checkout-cone-mode: false, sparse-checkout: /.github, persist-credentials: false }
       - { uses: './.github/actions/setup/directories', with: { srcdir: 'src', builddir: 'build', makeup: true, fetch-depth: 10 } }
+      - run: autoreconf --version
       - { uses: './.github/actions/compilers', name: 'C99',   with: { CFLAGS:   '-std=c99   -Werror=pedantic -pedantic-errors' },                      timeout-minutes: 8 }
       - { uses: './.github/actions/compilers', name: 'C11',   with: { CFLAGS:   '-std=c11   -Werror=pedantic -pedantic-errors' },                      timeout-minutes: 8 }
       - { uses: './.github/actions/compilers', name: 'C17',   with: { CFLAGS:   '-std=c17   -Werror=pedantic -pedantic-errors' },                      timeout-minutes: 8 }
