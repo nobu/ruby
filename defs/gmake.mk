@@ -48,6 +48,9 @@ TEST_DEPENDS += $(if $(filter great exam love check,$(MAKECMDGOALS)),all exts)
 TEST_TARGETS := $(patsubst yes-%,%,$(filter-out no-%,$(TEST_TARGETS)))
 endif
 
+PREPARE_GEMS := $(if $(filter test-bundled-gems exam great love,$(MAKECMDGOALS)),prepare-gems)
+ext/configure-ext.mk: $(PREPARE_GEMS)
+
 in-srcdir := $(if $(filter-out .,$(srcdir)),$(CHDIR) $(srcdir) &&)
 
 ifeq ($(if $(filter all main exts enc trans libencs libenc libtrans \

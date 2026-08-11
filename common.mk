@@ -348,8 +348,7 @@ $(EXTS_MK): ext/configure-ext.mk $(srcdir)/template/exts.mk.tmpl \
 	    $(srcdir)/template/exts.mk.tmpl --gnumake=$(gnumake) --configure-exts=ext/configure-ext.mk
 
 ext/configure-ext.mk: $(PREP) all-incs $(MKFILES) $(RBCONFIG) $(LIBRUBY) \
-		$(srcdir)/template/configure-ext.mk.tmpl update-default-gemspecs \
-		$(HAVE_BASERUBY:yes=extract-gems)
+		$(srcdir)/template/configure-ext.mk.tmpl update-default-gemspecs
 	$(ECHO) generating makefiles $@
 	$(Q)$(MAKEDIRS) $(@D)
 	$(Q)$(MINIRUBY) $(tooldir)/generic_erb.rb -o $@ -c \
@@ -629,9 +628,7 @@ do-install-dbg: $(PROGRAM) pre-install-dbg
 post-install-dbg::
 	@$(NULLCMD)
 
-srcs-doc: prepare-gems
-
-RDOC_DEPENDS = main srcs-doc
+RDOC_DEPENDS = main prepare-gems
 rdoc: PHONY $(RDOC_DEPENDS) $(RBCONFIG) update-default-gemspecs
 	@echo Generating RDoc documentation
 	$(Q) $(RDOC) --ri --op "$(RDOCOUT)" $(RDOC_GEN_OPTS) $(RDOCFLAGS) .
