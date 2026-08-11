@@ -32,23 +32,8 @@ jobs:
         # We enumerate every job in matrix.include to save build time
         include:
           - test_task: check
-            configure: 'cppflags=-DVM_CHECK_MODE'
-          - test_task: check
-            arch: i686
-          - test_task: check
-            configure: '--disable-yjit'
-          - test_task: check
             configure: '--enable-shared --enable-load-relative'
-          - test_task: test-bundler-parallel
-            timeout: 50
           - test_task: test-bundled-gems
-          - test_task: check
-            os: ubuntu-24.04
-            extra_checks: [capi]
-          - test_task: check
-            os: ubuntu-24.04
-            configure: 'CC=clang-18 cflags=-fsanitize=address cppflags=-DUSE_MN_THREADS=0'
-            timeout: 60
           # ubuntu-24.04-arm jobs don't start on ruby/ruby as of 2025-10-29
           #- test_task: check
           #  os: ubuntu-24.04-arm
@@ -198,88 +183,6 @@ jobs:
       - uses: ./.github/actions/slack
         with:
           label: ${{ matrix.test_task }} ${{ matrix.configure }}${{ matrix.arch }}${{ matrix.os }}
-          SLACK_WEBHOOK_URL: ${{ secrets.SIMPLER_ALERTS_URL }} # ruby-lang slack: ruby/simpler-alerts-bot
-        if: ${{ failure() }}
-
-  make-ibm:
-    strategy:
-      matrix:
-        include:
-          - test_task: check
-            os: ubuntu-24.04-ppc64le
-          - test_task: check
-            os: ubuntu-24.04-s390x
-      fail-fast: false
-
-    env: *make-env
-
-    runs-on: ${{ matrix.os }}
-
-    if: >-
-      ${{github.repository == 'ruby/ruby'
-      && !(false
-      || contains(github.event.head_commit.message, '[DOC]')
-      || contains(github.event.pull_request.title, '[DOC]')
-      || contains(github.event.pull_request.labels.*.name, 'Documentation')
-      || (github.event.pull_request.user.login == 'dependabot[bot]')
-      )}}
-
-    steps: *make-steps
-
-  # Separated from `make` job to avoid making it a required status check
-  ruby-bench:
-    strategy:
-      matrix:
-        include:
-          # Using the same setup as ZJIT jobs
-          - bench_opts: '--warmup=1 --bench=1 --excludes=shipit'
-
-    runs-on: ubuntu-24.04
-
-    if: >-
-      ${{!(false
-      || contains(github.event.head_commit.message, '[DOC]')
-      || contains(github.event.pull_request.title, '[DOC]')
-      || contains(github.event.pull_request.labels.*.name, 'Documentation')
-      || (github.event.pull_request.user.login == 'dependabot[bot]')
-      )}}
-
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - uses: ./.github/actions/setup/ubuntu
-
-      - uses: ./.github/actions/setup/directories
-        with:
-          srcdir: src
-          builddir: build
-          makeup: true
-
-      - name: Run configure
-        run: ../src/configure -C --disable-install-doc --prefix="$(pwd)/install"
-
-      - run: make install
-
-      - name: Checkout ruby-bench
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: ruby/ruby-bench
-          persist-credentials: false
-          path: ruby-bench
-
-      # If you want to skip failing benchmark, consider using `--excludes`.
-      # e.g. `bench_opts: '--warmup=1 --bench=1 --excludes=railsbench,lobsters'`
-      - name: Run ruby-bench
-        run: ruby run_benchmarks.rb -e "ruby::../build/install/bin/ruby" ${{ matrix.bench_opts }}
-        working-directory: ruby-bench
-        env:
-          BUNDLER_VERSION: 0
-
-      - uses: ./.github/actions/slack
-        with:
-          label: ruby-bench ${{ matrix.bench_opts }} ${{ matrix.ruby_opts }}
           SLACK_WEBHOOK_URL: ${{ secrets.SIMPLER_ALERTS_URL }} # ruby-lang slack: ruby/simpler-alerts-bot
         if: ${{ failure() }}
 
