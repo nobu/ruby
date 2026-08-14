@@ -61,6 +61,7 @@ OnigEncodingDefine(shift_jis, Shift_JIS) = {
  * Link: http://www.iana.org/assignments/character-sets
  * Link: https://ja.wikipedia.org/wiki/Shift_JIS
  */
+ENC_ALIAS("ShiftJIS", "Shift_JIS")
 
 /*
  * Name: MacJapanese

@@ -301,3 +301,4 @@ OnigEncodingDefine(windows_1253, Windows_1253) = {
   ONIGENC_FLAG_NONE,
 };
 ENC_ALIAS("CP1253", "Windows-1253")
+ENC_ALIAS("Windows1253", "Windows-1253")

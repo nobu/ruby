@@ -467,3 +467,4 @@ OnigEncodingDefine(cesu_8, CESU_8) = {
   ENCINDEX_UTF_8,
   ONIGENC_FLAG_UNICODE,
 };
+ENC_ALIAS("CESU8", "CESU-8")

@@ -69,6 +69,7 @@ OnigEncodingDefine(windows_31j, Windows_31J) = {
  * set is usually this one even if its mapping may differ.
  */
 ENC_ALIAS("CP932", "Windows-31J")
+ENC_ALIAS("Windows31J", "Windows-31J")
 ENC_ALIAS("csWindows31J", "Windows-31J") /* IANA.  IE6 don't accept Windows-31J but csWindows31J. */
 ENC_ALIAS("SJIS", "Windows-31J")
 

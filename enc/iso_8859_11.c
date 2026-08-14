@@ -109,6 +109,7 @@ ENC_ALIAS("ISO8859-11", "ISO-8859-11")
  * Link: https://en.wikipedia.org/wiki/Thai_Industrial_Standard_620-2533
  */
 ENC_REPLICATE("TIS-620", "ISO-8859-11")
+ENC_ALIAS("TIS620", "TIS-620")
 
 /*
  * Name: Windows-874
@@ -116,3 +117,4 @@ ENC_REPLICATE("TIS-620", "ISO-8859-11")
  */
 ENC_REPLICATE("Windows-874", "ISO-8859-11")
 ENC_ALIAS("CP874", "Windows-874")
+ENC_ALIAS("Windows874", "Windows-874")

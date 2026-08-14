@@ -308,3 +308,4 @@ OnigEncodingDefine(windows_1257, Windows_1257) = {
   ONIGENC_FLAG_NONE,
 };
 ENC_ALIAS("CP1257", "Windows-1257")
+ENC_ALIAS("Windows1257", "Windows-1257")

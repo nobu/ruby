@@ -344,3 +344,4 @@ OnigEncodingDefine(emacs_mule, Emacs_Mule) = {
 };
 
 ENC_REPLICATE("stateless-ISO-2022-JP", "Emacs-Mule")
+ENC_ALIAS("stateless-ISO2022-JP", "stateless-ISO-2022-JP")

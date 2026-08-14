@@ -275,3 +275,4 @@ OnigEncodingDefine(windows_1250, Windows_1250) = {
  * Link: https://en.wikipedia.org/wiki/Windows-1250
  */
 ENC_ALIAS("CP1250", "Windows-1250")
+ENC_ALIAS("Windows1250", "Windows-1250")

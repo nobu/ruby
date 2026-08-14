@@ -250,3 +250,4 @@ OnigEncodingDefine(utf_16le, UTF_16LE) = {
   0,
   ONIGENC_FLAG_UNICODE,
 };
+ENC_ALIAS("UTF16LE", "UTF-16LE")
