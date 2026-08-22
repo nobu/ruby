@@ -71,7 +71,11 @@
  */
 
 #ifndef HASH_DEBUG
-#define HASH_DEBUG 0
+# if RUBY_DEBUG
+#   define HASH_DEBUG 1
+# else
+#   define HASH_DEBUG 0
+# endif
 #endif
 
 #define SET_DEFAULT(hash, ifnone) ( \
