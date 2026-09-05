@@ -453,6 +453,7 @@ class TestFile < Test::Unit::TestCase
   end
 
   def test_file_share_delete
+    rdwr = IO::RDWR | IO::CREAT | IO::BINARY | IO::SHARE_DELETE
     wronly = IO::WRONLY | IO::CREAT | IO::TRUNC | IO::BINARY | IO::SHARE_DELETE
     Dir.mktmpdir(__method__.to_s) do |tmpdir|
       tmp = File.join(tmpdir, 'x')
@@ -486,6 +487,18 @@ class TestFile < Test::Unit::TestCase
       assert_file.not_exist?(tmp)
       assert_file.not_empty?(dest)
       assert_equal("test\n", File.read(dest))
+
+      File.open(dest, mode: rdwr) do |dest_file|
+        dest_file.flock(File::LOCK_EX)
+
+        File.open(tmp, mode: wronly) do |tmp_file|
+          tmp_file.flock(File::LOCK_EX)
+          tmp_file.print "test\n"
+          tmp_file.flush
+
+          File.rename(tmp, dest)
+        end
+      end
     end
   end
 
