@@ -9606,7 +9606,7 @@ struct tr_trans_pairs_search {
 
 #ifdef HAVE_SIMD
     unsigned char needles[TR_TRANS_PAIRS_SIMD_MAX_NEEDLES];
-    int needles_count;
+    unsigned int needles_count;
 #ifdef HAVE_SIMD_NEON
     uint64_t matches_bitmap;
 #endif
@@ -9670,7 +9670,6 @@ tr_trans_pairs_search_sse2(struct tr_trans_pairs_search *search)
                 const __m128i bytes = _mm_loadu_si128((__m128i const *)search->s);
 
                 __m128i matches[TR_TRANS_PAIRS_SIMD_MAX_NEEDLES];
-                matches[0] = _mm_setzero_si128();
                 for (i = 0; i < search->needles_count; i++) {
                     matches[i] = _mm_cmpeq_epi8(bytes, masks[i]);
                 }
@@ -9723,7 +9722,7 @@ tr_trans_pairs_search_neon(struct tr_trans_pairs_search *search)
         }
 
         if ((size_t)(search->send - search->s) >= sizeof(uint8x16_t)) {
-            int i;
+            unsigned int i;
             uint8x16_t masks[TR_TRANS_PAIRS_SIMD_MAX_NEEDLES];
             for (i = 0; i < search->needles_count; i++) {
                 masks[i] = vdupq_n_u8(search->needles[i]);
