@@ -8092,8 +8092,8 @@ wunlink_tree_enter(WCHAR *path, BOOL remove, struct wunlink_tree **stack)
     /* Do not silently reinterpret a changed type or newly readonly entry. */
     const DWORD mask = FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_REPARSE_POINT | FILE_ATTRIBUTE_READONLY;
     if ((attributes & mask) != (info.dwFileAttributes & mask)) {
-        e = EAGAIN;
-        goto close_handle;
+        CloseHandle(handle);
+        return -2;
     }
     attributes = info.dwFileAttributes;
     if (!remove && (attributes & (FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_REPARSE_POINT)) != FILE_ATTRIBUTE_DIRECTORY) {
@@ -8188,7 +8188,7 @@ rb_w32_uunlink_recursive(const char *path)
     size_t length = wcslen(input);
     while (length && isdirsep(input[length - 1])) input[--length] = L'\0';
     DWORD size = GetFullPathNameW(input, 0, NULL, NULL);
-    int e = 0;
+    int e = 0, ret = 0;
     WCHAR *full = NULL;
     struct wunlink_tree *stack = NULL;
     if (!size) {
@@ -8225,8 +8225,9 @@ rb_w32_uunlink_recursive(const char *path)
         }
         memcpy(part, full, n * sizeof(WCHAR));
         part[n] = L'\0';
-        if (wunlink_tree_enter(part, !*p, &stack) < 0) {
-            e = errno;
+        ret = wunlink_tree_enter(part, !*p, &stack);
+        if (ret < 0) {
+            if (ret == -1) e = errno;
             free(part);
             goto done;
         }
@@ -8268,8 +8269,9 @@ rb_w32_uunlink_recursive(const char *path)
             childpath[plen] = L'\\';
             memcpy(childpath + plen + 1, child->FileName, child->FileNameLength);
             childpath[plen + n + 1] = L'\0';
-            if (wunlink_tree_enter(childpath, TRUE, &stack) < 0) {
-                e = errno;
+            ret = wunlink_tree_enter(childpath, TRUE, &stack);
+            if (ret < 0) {
+                if (ret == -1) e = errno;
                 free(childpath);
                 goto done;
             }
@@ -8303,7 +8305,7 @@ rb_w32_uunlink_recursive(const char *path)
         errno = e;
         return -1;
     }
-    return 0;
+    return ret;
 }
 
 /* License: Ruby's */
