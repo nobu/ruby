@@ -207,7 +207,16 @@ jobs:
           reg add "HKLM\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps" /v DumpFolder /t REG_EXPAND_SZ /d "%GITHUB_WORKSPACE%\crashdumps" /f
           reg add "HKLM\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps" /v DumpType /t REG_DWORD /d 1 /f
 
+      # The Windows ARM runner intermittently crashes parallel test workers.
+      - name: Run checks (serial on Windows ARM)
+        run: nmake ${{ matrix.test_task || 'check' }}
+        if: ${{ matrix.os == '11-arm' }}
+        env:
+          RUBY_DEBUG: wer
+        timeout-minutes: 70
+
       - run: nmake ${{ matrix.test_task || 'check' }}
+        if: ${{ matrix.os != '11-arm' }}
         env:
           RUBY_TESTOPTS: -j${{ env.TEST_JOBS || 4 }}
           RUBY_DEBUG: wer
