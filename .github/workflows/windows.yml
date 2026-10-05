@@ -141,7 +141,9 @@ jobs:
           nmake -f nul
           set TMP=%RUNNER_TEMP%
           set TEMP=%RUNNER_TEMP%
-          set MAKEFLAGS=${{ matrix.make == 'make' && '-j%NUMBER_OF_PROCESSORS%' || 'l' }}
+          set MAKEFLAGS=l
+          rem configure.bat runs nmake, which also reads MAKEFLAGS.
+          set GNUMAKEFLAGS=${{ matrix.make == 'make' && '-j%NUMBER_OF_PROCESSORS%' || '' }}
           set /a TEST_JOBS=(15 * %NUMBER_OF_PROCESSORS% / 10) > nul
           set RUBY_OPT_DIR=%GITHUB_WORKSPACE:\=/%/src/vcpkg_installed/%VCPKG_DEFAULT_TRIPLET%
           set > new.env
