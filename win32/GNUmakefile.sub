@@ -18,6 +18,9 @@ nmake =
 DOT_WAIT = .WAIT
 override order_only := |
 override gnumake_recursive := +
+# The GNU make versions of update-gems and extract-gems in defs/gmake.mk
+# need sh, so keep the portable ones in common.mk under these names.
+override sequential :=
 
 ECHO1 = $(V:1=@:)
 RUNCMD = $(COMSPEC) /c
