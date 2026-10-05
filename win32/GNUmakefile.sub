@@ -1010,9 +1010,11 @@ RUBYSPEC_CAPIEXT_EXTS = $(patsubst %_spec.c,$(RUBYSPEC_CAPIEXT)/%_spec.so,$(notd
 $(RUBYSPEC_CAPIEXT_EXTS): $(RUBYSPEC_CAPIEXT_DEPS)
 rubyspec-capiext: $(RUBYSPEC_CAPIEXT_EXTS)
 
+# Each extension is compiled and linked in one go, so linking one would
+# read the shared vc140.pdb while another job writes it.
 $(RUBYSPEC_CAPIEXT)/%.so: $(RUBYSPEC_CAPIEXT_SRCDIR)/%.c
 	$(ECHO) building $(@F)
 	$(Q)$(MAKEDIRS) $(@D)
 	$(Q)(echo EXPORTS&&echo Init_$(*F))> $(basename $@).def
-	$(Q)$(LDSHARED) -Fe$(@) -Fo$(basename $@).obj $(INCFLAGS) $(CFLAGS) $(CPPFLAGS) $< $(LIBRUBYARG) -link $(DLDFLAGS) $(XLDFLAGS) $(LIBS) $(LOCAL_LIBS) -implib:$(basename $@).lib -pdb:$(basename $@).pdb -def:$(basename $@).def
-	$(Q)$(RM) $(basename $@).def $(basename $@).exp $(basename $@).lib $(basename $@).obj $(basename $@).pdb
+	$(Q)$(LDSHARED) -Fe$(@) -Fo$(basename $@).obj -Fd$(basename $@)-compile.pdb $(INCFLAGS) $(CFLAGS) $(CPPFLAGS) $< $(LIBRUBYARG) -link $(DLDFLAGS) $(XLDFLAGS) $(LIBS) $(LOCAL_LIBS) -implib:$(basename $@).lib -pdb:$(basename $@).pdb -def:$(basename $@).def
+	$(Q)$(RM) $(basename $@).def $(basename $@).exp $(basename $@).lib $(basename $@).obj $(basename $@).pdb $(basename $@)-compile.pdb
