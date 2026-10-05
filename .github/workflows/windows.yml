@@ -22,7 +22,7 @@ permissions:
 
 jobs:
   make:
-    continue-on-error: ${{ matrix.os == '11-arm' }}
+    continue-on-error: ${{ matrix.os == '11-arm' || matrix.make == 'make' }}
     strategy:
       matrix:
         include:
@@ -32,6 +32,9 @@ jobs:
             test_task: test-bundled-gems
           - os: 2025-vs2026
             test_task: check
+          - os: 2025-vs2026
+            test_task: check
+            make: make
           - os: 2025-vs2026
             test_task: test-bundled-gems
           - os: 2025-vs2026
@@ -55,7 +58,7 @@ jobs:
       || (github.event.pull_request.user.login == 'dependabot[bot]' && !startsWith(github.head_ref, 'dependabot/vcpkg'))
       )}}
 
-    name: Windows ${{ matrix.os }}${{ case(matrix.target == 'x86', ' x86', '') }}${{ case(matrix.yjit == true, ' YJIT', '') }} (${{ matrix.test_task }})
+    name: Windows ${{ matrix.os }}${{ case(matrix.target == 'x86', ' x86', '') }}${{ case(matrix.yjit == true, ' YJIT', '') }}${{ case(matrix.make == 'make', ' GNU make', '') }} (${{ matrix.test_task }})
 
     permissions:
       contents: read
@@ -138,7 +141,7 @@ jobs:
           nmake -f nul
           set TMP=%RUNNER_TEMP%
           set TEMP=%RUNNER_TEMP%
-          set MAKEFLAGS=l
+          set MAKEFLAGS=${{ matrix.make == 'make' && '-j%NUMBER_OF_PROCESSORS%' || 'l' }}
           set /a TEST_JOBS=(15 * %NUMBER_OF_PROCESSORS% / 10) > nul
           set RUBY_OPT_DIR=%GITHUB_WORKSPACE:\=/%/src/vcpkg_installed/%VCPKG_DEFAULT_TRIPLET%
           set > new.env
@@ -152,6 +155,12 @@ jobs:
             Where-Object { $_.SideIndicator -eq '=>' } |
             Select-Object -ExpandProperty InputObject |
             Add-Content -Path $env:GITHUB_ENV
+
+      - name: Install GNU make
+        run: |
+          call ..\src\win32\install-gnumake.cmd || exit /b 1
+          echo %GITHUB_WORKSPACE%\src\.gnumake>>%GITHUB_PATH%
+        if: ${{ matrix.make == 'make' }}
 
       - name: baseruby version
         run: ruby -v
@@ -172,15 +181,19 @@ jobs:
           --enable-debug-env
           ${{ matrix.yjit && '--enable-yjit' || '' }}
 
-      - run: nmake prepare-vcpkg
+      - name: Convert Makefile for GNU make
+        run: ruby ../src/win32/mkgnumakefile.rb
+        if: ${{ matrix.make == 'make' }}
 
-      - run: nmake incs
+      - run: ${{ matrix.make || 'nmake' }} prepare-vcpkg
 
-      - run: nmake extract-extlibs
+      - run: ${{ matrix.make || 'nmake' }} incs
+
+      - run: ${{ matrix.make || 'nmake' }} extract-extlibs
 
       # On all other platforms, test-spec depending on extract-gems (in common.mk) is enough.
       # But not for this Visual Studio workflow. So here we extract gems before building.
-      - run: nmake extract-gems
+      - run: ${{ matrix.make || 'nmake' }} extract-gems
 
       # windows-11-arm runner cannot run `ruby tool/file2lastrev.rb --revision.h --output=revision.h`
       - name: make revision.h
@@ -189,7 +202,7 @@ jobs:
           type revision.h
         working-directory: src
 
-      - run: nmake
+      - run: ${{ matrix.make || 'nmake' }}
 
       - name: Set ENV for YJIT
         shell: pwsh
@@ -211,7 +224,7 @@ jobs:
           test-task: ${{ matrix.test_task || 'check' }}
           is-yjit: ${{ matrix.yjit || false }}
         continue-on-error: true
-        if: ${{ matrix.test_task != 'test-bundled-gems' }}
+        if: ${{ matrix.test_task != 'test-bundled-gems' && !matrix.make }}
         timeout-minutes: 3
 
       # A minidump with data segments, handles, unloaded modules, the PEB and
@@ -228,10 +241,10 @@ jobs:
       # A dump carries part of the environment, so the test processes run
       # without LAUNCHABLE_TOKEN (only the Launchable post step uses it), and
       # no dump is written after this step.
-      - name: nmake ${{ matrix.test_task || 'check' }}
+      - name: ${{ matrix.make || 'nmake' }} ${{ matrix.test_task || 'check' }}
         run: |
           set LAUNCHABLE_TOKEN=
-          nmake ${{ matrix.test_task || 'check' }} ${{ matrix.yjit && 'RUN_OPTS=--yjit-call-threshold=1' || '' }}
+          ${{ matrix.make || 'nmake' }} ${{ matrix.test_task || 'check' }} ${{ matrix.yjit && 'RUN_OPTS=--yjit-call-threshold=1' || '' }}
         env:
           RUBY_TESTOPTS: -j${{ env.TEST_JOBS || 4 }}
           RUBY_DEBUG: wer
@@ -242,12 +255,12 @@ jobs:
         if: ${{ always() }}
 
       - run: nmake binary-package
-        if: ${{ matrix.test_task == 'check' }}
+        if: ${{ matrix.test_task == 'check' && !matrix.make }}
         timeout-minutes: 10
 
       - name: Verify binary package
         shell: pwsh
-        if: ${{ matrix.test_task == 'check' }}
+        if: ${{ matrix.test_task == 'check' && !matrix.make }}
         run: |
           $zip = Get-Item ruby-*-mswin*.zip
           $dest = Join-Path $env:RUNNER_TEMP "binpkg"
@@ -271,7 +284,7 @@ jobs:
       - name: Upload crash dumps
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: crashdumps-${{ matrix.os }}${{ case(matrix.target == 'x86', '-x86', '') }}${{ case(matrix.yjit == true, '-yjit', '') }}-${{ matrix.test_task }}
+          name: crashdumps-${{ matrix.os }}${{ case(matrix.target == 'x86', '-x86', '') }}${{ case(matrix.yjit == true, '-yjit', '') }}${{ case(matrix.make == 'make', '-gnumake', '') }}-${{ matrix.test_task }}
           path: |
             crashdumps
             build/*.exe
@@ -288,7 +301,7 @@ jobs:
 
       - uses: ./.github/actions/slack
         with:
-          label: Windows ${{ matrix.os }}${{ case(matrix.target == 'x86', ' x86', '') }}${{ case(matrix.yjit == true, ' YJIT', '') }} / ${{ matrix.test_task || 'check' }}
+          label: Windows ${{ matrix.os }}${{ case(matrix.target == 'x86', ' x86', '') }}${{ case(matrix.yjit == true, ' YJIT', '') }}${{ case(matrix.make == 'make', ' GNU make', '') }} / ${{ matrix.test_task || 'check' }}
           SLACK_WEBHOOK_URL: ${{ secrets.SIMPLER_ALERTS_URL }} # ruby-lang slack: ruby/simpler-alerts-bot
         if: ${{ failure() }}
 
