@@ -7,7 +7,8 @@
 
 set version=4.4.1
 set sha256=dd16fb1d67bfab79a72f5e8390735c49e3e8e70b4945a15ab1f81ddb78658fb3
-set url=https://ftp.gnu.org/gnu/make/make-%version%.tar.gz
+:: The tarball is checked against sha256, so a mirror is as good as the origin.
+set mirrors=https://mirrors.kernel.org/gnu https://ftp.gnu.org/gnu
 
 for %%I in ("%~dp0..") do set "srcdir=%%~fI"
 set "dest=%~1"
@@ -17,13 +18,7 @@ set "tarball=%dest%\make-%version%.tar.gz"
 set "builddir=%dest%\make-%version%"
 
 if not exist "%dest%\." mkdir "%dest%" || exit /b 1
-call :verify || (
-    "%SystemRoot%\System32\curl.exe" -fsSL -o "%tarball%" %url% || exit /b 1
-    call :verify || (
-        echo 1>&2 %tarball%: SHA256 mismatch
-        exit /b 1
-    )
-)
+call :verify || call :download || exit /b 1
 
 if exist "%builddir%\." rmdir /s /q "%builddir%"
 "%SystemRoot%\System32\tar.exe" -xzf "%tarball%" -C "%dest%" || exit /b 1
@@ -43,6 +38,13 @@ echo.
 "%dest%\make.exe" --version | findstr /b /c:"GNU Make"
 echo installed %dest%\make.exe
 exit /b 0
+
+:download
+for %%U in (%mirrors%) do (
+    "%SystemRoot%\System32\curl.exe" -fsSL --connect-timeout 30 --max-time 300 --retry 2 -o "%tarball%" %%U/make/make-%version%.tar.gz && call :verify && exit /b 0
+)
+echo 1>&2 failed to download make-%version%.tar.gz with the expected SHA256
+exit /b 1
 
 :verify
 if not exist "%tarball%" exit /b 1
