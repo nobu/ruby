@@ -91,7 +91,7 @@ jobs:
         with:
           srcdir: src
           builddir: build
-          make-command: nmake
+          make-command: ${{ matrix.make || 'nmake' }}
           clean: true
           bundled-gems-src-cache: ${{ matrix.test_task == 'test-bundled-gems' }}
 
