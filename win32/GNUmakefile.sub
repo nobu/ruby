@@ -922,8 +922,88 @@ clean-local::
 distclean-local::
 	$(Q)$(RM) ext\config.cache $(call win,$(RBCONFIG)) $(call win,$(CONFIG_H)) miniprelude.c
 	-$(Q)$(RM) $(call win,$(INSTALLED_LIST)) $(call win,$(arch_hdrdir))\ruby\config.h verconf.h
-	-$(Q)$(RM) uncommon.mk
+	-$(Q)$(RM) uncommon.mk GNUmakefile
+	-$(Q)$(RMALL) .deps-gnu
 	-$(Q)$(RMDIRS) $(call win,$(arch_hdrdir))\ruby
+	-$(Q)$(RMDIR) win32
+
+clean-local:: clean-prism
+
+clean-prism:
+	@for /R $(call win,$(PRISM_BUILD_DIR)) %%I in (.time) do @(del /q %%I && $(RMDIRS) %%~pI) 2> nul || $(NULLCMD)
+
+distclean-local:: clean-srcs-local
+distclean-ext:: clean-srcs-ext
+
+distclean-local:: distclean-prism
+
+distclean-prism: clean-prism
+ifneq ($(srcdir),.)
+	$(Q)for %%I in ( \
+		$(call win,$(PRISM_SRCDIR))\templates\ext\prism\*.c.erb \
+		$(call win,$(PRISM_SRCDIR))\templates\include\prism\*.h.erb \
+		$(call win,$(PRISM_SRCDIR))\templates\src\*.c.erb \
+	) do $(Q)(del /q prism\%%~nI 2> nul || $(NULLCMD))
+	$(Q)for /D %%I in (prism\*) do $(Q)$(RMDIRS) %%I
+	$(Q)$(RMDIRS) prism
+endif
+
+realclean-prism: distclean-prism
+ifeq ($(srcdir),.)
+	$(Q)for %%I in ( \
+		$(call win,$(PRISM_SRCDIR))\templates\ext\prism\*.c.erb \
+		$(call win,$(PRISM_SRCDIR))\templates\include\prism\*.h.erb \
+		$(call win,$(PRISM_SRCDIR))\templates\src\*.c.erb \
+	) do $(Q)(del /q $(call win,$(PRISM_SRCDIR))\%%~nI 2> nul || $(NULLCMD))
+endif
+
+.bundle/clean:: .bundle/clean.sub
+.bundle/distclean:: .bundle/distclean.sub
+.bundle/realclean:: .bundle/realclean.sub
+
+.bundle/clean.sub:: ext/clean.mk
+.bundle/distclean.sub:: ext/distclean.mk
+.bundle/realclean.sub:: ext/realclean.mk
+
+# top_srcdir on the command line would override the one in each
+# extension's Makefile too, so pass it through the environment.
+ext/clean.mk ext/distclean.mk ext/realclean.mk::
+	$(Q)if exist $(EXTS_MK) (set "top_srcdir=$(srcdir)" && $(MAKE) -k -f $(EXTS_MK) $(basename $(@F)))
+
+ext/clean.sub ext/distclean.sub ext/realclean.sub \
+.bundle/clean.sub .bundle/distclean.sub .bundle/realclean.sub::
+	$(Q)cd $(@D) 2>nul && (for /R $(EXTS) %%I in (.) \
+	do $(Q)if exist %%I\Makefile ( \
+	    cd %%I && ( \
+	    call set n=%%I && \
+	    call set n=%%n:%CD%\$(@D)\=%% && \
+	    call set n=%%n:\.=%% && \
+	    call echo $(@F:.sub=)ing %%n:\=/%% & \
+	    $(MAKE) $(@F:.sub=) & \
+	    cd %CD% & \
+	    $(RMDIRS) %%I \
+	))) || $(NULLCMD)
+
+ext/distclean ext/realclean .bundle/distclean .bundle/realclean::
+	$(Q)(for /D /R $(@D) %%I in (.) do $(Q)$(RMDIRS) %%I) || $(NULLCMD)
+
+.bundle/distclean .bundle/realclean::
+	$(Q)for /D %%I in ($(@D)\*) do $(Q)$(RMDIRS) %%I || $(NULLCMD)
+	-$(Q)rmdir $(@D) 2> nul || $(NULLCMD)
+
+.bundle/realclean::
+	@$(RMALL) $(tooldir)/bunlder/*.lock $(srcdir)/.bundle
+
+gc/clean gc/distclean gc/realclean::
+	- for /D %%G in (gc\*) do (pushd %%G && $(MAKE) TARGET_SO_DIR=./ $(@F) & popd) || $(NULLCMD)
+gc/distclean gc/realclean::
+	- for /D %%G in (gc\*) do ($(RMDIR) %%G) || $(NULLCMD)
+
+clean-enc distclean-enc realclean-enc:
+ifneq ($(wildcard $(ENC_MK)),)
+	$(ECHO) $(@:-enc=ing) encodings
+	-$(Q)$(MAKE) $(MAKE_ENC) $(@:-enc=)
+endif
 
 $(RCFILES) &: $(RBCONFIG) $(srcdir)/revision.h $(srcdir)/win32/resource.rb
 	@$(BOOTSTRAPRUBY_COMMAND) $(srcdir)/win32/resource.rb \
