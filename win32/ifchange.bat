@@ -65,6 +65,7 @@ for %%I in (%1) do set opt=%%~I
     )
     if "%opt%" == "--debug" (
         shift
+        set "PROMPT=$e[34m+$e[m"
         echo on
         goto :optloop
     )
@@ -81,10 +82,36 @@ if "%2" == "" (
     exit /b 1
 )
 
-set dest=%1
-set src=%2
-set dest=%dest:/=\%
-set src=%src:/=\%
+set "dest=%1"
+set "src=%2"
+set "dest=%dest:/=\%"
+set "src=%src:/=\%"
+
+if "%color%" == "always" (
+    set "color=yes"
+) else if "%color%" == "never" (
+    set "color=no"
+) else if not "%color%" == "auto" (
+    echo "unknown --color option: %color%" 1>&2
+    exit /b 1
+)
+if not "%NO_COLOR%" == "" set "color=no"
+
+if "%color%" == "auto" (
+    powershell -NoProfile -Command "exit [Console]::IsOutputRedirected"
+    if errorlevel 1 (set "color=no") else (set "color=yes")
+)
+
+set msg_begin=
+set msg_unchanged=
+set msg_updated=
+set msg_reset=
+if "%color%" == "no" goto :no_color
+    set "msg_begin=["
+    set "msg_unchanged=%msg_begin%32m"
+    set "msg_updated=%msg_begin%31;1m"
+    set "msg_reset=%msg_begin%m"
+:no_color
 
 if not "%src%" == "-" goto :srcfile
     if not "%TMPDIR%" == "" (
@@ -107,11 +134,11 @@ if exist %dest% (
       :nt_unchanged
 	del %src%
       :nt_unchanged1
-	for %%I in (%1) do echo %%~I unchanged
+	for %%I in (%1) do echo %%~I %msg_unchanged%unchanged%msg_reset%
 	goto :nt_end
     )
 )
-for %%I in (%1) do echo %%~I updated
+for %%I in (%1) do echo %%~I %msg_updated%updated%msg_reset%
 del /f %dest% 2> nul
 copy %src% %dest% > nul || (
     echo %progname%: failed to copy %src% to %dest% 1>&2
