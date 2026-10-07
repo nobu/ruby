@@ -21,6 +21,7 @@ timestamp=
 keepsuffix=
 srcavail=f
 color=auto
+quiet=
 [ "x${NO_COLOR-}" = x ] || color=never
 until [ $# -eq 0 ]; do
     case "$1" in
@@ -48,6 +49,9 @@ until [ $# -eq 0 ]; do
 	    ;;
 	--color=*)
 	    color=`expr \( "$1" : '[^=]*=\(.*\)' \)`
+	    ;;
+	--quiet)
+	    quiet=:
 	    ;;
 	--debug)
 	    set -x
@@ -81,6 +85,7 @@ if [ "$temp" = - ]; then
 fi
 
 msg_begin= msg_unchanged= msg_updated= msg_reset=
+[ -z "$quiet" ] || color=never
 if [ "$color" = always -o \( "$color" = auto -a -t 1 \) ]; then
     msg_begin="["
     case "`tput smso 2>/dev/null`" in
@@ -100,10 +105,10 @@ fi
 targetdir=
 case "$target" in */*) targetdir=`dirname "$target"`;; esac
 if [ -f "$target" -a ! -${srcavail} "$temp" ] || cmp "$target" "$temp" >/dev/null 2>&1; then
-    echo "$target ${msg_unchanged}unchanged${msg_reset}"
+    ${quiet} echo "$target ${msg_unchanged}unchanged${msg_reset}"
     rm -f "$temp"
 else
-    echo "$target ${msg_updated}updated${msg_reset}"
+    ${quiet} echo "$target ${msg_updated}updated${msg_reset}"
     [ x"${targetdir}" = x -o -d "${targetdir}" ] || mkdir -p "${targetdir}"
     [ x"${keepsuffix}" != x -a -f "$target" ] && mv -f "$target" "${target}${keepsuffix}"
     mv -f "$temp" "$target"

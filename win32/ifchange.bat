@@ -9,6 +9,7 @@ set timestamp=
 set keepsuffix=
 set empty=
 set color=auto
+set quiet=
 :optloop
 set optarg=
 :optnext
@@ -63,6 +64,11 @@ for %%I in (%1) do set opt=%%~I
         shift
         goto :optloop
     )
+    if "%opt%" == "--quiet" (
+        set quiet=true
+        shift
+        goto :optloop
+    )
     if "%opt%" == "--debug" (
         shift
         set "PROMPT=$e[34m+$e[m"
@@ -95,6 +101,7 @@ if "%color%" == "always" (
     echo "unknown --color option: %color%" 1>&2
     exit /b 1
 )
+if not "%quiet%" == "" set "color=no"
 if not "%NO_COLOR%" == "" set "color=no"
 
 if "%color%" == "auto" (
@@ -134,11 +141,11 @@ if exist %dest% (
       :nt_unchanged
 	del %src%
       :nt_unchanged1
-	for %%I in (%1) do echo %%~I %msg_unchanged%unchanged%msg_reset%
+	if "%quiet%" == "" for %%I in (%1) do echo %%~I %msg_unchanged%unchanged%msg_reset%
 	goto :nt_end
     )
 )
-for %%I in (%1) do echo %%~I %msg_updated%updated%msg_reset%
+if "%quiet%" == "" for %%I in (%1) do echo %%~I %msg_updated%updated%msg_reset%
 del /f %dest% 2> nul
 copy %src% %dest% > nul || (
     echo %progname%: failed to copy %src% to %dest% 1>&2
@@ -163,6 +170,7 @@ if "%timestamp%" == "" goto :end
         "   --keep[=suffix]    keep old file with suffix. (default: '.old')"
         "   --empty            assume unchanged if the new file is empty."
         "   --color[=always|auto|never] colorize output."
+        "   --quiet            suppress result"
     ) do echo.%%~I
     goto :eof
 
