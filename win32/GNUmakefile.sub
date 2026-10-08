@@ -13,6 +13,8 @@ MAKEOVERRIDES += SHELL=cmd.exe
 # Variable names are case sensitive, and the environment has `ComSpec`.
 COMSPEC := $(or $(ComSpec),$(COMSPEC),cmd.exe)
 
+GNUMAKEFLAGS += --output-sync=target
+
 gnumake = yes
 nmake =
 DOT_WAIT = .WAIT
@@ -24,7 +26,7 @@ override sequential :=
 
 ECHO1 = $(V:1=@:)
 RUNCMD = $(COMSPEC) /c
-MKFILES = Makefile verconf.mk
+MKFILES = GNUmakefile verconf.mk
 NULLCMD = exit /b0.
 NULL = nul
 CHDIR = cd
@@ -672,7 +674,7 @@ $(CONFIG_H): $(MKFILES) $(srcdir)/win32/GNUmakefile.sub $(ABI_VERSION_HDR)
 	@$(file >config.h.tmp,$(CONFIG_H_CONTENT))
 	@$(IFCHANGE) "--timestamp=$(call win,$@)" $(call win,$(RUBY_CONFIG_H)) config.h.tmp
 
-EXECUTABLE_EXTS_LIST = $(subst $(comma), ,$(subst ",,$(EXECUTABLE_EXTS)))
+EXECUTABLE_EXTS_LIST = $(subst $(comma), ,$(subst ",,$(EXECUTABLE_EXTS))) #"
 
 define CONFIG_STATUS_CONTENT
 $(sharp) Generated automatically by GNUmakefile.sub.
