@@ -924,7 +924,7 @@ clean-local::
 distclean-local::
 	$(Q)$(RM) ext\config.cache $(call win,$(RBCONFIG)) $(call win,$(CONFIG_H)) miniprelude.c
 	-$(Q)$(RM) $(call win,$(INSTALLED_LIST)) $(call win,$(arch_hdrdir))\ruby\config.h verconf.h
-	-$(Q)$(RM) uncommon.mk GNUmakefile
+	-$(Q)$(RM) uncommon.mk
 	-$(Q)$(RMDIRS) $(call win,$(arch_hdrdir))\ruby
 	-$(Q)$(RMDIR) win32
 
