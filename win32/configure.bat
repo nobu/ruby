@@ -279,6 +279,7 @@ goto :loop ;
   echo   --target=TARGET         configure for TARGET [i386-mswin32]
   echo Optional Package:
   echo   --with-baseruby=RUBY    use RUBY as baseruby [ruby]
+  echo   --with-gnu-make[=MAKE]  generate GNUmakefile for GNU make [make]
   echo   --with-static-linked-ext link external modules statically
   echo   --with-ext="a,b,..."    use extensions a, b, ...
   echo   --without-ext="a,b,..." ignore extensions a, b, ...
