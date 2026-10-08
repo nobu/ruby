@@ -60,7 +60,7 @@ HAVE_BASERUBY = yes
 endif
 
 ifeq ($(HAVE_BASERUBY),yes)
-DEPENDENCIES_DIR = .deps-gnu
+DEPENDENCIES_DIR = .deps
 REVISION_FORCE ?= PHONY
 else
 DEPENDENCIES_DIR = $(srcdir)
@@ -428,7 +428,7 @@ common_mk_includes := $(srcdir)/prism/srcs.mk $(srcdir)/coroutine/test.mk
 -include uncommon.mk
 # The jobserver hands out the jobs to sub-makes.
 override mflags := $(filter-out -j%,$(MFLAGS))
-ifeq ($(DEPENDENCIES_DIR),.deps-gnu)
+ifeq ($(DEPENDENCIES_DIR),.deps)
 -include $(DEPENDENCIES_DIR)/depend
 endif
 
@@ -925,7 +925,6 @@ distclean-local::
 	$(Q)$(RM) ext\config.cache $(call win,$(RBCONFIG)) $(call win,$(CONFIG_H)) miniprelude.c
 	-$(Q)$(RM) $(call win,$(INSTALLED_LIST)) $(call win,$(arch_hdrdir))\ruby\config.h verconf.h
 	-$(Q)$(RM) uncommon.mk GNUmakefile
-	-$(Q)$(RMALL) .deps-gnu
 	-$(Q)$(RMDIRS) $(call win,$(arch_hdrdir))\ruby
 	-$(Q)$(RMDIR) win32
 
