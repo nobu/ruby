@@ -436,9 +436,6 @@ uncommon.mk: $(srcdir)/common.mk $(common_mk_includes) $(srcdir)/win32/GNUmakefi
 	$(BASERUBY) -pe "$$_.gsub!(/\{\$$\([^(){}]*\)\}/, ''); $$_.sub!(/^!/, '#!')" \
 	    $(srcdir)/common.mk $(common_mk_includes) > $@
 
-$(DEPENDENCIES_DIR)/depend:
-	$(BASERUBY) $(srcdir)/tool/mkdepend.rb --root=$(srcdir) --scope=core --output=$(DEPENDENCIES_DIR)
-
 VCPKG_DEFAULT_TRIPLET ?= $(MACHINE)-windows
 
 prepare-vcpkg::
