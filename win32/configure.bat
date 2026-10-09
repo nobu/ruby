@@ -302,10 +302,11 @@ goto :EOF
 if "%debug_configure%" == "yes" (type %confargs%)
 if defined optdirs (echo>>%config_make% optdirs = %optdirs:~1%)
 (
+  echo empty =
   echo.
   echo configure_args = \
   type %confargs%
-  echo # configure_args
+  echo $^(empty^)# configure_args
 
   if not "%MAKEFILE%" == "GNUmakefile" (
     echo.
