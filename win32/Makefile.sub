@@ -28,8 +28,8 @@ BASERUBY =
 # After `nmake`, just built `ruby.exe` exists in the build directory,
 # and is searched first prior to $PATH.  Assume that no ruby
 # executable in $(tooldir).
-! if [cd $(tooldir) && ruby missing-baseruby.bat 2> nul]
-! else if [(cd $(tooldir) && for %I in (ruby.exe) do @echo BASERUBY = %~s$$PATH:I) > baseruby.mk]
+! if [cd $(tooldir) && set NoDefaultCurrentDirectoryInExePath=1 && ruby missing-baseruby.bat 2> nul]
+! else if [(cd $(tooldir) && set NoDefaultCurrentDirectoryInExePath=1 && for %I in (ruby.exe) do @echo BASERUBY = %~s$$PATH:I) > baseruby.mk]
 ! else if exist(baseruby.mk)
 !   include baseruby.mk
 ! endif

@@ -50,7 +50,7 @@ else ifeq ($(BASERUBY),)
 # After `make`, just built `ruby.exe` exists in the build directory,
 # and is searched first prior to $PATH.  Assume that no ruby
 # executable in $(tooldir).
-BASERUBY := $(shell cd $(call win,$(tooldir)) && for %%I in (ruby.exe) do @echo %%~s$$PATH:I)
+BASERUBY := $(shell cd $(call win,$(tooldir)) && set NoDefaultCurrentDirectoryInExePath=1 && for %%I in (ruby.exe) do @echo %%~s$$PATH:I)
 endif
 ifeq ($(BASERUBY),)
 BASERUBY = $(call win,$(tooldir))\missing-baseruby.bat
