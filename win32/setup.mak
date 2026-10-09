@@ -55,6 +55,7 @@ prefix = $(prefix:\=/)
 <<
 	@type $(config_make) >>$(MAKEFILE)
 	@del $(config_make) > nul
+	@$(APPEND)
 
 -baseruby-: nul
 !if "$(HAVE_BASERUBY)" != "no"
@@ -86,7 +87,7 @@ int main(void) {mpz_init(x); return 0;}
 	@echo # TARGET>>$(MAKEFILE)
 
 -osname32-: -osname-section-
-	@$(CPP) -Tc <<"checking if target OS is 32bit" >>$(MAKEFILE)
+	@$(CPP) -Tc <<"checking if target OS is 32bit" | findstr = >>$(MAKEFILE)
 #ifdef _WIN64
 #error
 #else
@@ -95,7 +96,7 @@ TARGET_OS = mswin32
 <<
 
 -osname64-: -osname-section-
-	@$(CPP) -Tc <<"checking if target OS is 64bit" >>$(MAKEFILE)
+	@$(CPP) -Tc <<"checking if target OS is 64bit" | findstr = >>$(MAKEFILE)
 #ifndef _WIN64
 #error
 #else
@@ -251,7 +252,7 @@ $(CPU) = $(PROCESSOR_LEVEL)
 <<
 
 -x64-: -osname64-
-	@$(CPP) -Tc <<"checking if compiler is for $(@:-=)" >>$(MAKEFILE)
+	@$(CPP) -Tc <<"checking if compiler is for $(@:-=)" | findstr = >>$(MAKEFILE)
 #ifndef _M_AMD64
 #error Not compiler for $(@:-=)
 #else
@@ -260,7 +261,7 @@ MACHINE = $(@:-=)
 <<
 
 -ix86-: -osname32-
-	@$(CPP) -Tc <<"checking if compiler is for $(@:-=)" >>$(MAKEFILE)
+	@$(CPP) -Tc <<"checking if compiler is for $(@:-=)" | findstr = >>$(MAKEFILE)
 #ifndef _M_IX86
 #error Not compiler for $(@:-=)
 #else
@@ -270,7 +271,7 @@ MACHINE = $(@:-=)
 <<
 
 -arm64-: -osname64-
-	@$(CPP) -Tc <<"checking if compiler is for $(@:-=)" >>$(MAKEFILE)
+	@$(CPP) -Tc <<"checking if compiler is for $(@:-=)" | findstr = >>$(MAKEFILE)
 #ifndef _M_ARM64
 #error Not compiler for $(@:-=)
 #else
