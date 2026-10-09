@@ -73,6 +73,13 @@ win_srcdir ?= $(srcdir)/win32
 
 #### Start of system configuration section. ####
 
+ifdef pathlist
+override pathlist := $(subst ;;,;,$(pathlist);)
+export PATH := $(pathlist:;=/bin;)$(PATH)
+export INCLUDE := $(pathlist:;=/include;)$(INCLUDE)
+export LIB := $(pathlist:;=/lib;)$(LIB)
+endif
+
 ifneq ($(optdirs),)
 override optdirs := $(subst ;, ,$(subst \,/,$(optdirs)))
 XINCFLAGS = $(patsubst %,-I"%/include",$(optdirs))

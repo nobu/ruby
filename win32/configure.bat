@@ -301,6 +301,7 @@ goto :EOF
 :end
 if "%debug_configure%" == "yes" (type %confargs%)
 if defined optdirs (echo>>%config_make% optdirs = %optdirs:~1%)
+if defined pathlist (echo>>%config_make% pathlist = %pathlist%)
 (
   echo empty =
   echo.
@@ -316,14 +317,13 @@ if defined optdirs (echo>>%config_make% optdirs = %optdirs:~1%)
     echo XLDFLAGS = -libpath:"$(optdirs:;=/lib" -libpath:")/lib"
     echo !endif
   )
-
-  if not "%pathlist%" == "" (
-    echo.
-    call echo PATH = %%pathlist:;=/bin;%%$^(PATH^)
-    call echo INCLUDE = %%pathlist:;=/include;%%$^(INCLUDE^)
-    call echo LIB = %%pathlist:;=/lib;%%$^(LIB^)
-  )
 ) >> %config_make%
+
+if not "%pathlist%" == "" (
+  set "PATH=%pathlist:;=/bin;%%PATH%"
+  set "INCLUDE=%pathlist:;=/include;%%INCLUDE%"
+  set "LIB=%pathlist:;=/lib;%%LIB%"
+)
 
 del %confargs%
 if "%debug_configure%" == "yes" (type %config_make%)

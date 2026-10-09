@@ -79,9 +79,11 @@ win_srcdir = $(srcdir)/win32
 #### Start of system configuration section. ####
 
 !if defined(pathlist)
+pathlist = $(pathlist);
+pathlist = $(pathlist:;;=;)
 PATH = $(pathlist:;=/bin;)$(PATH)
-INCLUDE = $(pathlist:;=/include;)
-LIB = $(pathlist:;=/lib;)
+INCLUDE = $(pathlist:;=/include;)$(INCLUDE)
+LIB = $(pathlist:;=/lib;)$(LIB)
 !endif
 
 ## variables may be overridden by $(compile_dir)/Makefile
