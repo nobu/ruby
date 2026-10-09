@@ -669,6 +669,12 @@ update-src::
 !ifndef VCPKG_DEFAULT_TRIPLET
 VCPKG_DEFAULT_TRIPLET = $(MACHINE)-windows
 !endif
+!ifndef VCPKG_INSTALLED_DIR
+VCPKG_INSTALLED_DIR = $(srcdir)/vcpkg_installed
+!endif
+!ifndef VCPKG_INSTALLED
+VCPKG_INSTALLED = $(VCPKG_INSTALLED_DIR)/$(VCPKG_DEFAULT_TRIPLET)
+!endif
 TRIPLET_OPTION = --triplet $(VCPKG_DEFAULT_TRIPLET)
 
 update-vcpkg::
@@ -678,13 +684,10 @@ install-vcpkg::
 	@cd "$(srcdir:/=\)" && set LC_TIME=C && vcpkg install $(TRIPLET_OPTION)
 
 prepare-vcpkg::
-	for %%I in ($(srcdir:/=\)\vcpkg_installed\$(VCPKG_DEFAULT_TRIPLET)\bin\*.dll) do @( \
+	for %%I in ($(VCPKG_INSTALLED:/=\)\bin\*.dll) do @( \
 		if not %%~nI == readline mklink %%~nxI %%I \
 	)
 
-!ifndef VCPKG_INSTALLED
-VCPKG_INSTALLED = $(srcdir)/vcpkg_installed/$(VCPKG_DEFAULT_TRIPLET)
-!endif
 BINARY_PACKAGE_NAME = $(RUBY_BASE_NAME)-$(RUBY_PROGRAM_VERSION)-$(arch)
 BINARY_PACKAGE_STAGE = binary-package-stage
 

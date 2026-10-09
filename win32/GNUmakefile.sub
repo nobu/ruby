@@ -445,9 +445,11 @@ uncommon.mk: $(srcdir)/common.mk $(common_mk_includes) $(srcdir)/win32/GNUmakefi
 	    $(srcdir)/common.mk $(common_mk_includes) > $@
 
 VCPKG_DEFAULT_TRIPLET ?= $(MACHINE)-windows
+VCPKG_INSTALLED_DIR ?= $(srcdir)/vcpkg_installed
+VCPKG_INSTALLED ?= $(VCPKG_INSTALLED_DIR)/$(VCPKG_DEFAULT_TRIPLET)
 
 prepare-vcpkg::
-	for %%I in ($(call win,$(srcdir))\vcpkg_installed\$(VCPKG_DEFAULT_TRIPLET)\bin\*.dll) do @( \
+	for %%I in ($(call win,$(VCPKG_INSTALLED))\bin\*.dll) do @( \
 		if not %%~nI == readline mklink %%~nxI %%I \
 	)
 
