@@ -86,6 +86,13 @@ INCLUDE = $(pathlist:;=/include;)$(INCLUDE)
 LIB = $(pathlist:;=/lib;)$(LIB)
 !endif
 
+!if "$(optdirs)" != ""
+optdirs = $(optdirs:\=/)
+optdirs = $(optdirs:;= )
+XINCFLAGS = -I"$(optdirs:;=/include" -I")/include"
+XLDFLAGS = -libpath:"$(optdirs:;=/lib" -libpath:")/lib"
+!endif
+
 ## variables may be overridden by $(compile_dir)/Makefile
 !ifndef srcdir
 srcdir = ..

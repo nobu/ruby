@@ -308,15 +308,6 @@ if defined pathlist (echo>>%config_make% pathlist = %pathlist%)
   echo configure_args = \
   type %confargs%
   echo $^(empty^)# configure_args
-
-  if not "%MAKEFILE%" == "GNUmakefile" (
-    echo.
-    echo !if "$(optdirs)" != ""
-    for %%I in ("$(optdirs:\=/)" "$(optdirs:/;=;)") do @echo optdirs = %%~I
-    echo XINCFLAGS = -I"$(optdirs:;=/include" -I")/include"
-    echo XLDFLAGS = -libpath:"$(optdirs:;=/lib" -libpath:")/lib"
-    echo !endif
-  )
 ) >> %config_make%
 
 if not "%pathlist%" == "" (

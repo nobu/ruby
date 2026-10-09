@@ -82,8 +82,8 @@ endif
 
 ifneq ($(optdirs),)
 override optdirs := $(subst ;, ,$(subst \,/,$(optdirs)))
-XINCFLAGS = $(patsubst %,-I"%/include",$(optdirs))
-XLDFLAGS = $(patsubst %,-libpath:"%/lib",$(optdirs))
+XINCFLAGS := $(patsubst %,-I"%/include",$(optdirs))
+XLDFLAGS := $(patsubst %,-libpath:"%/lib",$(optdirs))
 endif
 
 srcdir ?= ..
