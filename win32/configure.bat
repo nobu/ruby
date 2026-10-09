@@ -193,6 +193,7 @@ goto :loop ;
   if "%opt%" == "--with-opt-dir" goto :opt-dir
   if "%opt%" == "--with-gmp-dir" goto :opt-dir
   if "%opt%" == "--with-gmp" goto :gmp
+  if "%opt%" == "--with-vcpkg" goto :vcpkg
   if "%opt%" == "--with-destdir" goto :destdir
   if "%opt%" == "--with-dump-ast" goto :dump-ast
   if "%opt%" == "--with-gnu-make" goto :gnu-make
@@ -254,6 +255,16 @@ goto :loop ;
   set "MAKEFILE=GNUmakefile"
   if defined arg (set "make_command=%arg%") else (set "make_command=make")
 goto :loop ;
+:vcpkg
+  for /f "delims=; tokens=1,*" %%I in ("%arg%") do (
+    if not "%%J" == "" (
+      echo 1>&2 %configure%: VCPKG_INSTALLED_DIR must be single directory
+      exit /b 1
+    )
+  )
+  echo>> %config_make% VCPKG_INSTALLED_DIR = %arg:\=/%
+  set "optdirs=%optdirs%;%arg:\=/%"
+goto :loop ;
 :opt-dir
   if "%arg%" == "" (
     echo 1>&2 %configure%: missing argument for %opt%
@@ -284,6 +295,7 @@ goto :loop ;
   echo   --with-ext="a,b,..."    use extensions a, b, ...
   echo   --without-ext="a,b,..." ignore extensions a, b, ...
   echo   --with-opt-dir="DIR-LIST" add optional headers and libraries directories separated by ';'
+  echo   --with-vcpkg="DIR"      use VCPKG installed at DIR, does not include the triplets
   echo   --disable-install-doc   do not install rdoc indexes during install
   echo   --enable-yjit           enable in-process JIT compiler that requires rustc (x64 only)
   echo   --with-ntver=0xXXXX     target NT version (shouldn't use with old SDK)
