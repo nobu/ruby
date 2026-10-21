@@ -28,7 +28,7 @@ goto :optloop
     call :usage 1 1>&2
 
 :optloop
-set "opt=%1"
+set "opt=%~1"
 if not defined opt (goto :optend)
 if not "%opt:~0,1%" == "-" (goto :optend)
 if "%opt%" == "--" (shift /1 & goto :optend)
@@ -44,8 +44,8 @@ if "%opt%" == "--" (shift /1 & goto :optend)
             if not defined optarg (
                 call :die "Missing argument for %opt%"
             )
+            set "optarg=%~1"
             if "%optarg:~0,1%" == "-" (set optarg=) else (shift)
-            goto :eachopt
         :have_optarg
             if "%opt%" == "-g" (set "opt=--git" & goto :eachopt)
             if "%opt%" == "-d" (set "opt=--date" & goto :eachopt)
@@ -56,7 +56,7 @@ if "%opt%" == "--" (shift /1 & goto :optend)
             call :die "Unknown option %opt"
         ::-
     :eachopt
-    if defined optarg goto :havearg
+    if defined optarg (for %%I in ("%optarg%") do (set "optarg=%%~I") & goto :havearg)
         set "optarg=%1"
         if "%optarg:~0,1%" == "-" (set "optarg=") else (shift)
     :havearg
@@ -95,8 +95,8 @@ if "%opt%" == "--" (shift /1 & goto :optend)
 
 if not defined git goto :EOF
 
-if not "%1" == "" (set "gitdir=%1")
-if not "%2" == "" (set "head=%2")
+if not "%1" == "" (set "gitdir=%~1")
+if not "%2" == "" (set "head=%~2")
 
 set TZ=UTC
 
