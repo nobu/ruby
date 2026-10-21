@@ -9,6 +9,7 @@ set "head=HEAD"
 set "width=10"
 set "date_type=cd"
 set "limit=20"
+set "prefix=RUBY"
 goto :optloop
 
 :usage
@@ -19,6 +20,7 @@ goto :optloop
         "  -d, --date=author|committer   specify date type (committer)"
         "  -w, --width=width             abbreviation width (%width%)"
         "  -l, --limit=NUM               limit branch name length (%limit%)"
+        "  -p, --prefix=PREFIX           use PREFIX as the symbol prefix (%prefix%)"
     ) do echo.%%~I
     exit %1
 :die
@@ -49,6 +51,7 @@ if "%opt%" == "--" (shift /1 & goto :optend)
             if "%opt%" == "-d" (set "opt=--date" & goto :eachopt)
             if "%opt%" == "-w" (set "opt=--width" & goto :eachopt)
             if "%opt%" == "-l" (set "opt=--limit" & goto :eachopt)
+            if "%opt%" == "-p" (set "opt=--prefix" & goto :eachopt)
             if "%opt%" == "-h" (set "opt=--help" & goto :eachopt)
             call :die "Unknown option %opt"
         ::-
@@ -72,6 +75,10 @@ if "%opt%" == "--" (shift /1 & goto :optend)
     )
     if "%opt%" == "--limit" (
         set /a "limit=%optarg%"
+        goto :optloop
+    )
+    if "%opt%" == "--prefix" (
+        set "prefix=%optarg%"
         goto :optloop
     )
     if "%opt%" == "--debug" (
@@ -125,13 +132,13 @@ for /f "usebackq tokens=1-6" %%A in (
 
 if "%rev%" == "" goto :EOF
 
-echo #define RUBY_REVISION "%rev%"
-echo #define RUBY_FULL_REVISION "%full%"
-echo #define RUBY_BRANCH_NAME "%branch%"
-if defined title echo #define RUBY_LAST_COMMIT_TITLE "%title%\n"
-echo #define RUBY_RELEASE_DATETIME "%dt%"
-echo #define RUBY_RELEASE_YEAR %yy%
-echo #define RUBY_RELEASE_MONTH %mm%
-echo #define RUBY_RELEASE_DAY %dd%
+echo #define %prefix%_REVISION "%rev%"
+echo #define %prefix%_FULL_REVISION "%full%"
+echo #define %prefix%_BRANCH_NAME "%branch%"
+if defined title echo #define %prefix%_LAST_COMMIT_TITLE "%title%\n"
+echo #define %prefix%_RELEASE_DATETIME "%dt%"
+echo #define %prefix%_RELEASE_YEAR %yy%
+echo #define %prefix%_RELEASE_MONTH %mm%
+echo #define %prefix%_RELEASE_DAY %dd%
 
 @endlocal

@@ -5,6 +5,7 @@
 date_type=cd
 width=10
 limit=20
+prefix=RUBY
 
 usage() {
     echo "usage: $0 [options] [working-directory [head]]
@@ -13,6 +14,7 @@ options:
   -d, --date=author|committer   specify date type (committer)
   -w, --width=width             abbreviation width ($width)
   -l, --limit=NUM               limit branch name length ($limit)
+  -p, --prefix=PREFIX           use PREFIX as the symbol prefix ($prefix)
 "
     exit ${1}
 }
@@ -22,7 +24,7 @@ die () {
     usage 1 1>&2
 }
 
-while getopts g:d:w:l:h-: opt; do
+while getopts g:d:w:l:p:h-: opt; do
     optarg="$OPTARG"
     if [ "$opt" = "-" ]; then
         opt="-${optarg%%=*}"
@@ -51,6 +53,8 @@ while getopts g:d:w:l:h-: opt; do
             width=`expr 0 + "$optarg"`;;
         -l|--limit)
             limit=`expr 0 + "$optarg"`;;
+        -p|--prefix)
+            prefix="$optarg";;
         -h|--help)
             usage;;
         --)
@@ -76,11 +80,11 @@ shift
 
 [ -z ${1+set} ] && exit
 
-echo "#define RUBY_REVISION \"$1\""
-echo "#define RUBY_FULL_REVISION \"${2}\""
-echo "#define RUBY_BRANCH_NAME \"${branch}\""
-${title:+echo "#define RUBY_LAST_COMMIT_TITLE \"${title}\\\\n\""}
-echo "#define RUBY_RELEASE_DATETIME \"${3}\""
-echo "#define RUBY_RELEASE_YEAR ${4}"
-echo "#define RUBY_RELEASE_MONTH ${5#0}"
-echo "#define RUBY_RELEASE_DAY ${6#0}"
+echo "#define ${prefix}_REVISION \"$1\""
+echo "#define ${prefix}_FULL_REVISION \"${2}\""
+echo "#define ${prefix}_BRANCH_NAME \"${branch}\""
+${title:+echo "#define ${prefix}_LAST_COMMIT_TITLE \"${title}\\\\n\""}
+echo "#define ${prefix}_RELEASE_DATETIME \"${3}\""
+echo "#define ${prefix}_RELEASE_YEAR ${4}"
+echo "#define ${prefix}_RELEASE_MONTH ${5#0}"
+echo "#define ${prefix}_RELEASE_DAY ${6#0}"
