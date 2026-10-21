@@ -4,6 +4,7 @@
 
 date_type=cd
 width=10
+limit=20
 
 usage() {
     echo "usage: $0 [options] [working-directory [head]]
@@ -11,6 +12,7 @@ options:
   -g, --git=git-command         specify the git command ($git)
   -d, --date=author|committer   specify date type (committer)
   -w, --width=width             abbreviation width ($width)
+  -l, --limit=NUM               limit branch name length ($limit)
 "
     exit ${1}
 }
@@ -20,7 +22,7 @@ die () {
     usage 1 1>&2
 }
 
-while getopts g:d:w:h-: opt; do
+while getopts g:d:w:l:h-: opt; do
     optarg="$OPTARG"
     if [ "$opt" = "-" ]; then
         opt="-${optarg%%=*}"
@@ -46,7 +48,9 @@ while getopts g:d:w:h-: opt; do
             case committer in "$optarg"*) date_type=cd; :;; *) false;; esac ||
             die "Unknown date $optarg";;
         -w|--width)
-            width="$optarg";;
+            width=`expr 0 + "$optarg"`;;
+        -l|--limit)
+            limit=`expr 0 + "$optarg"`;;
         -h|--help)
             usage;;
         --)
@@ -60,6 +64,12 @@ shift $((OPTIND-1))
 gitdir="${1-.}" head="${2-HEAD}"
 
 branch=`${git} -C "${gitdir}" symbolic-ref --short "${head}" 2>/dev/null` || branch="$head"
+set _ `${git} -C "${gitdir}" log -1 --no-show-signature "--format=%<($limit,trunc)%S" "${branch}" 2>/dev/null` "$branch"
+branch="$2"
+
+title=`${git} -C "${gitdir}" log -1 --no-show-signature "--format=%s" "${head}@{upstream}..${head}" |
+       sed 's/"/\\"/g'`
+
 set _ `${git} -C "${gitdir}" log -1 --no-show-signature "--abbrev=${width}" \
      "--date=format-local:%FT%TZ %Y %m %d" "--format=%h %H %${date_type}" "${head}" -- 2>/dev/null`
 shift
@@ -69,6 +79,7 @@ shift
 echo "#define RUBY_REVISION \"$1\""
 echo "#define RUBY_FULL_REVISION \"${2}\""
 echo "#define RUBY_BRANCH_NAME \"${branch}\""
+${title:+echo "#define RUBY_LAST_COMMIT_TITLE \"${title}\\\\n\""}
 echo "#define RUBY_RELEASE_DATETIME \"${3}\""
 echo "#define RUBY_RELEASE_YEAR ${4}"
 echo "#define RUBY_RELEASE_MONTH ${5#0}"

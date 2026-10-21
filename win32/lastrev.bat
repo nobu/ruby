@@ -8,6 +8,7 @@ if not defined gitdir (set "gitdir=.")
 set "head=HEAD"
 set "width=10"
 set "date_type=cd"
+set "limit=20"
 goto :optloop
 
 :usage
@@ -17,6 +18,7 @@ goto :optloop
         "  -g, --git=git-command         specify the git command (%git%)"
         "  -d, --date=author|committer   specify date type (committer)"
         "  -w, --width=width             abbreviation width (%width%)"
+        "  -l, --limit=NUM               limit branch name length (%limit%)"
     ) do echo.%%~I
     exit %1
 :die
@@ -46,6 +48,7 @@ if "%opt%" == "--" (shift /1 & goto :optend)
             if "%opt%" == "-g" (set "opt=--git" & goto :eachopt)
             if "%opt%" == "-d" (set "opt=--date" & goto :eachopt)
             if "%opt%" == "-w" (set "opt=--width" & goto :eachopt)
+            if "%opt%" == "-l" (set "opt=--limit" & goto :eachopt)
             if "%opt%" == "-h" (set "opt=--help" & goto :eachopt)
             call :die "Unknown option %opt"
         ::-
@@ -65,6 +68,10 @@ if "%opt%" == "--" (shift /1 & goto :optend)
     )
     if "%opt%" == "--width" (
         set /a "width=%optarg%"
+        goto :optloop
+    )
+    if "%opt%" == "--limit" (
+        set /a "limit=%optarg%"
         goto :optloop
     )
     if "%opt%" == "--debug" (
@@ -92,6 +99,17 @@ set TZ=UTC
 if not defined branch (
    set "branch=%head%"
 )
+(for /f "usebackq" %%I in (
+    `%git% -C "%gitdir%" log -1 --no-show-signature "--format=%%<(%limit%,trunc)%%S" "%branch%"`
+) do set branch=%%I) 2> nul
+if not defined branch (
+   set "branch=%head%"
+)
+
+(for /f "usebackq tokens=*" %%I in (
+    `%git% -C "%gitdir%" log -1 --no-show-signature "--format=%%s" "%head%@{upstream}..%head%"`
+) do set "title=%%I") 2> nul
+if defined title (set title=%title:"=\"%)
 
 for /f "usebackq tokens=1-6" %%A in (
     `%git% -C "%gitdir%" log -1 --no-show-signature "--abbrev=%width%" ^
@@ -110,6 +128,7 @@ if "%rev%" == "" goto :EOF
 echo #define RUBY_REVISION "%rev%"
 echo #define RUBY_FULL_REVISION "%full%"
 echo #define RUBY_BRANCH_NAME "%branch%"
+if defined title echo #define RUBY_LAST_COMMIT_TITLE "%title%\n"
 echo #define RUBY_RELEASE_DATETIME "%dt%"
 echo #define RUBY_RELEASE_YEAR %yy%
 echo #define RUBY_RELEASE_MONTH %mm%
