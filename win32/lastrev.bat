@@ -14,9 +14,9 @@ goto :optloop
     for %%I in (
         "usage: %progname% [options] [working-directory [head]]"
         "options:"
-        "  -g, --git=git-command         specify the git command[%git%]"
-        "  -d, --date=author|committer   specify date type"
-        "  -w, --width=width             abbreviation width [default=%width%]"
+        "  -g, --git=git-command         specify the git command (%git%)"
+        "  -d, --date=author|committer   specify date type (committer)"
+        "  -w, --width=width             abbreviation width (%width%)"
     ) do echo.%%~I
     exit %1
 :die
