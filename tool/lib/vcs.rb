@@ -357,9 +357,7 @@ class VCS
       end
       branch.chomp!
       branch = ":detached:" if branch.empty?
-      upstream = cmd_read_at(srcdir, [gitcmd + %W[branch --list --format=%(upstream:short) #{branch}]])
-      upstream.chomp!
-      title = cmd_read_at(srcdir, [gitcmd + %W[log --format=%s -n1 #{upstream}..#{ref}]])
+      title = cmd_read_at(srcdir, [gitcmd + %W[log --format=%s -n1 #{ref}@{upstream}..#{ref}]])
       title = nil if title.empty?
       [last, changed, modified, branch, title]
     end
