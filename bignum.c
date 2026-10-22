@@ -2801,7 +2801,7 @@ rb_big_divrem_normal(VALUE x, VALUE y)
     BARY_TRUNC(xds, xn);
 
     if (xn < yn || (xn == yn && xds[xn - 1] < yds[yn - 1]))
-        return rb_assoc_new(LONG2FIX(0), x);
+        return rb_assoc_new(INT2FIX(0), x);
 
     qn = xn + BIGDIVREM_EXTRA_WORDS;
     q = bignew(qn, BIGNUM_SIGN(x)==BIGNUM_SIGN(y));
@@ -2881,7 +2881,7 @@ rb_big_divrem_gmp(VALUE x, VALUE y)
     BARY_TRUNC(xds, xn);
 
     if (xn < yn || (xn == yn && xds[xn - 1] < yds[yn - 1]))
-        return rb_assoc_new(LONG2FIX(0), x);
+        return rb_assoc_new(INT2FIX(0), x);
 
     qn = xn - yn + 1;
     q = bignew(qn, BIGNUM_SIGN(x)==BIGNUM_SIGN(y));
@@ -2979,7 +2979,7 @@ rb_cmpint(VALUE val, VALUE a, VALUE b)
         rb_cmperr_reason(a, b, "comparator returned nil");
     }
     if (FIXNUM_P(val)) {
-        long l = FIX2LONG(val);
+        rb_len_t l = FIX2LEN(val);
         if (l > 0) return 1;
         if (l < 0) return -1;
         return 0;
@@ -3121,15 +3121,16 @@ rb_big_clone(VALUE x)
 static void
 big_extend_carry(VALUE x)
 {
-    rb_big_resize(x, BIGNUM_LEN(x)+1);
-    BDIGITS(x)[BIGNUM_LEN(x)-1] = 1;
+    size_t n = BIGNUM_LEN(x);
+    rb_big_resize(x, rbimpl_size_add_or_raise(n, 1));
+    BDIGITS(x)[n] = 1;
 }
 
 /* modify a bignum by 2's complement */
 static void
 get2comp(VALUE x)
 {
-    long i = BIGNUM_LEN(x);
+    rb_len_t i = BIGNUM_LEN(x);
     BDIGIT *ds = BDIGITS(x);
 
     if (bary_2comp(ds, i)) {
@@ -3144,10 +3145,10 @@ rb_big_2comp(VALUE x)			/* get 2's complement */
 }
 
 static BDIGIT
-abs2twocomp(VALUE *xp, long *n_ret)
+abs2twocomp(VALUE *xp, rb_len_t *n_ret)
 {
     VALUE x = *xp;
-    long n = BIGNUM_LEN(x);
+    rb_len_t n = BIGNUM_LEN(x);
     BDIGIT *ds = BDIGITS(x);
     BDIGIT hibits = 0;
 
@@ -3192,38 +3193,35 @@ bigfixize(VALUE x)
 {
     size_t n = BIGNUM_LEN(x);
     BDIGIT *ds = BDIGITS(x);
-#if SIZEOF_BDIGIT < SIZEOF_LONG
-    unsigned long u;
+    rb_ulen_t u;
+#if SIZEOF_BDIGIT < SIZEOF_RB_LEN_T
+    const size_t bdigit_fix_limit = sizeof(rb_ulen_t)/SIZEOF_BDIGIT;
 #else
-    BDIGIT u;
+    const size_t bdigit_fix_limit = 1;
 #endif
 
     BARY_TRUNC(ds, n);
 
     if (n == 0) return INT2FIX(0);
 
-#if SIZEOF_BDIGIT < SIZEOF_LONG
-    if (sizeof(long)/SIZEOF_BDIGIT < n)
+    if (bdigit_fix_limit < n)
         goto return_big;
-    else {
+    if (bdigit_fix_limit > 1) {
         int i = (int)n;
         u = 0;
         while (i--) {
-            u = (unsigned long)(BIGUP(u) + ds[i]);
+            u = (rb_ulen_t)(BIGUP(u) + ds[i]);
         }
     }
-#else /* SIZEOF_BDIGIT >= SIZEOF_LONG */
-    if (1 < n)
-        goto return_big;
-    else
+    else {
         u = ds[0];
-#endif
+    }
 
     if (BIGNUM_POSITIVE_P(x)) {
-        if (POSFIXABLE(u)) return LONG2FIX((long)u);
+        if (POSFIXABLE(u)) return LEN2FIX((rb_len_t)u);
     }
     else {
-        if (u <= -FIXNUM_MIN) return LONG2FIX(-(long)u);
+        if (u <= -FIXNUM_MIN) return LEN2FIX(-(rb_len_t)u);
     }
 
   return_big:
@@ -3249,7 +3247,7 @@ rb_big_norm(VALUE x)
 VALUE
 rb_uint2big(uintptr_t n)
 {
-    long i;
+    int i;
     VALUE big = bignew(bdigit_roomof(SIZEOF_VALUE), 1);
     BDIGIT *digits = BDIGITS(big);
 
@@ -3292,14 +3290,14 @@ rb_int2big(intptr_t n)
 VALUE
 rb_uint2inum(uintptr_t n)
 {
-    if (POSFIXABLE(n)) return LONG2FIX(n);
+    if (POSFIXABLE(n)) return LEN2FIX(n);
     return rb_uint2big(n);
 }
 
 VALUE
 rb_int2inum(intptr_t n)
 {
-    if (FIXABLE(n)) return LONG2FIX(n);
+    if (FIXABLE(n)) return LEN2FIX(n);
     return rb_int2big(n);
 }
 
@@ -3340,18 +3338,18 @@ rb_absint_size(VALUE val, int *nlz_bits_ret)
 {
     BDIGIT *dp;
     BDIGIT *de;
-    BDIGIT fixbuf[bdigit_roomof(sizeof(long))];
+    BDIGIT fixbuf[bdigit_roomof(sizeof(rb_len_t))];
 
     int num_leading_zeros;
 
     val = rb_to_int(val);
 
     if (FIXNUM_P(val)) {
-        long v = FIX2LONG(val);
+        rb_len_t v = FIX2LEN(val);
         if (v < 0) {
             v = -v;
         }
-#if SIZEOF_BDIGIT >= SIZEOF_LONG
+#if SIZEOF_BDIGIT >= SIZEOF_RB_LEN_T
         fixbuf[0] = v;
 #else
         {
@@ -3514,7 +3512,7 @@ rb_absint_numwords(VALUE val, size_t word_numbits, size_t *nlz_bits_ret)
  * represent val in two's complement number, without sign bit.
  *
  *   size_t size;
- *   int neg = FIXNUM_P(val) ? FIX2LONG(val) < 0 : BIGNUM_NEGATIVE_P(val);
+ *   int neg = FIXNUM_P(val) ? FIX2LEN(val) < 0 : BIGNUM_NEGATIVE_P(val);
  *   size = rb_absint_numwords(val, 1, NULL)
  *   if (size == (size_t)-1) ...overflow...
  *   if (neg && rb_absint_singlebit_p(val))
@@ -3524,7 +3522,7 @@ rb_absint_numwords(VALUE val, size_t word_numbits, size_t *nlz_bits_ret)
  * represent val in two's complement number, with sign bit.
  *
  *   size_t size;
- *   int neg = FIXNUM_P(val) ? FIX2LONG(val) < 0 : BIGNUM_NEGATIVE_P(val);
+ *   int neg = FIXNUM_P(val) ? FIX2LEN(val) < 0 : BIGNUM_NEGATIVE_P(val);
  *   int nlz_bits;
  *   size = rb_absint_size(val, &nlz_bits);
  *   if (nlz_bits == 0 && !(neg && rb_absint_singlebit_p(val)))
@@ -3535,17 +3533,17 @@ rb_absint_singlebit_p(VALUE val)
 {
     BDIGIT *dp;
     BDIGIT *de;
-    BDIGIT fixbuf[bdigit_roomof(sizeof(long))];
+    BDIGIT fixbuf[bdigit_roomof(sizeof(rb_len_t))];
     BDIGIT d;
 
     val = rb_to_int(val);
 
     if (FIXNUM_P(val)) {
-        long v = FIX2LONG(val);
+        rb_len_t v = FIX2LEN(val);
         if (v < 0) {
             v = -v;
         }
-#if SIZEOF_BDIGIT >= SIZEOF_LONG
+#if SIZEOF_BDIGIT >= SIZEOF_RB_LEN_T
         fixbuf[0] = v;
 #else
         {
@@ -3637,12 +3635,12 @@ rb_integer_pack(VALUE val, void *words, size_t numwords, size_t wordsize, size_t
     int sign;
     BDIGIT *ds;
     size_t num_bdigits;
-    BDIGIT fixbuf[bdigit_roomof(sizeof(long))];
+    BDIGIT fixbuf[bdigit_roomof(sizeof(rb_len_t))];
 
     RB_GC_GUARD(val) = rb_to_int(val);
 
     if (FIXNUM_P(val)) {
-        long v = FIX2LONG(val);
+        rb_len_t v = FIX2LEN(val);
         if (v < 0) {
             sign = -1;
             v = -v;
@@ -3650,7 +3648,7 @@ rb_integer_pack(VALUE val, void *words, size_t numwords, size_t wordsize, size_t
         else {
             sign = 1;
         }
-#if SIZEOF_BDIGIT >= SIZEOF_LONG
+#if SIZEOF_BDIGIT >= SIZEOF_RB_LEN_T
         fixbuf[0] = v;
 #else
         {
@@ -3740,24 +3738,27 @@ rb_integer_unpack(const void *words, size_t numwords, size_t wordsize, size_t na
 
     num_bdigits = integer_unpack_num_bdigits(numwords, wordsize, nails, &nlp_bits);
 
-    if (LONG_MAX-1 < num_bdigits)
+    if (rb_size_too_big_len_p(num_bdigits)) {
+      too_big:
         rb_raise(rb_eArgError, "too big to unpack as an integer");
+    }
     if (num_bdigits <= numberof(fixbuf) && !(flags & INTEGER_PACK_FORCE_BIGNUM)) {
         val = Qfalse;
         ds = fixbuf;
     }
     else {
-        val = bignew((long)num_bdigits, 0);
+        val = bignew(num_bdigits, 0);
         ds = BDIGITS(val);
     }
     sign = bary_unpack_internal(ds, num_bdigits, words, numwords, wordsize, nails, flags, nlp_bits);
 
     if (sign == -2) {
         if (val) {
+            if (/* very */UNLIKELY(num_bdigits == SIZE_MAX)) goto too_big;
             big_extend_carry(val);
         }
         else if (num_bdigits == numberof(fixbuf)) {
-            val = bignew((long)num_bdigits+1, 0);
+            val = bignew((size_t)numberof(fixbuf)+1, 0);
             MEMCPY(BDIGITS(val), fixbuf, BDIGIT, num_bdigits);
             BDIGITS(val)[num_bdigits++] = 1;
         }
@@ -3769,13 +3770,13 @@ rb_integer_unpack(const void *words, size_t numwords, size_t wordsize, size_t na
     if (!val) {
         BDIGIT_DBL u = fixbuf[0] + BIGUP(fixbuf[1]);
         if (u == 0)
-            return LONG2FIX(0);
+            return INT2FIX(0);
         if (0 < sign && POSFIXABLE(u))
-            return LONG2FIX((long)u);
+            return LEN2FIX(u);
         if (sign < 0 && BDIGIT_MSB(fixbuf[1]) == 0 &&
                 NEGFIXABLE(-(BDIGIT_DBL_SIGNED)u))
-            return LONG2FIX((long)-(BDIGIT_DBL_SIGNED)u);
-        val = bignew((long)num_bdigits, 0 <= sign);
+            return LEN2FIX((rb_len_t)-(BDIGIT_DBL_SIGNED)u);
+        val = bignew(num_bdigits, 0 <= sign);
         MEMCPY(BDIGITS(val), fixbuf, BDIGIT, num_bdigits);
     }
 
@@ -4267,10 +4268,10 @@ rb_int_parse_cstr(const char *str, ssize_t len, char **endp, size_t *ndigits,
         }
 
         if (POSFIXABLE(val)) {
-            if (sign) return LONG2FIX(val);
+            if (sign) return LEN2FIX(val);
             else {
-                long result = -(long)val;
-                return LONG2FIX(result);
+                rb_len_t result = -(rb_len_t)val;
+                return LEN2FIX(result);
             }
         }
         else {
@@ -4568,14 +4569,14 @@ rb_ll2big(LONG_LONG n)
 VALUE
 rb_ull2inum(unsigned LONG_LONG n)
 {
-    if (POSFIXABLE(n)) return LONG2FIX((long)n);
+    if (POSFIXABLE(n)) return LEN2FIX((rb_len_t)n);
     return rb_ull2big(n);
 }
 
 VALUE
 rb_ll2inum(LONG_LONG n)
 {
-    if (FIXABLE(n)) return LONG2FIX((long)n);
+    if (FIXABLE(n)) return LEN2FIX((rb_len_t)n);
     return rb_ll2big(n);
 }
 
@@ -4637,13 +4638,13 @@ static VALUE
 big_shift3(VALUE x, int lshift_p, size_t shift_numdigits, int shift_numbits)
 {
     BDIGIT *xds, *zds;
-    long s1;
+    rb_len_t s1;
     int s2;
     VALUE z;
-    long xn;
+    rb_len_t xn;
 
     if (lshift_p) {
-        if (LONG_MAX < shift_numdigits) {
+        if (((rb_ulen_t)-1 >> 1) < shift_numdigits) {
           too_big:
             rb_raise(rb_eRangeError, "shift width too big");
         }
@@ -4651,7 +4652,7 @@ big_shift3(VALUE x, int lshift_p, size_t shift_numdigits, int shift_numbits)
         s2 = shift_numbits;
         if ((size_t)s1 != shift_numdigits) goto too_big;
         xn = BIGNUM_LEN(x);
-        if (LONG_MAX/SIZEOF_BDIGIT <= xn+s1) goto too_big;
+        if ((((rb_ulen_t)-1 >> 1)/SIZEOF_BDIGIT) <= (rb_ulen_t)xn+s1) goto too_big;
         z = bignew(xn+s1+1, BIGNUM_SIGN(x));
         zds = BDIGITS(z);
         BDIGITS_ZERO(zds, s1);
@@ -4659,9 +4660,9 @@ big_shift3(VALUE x, int lshift_p, size_t shift_numdigits, int shift_numbits)
         zds[xn+s1] = bary_small_lshift(zds+s1, xds, xn, s2);
     }
     else {
-        long zn;
+        rb_len_t zn;
         BDIGIT hibitsx;
-        if (LONG_MAX < shift_numdigits || (size_t)BIGNUM_LEN(x) <= shift_numdigits) {
+        if (((rb_ulen_t)-1 >> 1) < shift_numdigits || (size_t)BIGNUM_LEN(x) <= shift_numdigits) {
             if (BIGNUM_POSITIVE_P(x) ||
                 bary_zero_p(BDIGITS(x), BIGNUM_LEN(x)))
                 return INT2FIX(0);
@@ -4719,17 +4720,17 @@ big_shift2(VALUE x, int lshift_p, VALUE y)
 }
 
 static VALUE
-big_lshift(VALUE x, unsigned long shift)
+big_lshift(VALUE x, rb_ulen_t shift)
 {
-    long s1 = shift/BITSPERDIG;
+    rb_len_t s1 = (rb_len_t)(shift/BITSPERDIG);
     int s2 = (int)(shift%BITSPERDIG);
     return big_shift3(x, 1, s1, s2);
 }
 
 static VALUE
-big_rshift(VALUE x, unsigned long shift)
+big_rshift(VALUE x, rb_ulen_t shift)
 {
-    long s1 = shift/BITSPERDIG;
+    rb_len_t s1 = (rb_len_t)(shift/BITSPERDIG);
     int s2 = (int)(shift%BITSPERDIG);
     return big_shift3(x, 0, s1, s2);
 }
@@ -5037,14 +5038,14 @@ big2str_base_poweroftwo(VALUE x, int base)
     char *ptr;
     numwords = rb_absint_numwords(x, word_numbits, NULL);
     if (BIGNUM_NEGATIVE_P(x)) {
-        if (LONG_MAX-1 < numwords)
+        if (rb_size_too_big_len_p(numwords))
             rb_raise(rb_eArgError, "too big number");
         result = rb_usascii_str_new(0, 1+numwords);
         ptr = RSTRING_PTR(result);
         *ptr++ = BIGNUM_POSITIVE_P(x) ? '+' : '-';
     }
     else {
-        if (LONG_MAX < numwords)
+        if (rb_size_too_big_len_p(numwords))
             rb_raise(rb_eArgError, "too big number");
         result = rb_usascii_str_new(0, numwords);
         ptr = RSTRING_PTR(result);
@@ -5085,7 +5086,7 @@ big2str_generic(VALUE x, int base)
     if (!valid_radix_p(base))
         invalid_radix(base);
 
-    if (xn >= LONG_MAX/BITSPERDIG) {
+    if (SIZE_MAX >= RB_LEN_MAX/BITSPERDIG && xn >= (size_t)RB_LEN_MAX/BITSPERDIG) {
         rb_raise(rb_eRangeError, "bignum too big to convert into 'string'");
     }
 
@@ -5210,7 +5211,7 @@ rb_big2str1(VALUE x, int base)
     if (!valid_radix_p(base))
         invalid_radix(base);
 
-    if (xn >= LONG_MAX/BITSPERDIG) {
+    if (SIZE_MAX >= RB_LEN_MAX/BITSPERDIG && xn >= (size_t)RB_LEN_MAX/BITSPERDIG) {
         rb_raise(rb_eRangeError, "bignum too big to convert into 'string'");
     }
 
@@ -5477,21 +5478,21 @@ rb_integer_float_cmp(VALUE x, VALUE y)
     }
     yf = modf(yd, &yi);
     if (FIXNUM_P(x)) {
-#if SIZEOF_LONG * CHAR_BIT < DBL_MANT_DIG /* assume FLT_RADIX == 2 */
-        double xd = (double)FIX2LONG(x);
+#if SIZEOF_RB_LEN_T * CHAR_BIT < DBL_MANT_DIG /* assume FLT_RADIX == 2 */
+        double xd = (double)FIX2LEN(x);
         if (xd < yd)
             return INT2FIX(-1);
         if (xd > yd)
             return INT2FIX(1);
         return INT2FIX(0);
 #else
-        long xn, yn;
+        rb_len_t xn, yn;
         if (yi < FIXNUM_MIN)
             return INT2FIX(1);
         if (FIXNUM_MAX+1 <= yi)
             return INT2FIX(-1);
-        xn = FIX2LONG(x);
-        yn = (long)yi;
+        xn = FIX2LEN(x);
+        yn = (rb_len_t)yi;
         if (xn < yn)
             return INT2FIX(-1);
         if (xn > yn)
@@ -5512,15 +5513,6 @@ rb_integer_float_cmp(VALUE x, VALUE y)
     return INT2FIX(-1);
 }
 
-#if SIZEOF_LONG * CHAR_BIT >= DBL_MANT_DIG /* assume FLT_RADIX == 2 */
-COMPILER_WARNING_PUSH
-#if __has_warning("-Wimplicit-int-float-conversion")
-COMPILER_WARNING_IGNORED(-Wimplicit-int-float-conversion)
-#endif
-static const double LONG_MAX_as_double = LONG_MAX;
-COMPILER_WARNING_POP
-#endif
-
 VALUE
 rb_integer_float_eq(VALUE x, VALUE y)
 {
@@ -5533,15 +5525,15 @@ rb_integer_float_eq(VALUE x, VALUE y)
     if (yf != 0)
         return Qfalse;
     if (FIXNUM_P(x)) {
-#if SIZEOF_LONG * CHAR_BIT < DBL_MANT_DIG /* assume FLT_RADIX == 2 */
-        double xd = (double)FIX2LONG(x);
+#if SIZEOF_RB_LEN_T * CHAR_BIT < DBL_MANT_DIG /* assume FLT_RADIX == 2 */
+        double xd = (double)FIX2LEN(x);
         return RBOOL(xd == yd);
 #else
-        long xn, yn;
-        if (yi < LONG_MIN || LONG_MAX_as_double <= yi)
+        rb_len_t xn, yn;
+        if (yi < FIXNUM_MIN || FIXNUM_MAX+1 <= yi)
             return Qfalse;
-        xn = FIX2LONG(x);
-        yn = (long)yi;
+        xn = FIX2LEN(x);
+        yn = (rb_len_t)yi;
         return RBOOL(xn == yn);
 #endif
     }
@@ -5698,7 +5690,7 @@ rb_big_comp(VALUE x)
 {
     VALUE z = rb_big_clone(x);
     BDIGIT *ds = BDIGITS(z);
-    long n = BIGNUM_LEN(z);
+    rb_len_t n = BIGNUM_LEN(z);
 
     if (!n) return INT2FIX(-1);
 
@@ -5724,7 +5716,7 @@ bigsub(VALUE x, VALUE y)
 {
     VALUE z;
     BDIGIT *xds, *yds, *zds;
-    long xn, yn, zn;
+    rb_len_t xn, yn, zn;
 
     xn = BIGNUM_LEN(x);
     yn = BIGNUM_LEN(y);
@@ -5744,33 +5736,33 @@ bigsub(VALUE x, VALUE y)
     return z;
 }
 
-static VALUE bigadd_int(VALUE x, long y);
+static VALUE bigadd_int(VALUE x, rb_len_t y);
 
 static VALUE
-bigsub_int(VALUE x, long y0)
+bigsub_int(VALUE x, rb_len_t y0)
 {
     VALUE z;
     BDIGIT *xds, *zds;
-    long xn, zn;
+    rb_len_t xn, zn;
     BDIGIT_DBL_SIGNED num;
-    long i, y;
+    rb_len_t i, y;
 
     y = y0;
     xds = BDIGITS(x);
     xn = BIGNUM_LEN(x);
 
     if (xn == 0)
-        return LONG2NUM(-y0);
+        return LEN2NUM(-y0);
 
     zn = xn;
-#if SIZEOF_BDIGIT < SIZEOF_LONG
-    if (zn < bdigit_roomof(SIZEOF_LONG))
-        zn = bdigit_roomof(SIZEOF_LONG);
+#if SIZEOF_BDIGIT < SIZEOF_RB_LEN_T
+    if (zn < bdigit_roomof(SIZEOF_RB_LEN_T))
+        zn = bdigit_roomof(SIZEOF_RB_LEN_T);
 #endif
     z = bignew(zn, BIGNUM_SIGN(x));
     zds = BDIGITS(z);
 
-#if SIZEOF_BDIGIT >= SIZEOF_LONG
+#if SIZEOF_BDIGIT >= SIZEOF_RB_LEN_T
     RUBY_ASSERT(xn == zn);
     num = (BDIGIT_DBL_SIGNED)xds[0] - y;
     if (xn == 1 && num < 0) {
@@ -5811,7 +5803,7 @@ bigsub_int(VALUE x, long y0)
         zds[i] = BIGLO(num);
         num = BIGDN(num);
     }
-#if SIZEOF_BDIGIT < SIZEOF_LONG
+#if SIZEOF_BDIGIT < SIZEOF_RB_LEN_T
     for (; i < zn; i++) {
       y_is_zero_z:
         if (num == 0) goto num_is_zero_z;
@@ -5825,7 +5817,7 @@ bigsub_int(VALUE x, long y0)
       num_is_zero_x:
         zds[i] = xds[i];
     }
-#if SIZEOF_BDIGIT < SIZEOF_LONG
+#if SIZEOF_BDIGIT < SIZEOF_RB_LEN_T
     for (; i < zn; i++) {
       num_is_zero_z:
         zds[i] = 0;
@@ -5844,31 +5836,31 @@ bigsub_int(VALUE x, long y0)
 }
 
 static VALUE
-bigadd_int(VALUE x, long y)
+bigadd_int(VALUE x, rb_len_t y)
 {
     VALUE z;
     BDIGIT *xds, *zds;
-    long xn, zn;
+    rb_len_t xn, zn;
     BDIGIT_DBL num;
-    long i;
+    rb_len_t i;
 
     xds = BDIGITS(x);
     xn = BIGNUM_LEN(x);
 
     if (xn == 0)
-        return LONG2NUM(y);
+        return LEN2NUM(y);
 
     zn = xn;
-#if SIZEOF_BDIGIT < SIZEOF_LONG
-    if (zn < bdigit_roomof(SIZEOF_LONG))
-        zn = bdigit_roomof(SIZEOF_LONG);
+#if SIZEOF_BDIGIT < SIZEOF_RB_LEN_T
+    if (zn < bdigit_roomof(SIZEOF_RB_LEN_T))
+        zn = bdigit_roomof(SIZEOF_RB_LEN_T);
 #endif
     zn++;
 
     z = bignew(zn, BIGNUM_SIGN(x));
     zds = BDIGITS(z);
 
-#if SIZEOF_BDIGIT >= SIZEOF_LONG
+#if SIZEOF_BDIGIT >= SIZEOF_RB_LEN_T
     num = (BDIGIT_DBL)xds[0] + y;
     zds[0] = BIGLO(num);
     num = BIGDN(num);
@@ -5956,10 +5948,10 @@ bigadd(VALUE x, VALUE y, int sign)
 VALUE
 rb_big_plus(VALUE x, VALUE y)
 {
-    long n;
+    rb_len_t n;
 
     if (FIXNUM_P(y)) {
-        n = FIX2LONG(y);
+        n = FIX2LEN(y);
         if ((n > 0) != BIGNUM_SIGN(x)) {
             if (n < 0) {
                 n = -n;
@@ -5985,10 +5977,10 @@ rb_big_plus(VALUE x, VALUE y)
 VALUE
 rb_big_minus(VALUE x, VALUE y)
 {
-    long n;
+    rb_len_t n;
 
     if (FIXNUM_P(y)) {
-        n = FIX2LONG(y);
+        n = FIX2LEN(y);
         if ((n > 0) != BIGNUM_SIGN(x)) {
             if (n < 0) {
                 n = -n;
@@ -6014,7 +6006,7 @@ rb_big_minus(VALUE x, VALUE y)
 static VALUE
 bigsq(VALUE x)
 {
-    long xn, zn;
+    rb_len_t xn, zn;
     VALUE z;
     BDIGIT *xds, *zds;
 
@@ -6040,7 +6032,7 @@ bigsq(VALUE x)
 static VALUE
 bigmul0(VALUE x, VALUE y)
 {
-    long xn, yn, zn;
+    rb_len_t xn, yn, zn;
     VALUE z;
     BDIGIT *xds, *yds, *zds;
 
@@ -6070,7 +6062,7 @@ VALUE
 rb_big_mul(VALUE x, VALUE y)
 {
     if (FIXNUM_P(y)) {
-        y = rb_int2big(FIX2LONG(y));
+        y = rb_int2big(FIX2LEN(y));
     }
     else if (RB_BIGNUM_TYPE_P(y)) {
     }
@@ -6087,14 +6079,14 @@ rb_big_mul(VALUE x, VALUE y)
 static VALUE
 bigdivrem(VALUE x, VALUE y, volatile VALUE *divp, volatile VALUE *modp)
 {
-    long xn = BIGNUM_LEN(x), yn = BIGNUM_LEN(y);
+    rb_len_t xn = BIGNUM_LEN(x), yn = BIGNUM_LEN(y);
     VALUE z;
     BDIGIT *xds, *yds, *zds;
     BDIGIT dd;
 
     VALUE q = Qnil, r = Qnil;
     BDIGIT *qds, *rds;
-    long qn, rn;
+    rb_len_t qn, rn;
 
     yds = BDIGITS(y);
     BARY_TRUNC(yds, yn);
@@ -6199,7 +6191,7 @@ rb_big_divide(VALUE x, VALUE y, ID op)
     VALUE z;
 
     if (FIXNUM_P(y)) {
-        y = rb_int2big(FIX2LONG(y));
+        y = rb_int2big(FIX2LEN(y));
     }
     else if (RB_BIGNUM_TYPE_P(y)) {
     }
@@ -6242,7 +6234,7 @@ rb_big_modulo(VALUE x, VALUE y)
     VALUE z;
 
     if (FIXNUM_P(y)) {
-        y = rb_int2big(FIX2LONG(y));
+        y = rb_int2big(FIX2LEN(y));
     }
     else if (!RB_BIGNUM_TYPE_P(y)) {
         return rb_num_coerce_bin(x, y, '%');
@@ -6258,7 +6250,7 @@ rb_big_remainder(VALUE x, VALUE y)
     VALUE z;
 
     if (FIXNUM_P(y)) {
-        y = rb_int2big(FIX2LONG(y));
+        y = rb_int2big(FIX2LEN(y));
     }
     else if (!RB_BIGNUM_TYPE_P(y)) {
         return rb_num_coerce_bin(x, y, rb_intern("remainder"));
@@ -6274,7 +6266,7 @@ rb_big_divmod(VALUE x, VALUE y)
     VALUE div, mod;
 
     if (FIXNUM_P(y)) {
-        y = rb_int2big(FIX2LONG(y));
+        y = rb_int2big(FIX2LEN(y));
     }
     else if (!RB_BIGNUM_TYPE_P(y)) {
         return rb_num_coerce_bin(x, y, idDivmod);
@@ -6285,12 +6277,12 @@ rb_big_divmod(VALUE x, VALUE y)
 }
 
 static VALUE
-big_shift(VALUE x, long n)
+big_shift(VALUE x, rb_len_t n)
 {
     if (n < 0)
-        return big_lshift(x, 1+(unsigned long)(-(n+1)));
+        return big_lshift(x, 1+(rb_ulen_t)(-(n+1)));
     else if (n > 0)
-        return big_rshift(x, (unsigned long)n);
+        return big_rshift(x, (rb_ulen_t)n);
     return x;
 }
 
@@ -6350,9 +6342,9 @@ rb_big_fdiv_double(VALUE x, VALUE y)
 
     dx = big2dbl(x);
     if (FIXNUM_P(y)) {
-        dy = (double)FIX2LONG(y);
+        dy = (double)FIX2LEN(y);
         if (isinf(dx))
-            return big_fdiv_int(x, rb_int2big(FIX2LONG(y)));
+            return big_fdiv_int(x, rb_int2big(FIX2LEN(y)));
     }
     else if (RB_BIGNUM_TYPE_P(y)) {
         return big_fdiv_int(x, y);
@@ -6376,7 +6368,7 @@ VALUE
 rb_big_pow(VALUE x, VALUE y)
 {
     double d;
-    SIGNED_VALUE yy;
+    rb_len_t yy;
 
   again:
     if (y == INT2FIX(0)) return INT2FIX(1);
@@ -6394,10 +6386,10 @@ rb_big_pow(VALUE x, VALUE y)
         rb_raise(rb_eArgError, "exponent is too large");
     }
     else if (FIXNUM_P(y)) {
-        yy = FIX2LONG(y);
+        yy = FIX2LEN(y);
 
         if (yy < 0) {
-            x = rb_big_pow(x, LONG2NUM(-yy));
+            x = rb_big_pow(x, LEN2NUM(-yy));
             if (RB_INTEGER_TYPE_P(x))
                 return rb_rational_raw(INT2FIX(1), x);
             else
@@ -6415,8 +6407,7 @@ rb_big_pow(VALUE x, VALUE y)
 
             if (xbits == (size_t)-1 ||
                 (xbits > BIGLEN_LIMIT) ||
-                MUL_OVERFLOW_LONG_P(yy, xbits) ||
-                (xbits * yy > BIGLEN_LIMIT)) {
+                (yy && ((size_t)yy > BIGLEN_LIMIT || xbits > BIGLEN_LIMIT / (size_t)yy))) {
                 rb_raise(rb_eArgError, "exponent is too large");
             }
             else {
@@ -6437,35 +6428,35 @@ rb_big_pow(VALUE x, VALUE y)
 }
 
 static VALUE
-bigand_int(VALUE x, long xn, BDIGIT hibitsx, long y)
+bigand_int(VALUE x, rb_len_t xn, BDIGIT hibitsx, rb_len_t y)
 {
     VALUE z;
     BDIGIT *xds, *zds;
-    long zn;
-    long i;
+    rb_len_t zn;
+    rb_len_t i;
     BDIGIT hibitsy;
 
     if (y == 0) return INT2FIX(0);
-    if (xn == 0) return hibitsx ? LONG2NUM(y) : INT2FIX(0);
+    if (xn == 0) return hibitsx ? LEN2NUM(y) : INT2FIX(0);
     hibitsy = 0 <= y ? 0 : BDIGMAX;
     xds = BDIGITS(x);
-#if SIZEOF_BDIGIT >= SIZEOF_LONG
+#if SIZEOF_BDIGIT >= SIZEOF_RB_LEN_T
     if (!hibitsy) {
         y &= xds[0];
-        return LONG2NUM(y);
+        return LEN2NUM(y);
     }
 #endif
 
     zn = xn;
-#if SIZEOF_BDIGIT < SIZEOF_LONG
-    if (hibitsx && zn < bdigit_roomof(SIZEOF_LONG))
-        zn = bdigit_roomof(SIZEOF_LONG);
+#if SIZEOF_BDIGIT < SIZEOF_RB_LEN_T
+    if (hibitsx && zn < bdigit_roomof(SIZEOF_RB_LEN_T))
+        zn = bdigit_roomof(SIZEOF_RB_LEN_T);
 #endif
 
     z = bignew(zn, 0);
     zds = BDIGITS(z);
 
-#if SIZEOF_BDIGIT >= SIZEOF_LONG
+#if SIZEOF_BDIGIT >= SIZEOF_RB_LEN_T
     i = 1;
     zds[0] = xds[0] & BIGLO(y);
 #else
@@ -6496,12 +6487,12 @@ rb_big_and(VALUE x, VALUE y)
 {
     VALUE z;
     BDIGIT *ds1, *ds2, *zds;
-    long i, xn, yn, n1, n2;
+    rb_len_t i, xn, yn, n1, n2;
     BDIGIT hibitsx, hibitsy;
     BDIGIT hibits1, hibits2;
     VALUE tmpv;
     BDIGIT tmph;
-    long tmpn;
+    rb_len_t tmpn;
 
     if (!RB_INTEGER_TYPE_P(y)) {
         return rb_num_coerce_bit(x, y, '&');
@@ -6509,7 +6500,7 @@ rb_big_and(VALUE x, VALUE y)
 
     hibitsx = abs2twocomp(&x, &xn);
     if (FIXNUM_P(y)) {
-        return bigand_int(x, xn, hibitsx, FIX2LONG(y));
+        return bigand_int(x, xn, hibitsx, FIX2LEN(y));
     }
     hibitsy = abs2twocomp(&y, &yn);
     if (xn > yn) {
@@ -6543,28 +6534,28 @@ rb_big_and(VALUE x, VALUE y)
 }
 
 static VALUE
-bigor_int(VALUE x, long xn, BDIGIT hibitsx, long y)
+bigor_int(VALUE x, rb_len_t xn, BDIGIT hibitsx, rb_len_t y)
 {
     VALUE z;
     BDIGIT *xds, *zds;
-    long zn;
-    long i;
+    rb_len_t zn;
+    rb_len_t i;
     BDIGIT hibitsy;
 
     if (y == -1) return INT2FIX(-1);
-    if (xn == 0) return hibitsx ? INT2FIX(-1) : LONG2FIX(y);
+    if (xn == 0) return hibitsx ? INT2FIX(-1) : LEN2FIX(y);
     hibitsy = 0 <= y ? 0 : BDIGMAX;
     xds = BDIGITS(x);
 
     zn = BIGNUM_LEN(x);
-#if SIZEOF_BDIGIT < SIZEOF_LONG
-    if (zn < bdigit_roomof(SIZEOF_LONG))
-        zn = bdigit_roomof(SIZEOF_LONG);
+#if SIZEOF_BDIGIT < SIZEOF_RB_LEN_T
+    if (zn < bdigit_roomof(SIZEOF_RB_LEN_T))
+        zn = bdigit_roomof(SIZEOF_RB_LEN_T);
 #endif
     z = bignew(zn, 0);
     zds = BDIGITS(z);
 
-#if SIZEOF_BDIGIT >= SIZEOF_LONG
+#if SIZEOF_BDIGIT >= SIZEOF_RB_LEN_T
     i = 1;
     zds[0] = xds[0] | BIGLO(y);
     if (i < zn)
@@ -6615,12 +6606,12 @@ rb_big_or(VALUE x, VALUE y)
 {
     VALUE z;
     BDIGIT *ds1, *ds2, *zds;
-    long i, xn, yn, n1, n2;
+    rb_len_t i, xn, yn, n1, n2;
     BDIGIT hibitsx, hibitsy;
     BDIGIT hibits1, hibits2;
     VALUE tmpv;
     BDIGIT tmph;
-    long tmpn;
+    rb_len_t tmpn;
 
     if (!RB_INTEGER_TYPE_P(y)) {
         return rb_num_coerce_bit(x, y, '|');
@@ -6628,7 +6619,7 @@ rb_big_or(VALUE x, VALUE y)
 
     hibitsx = abs2twocomp(&x, &xn);
     if (FIXNUM_P(y)) {
-        return bigor_int(x, xn, hibitsx, FIX2LONG(y));
+        return bigor_int(x, xn, hibitsx, FIX2LEN(y));
     }
     hibitsy = abs2twocomp(&y, &yn);
     if (xn > yn) {
@@ -6662,25 +6653,25 @@ rb_big_or(VALUE x, VALUE y)
 }
 
 static VALUE
-bigxor_int(VALUE x, long xn, BDIGIT hibitsx, long y)
+bigxor_int(VALUE x, rb_len_t xn, BDIGIT hibitsx, rb_len_t y)
 {
     VALUE z;
     BDIGIT *xds, *zds;
-    long zn;
-    long i;
+    rb_len_t zn;
+    rb_len_t i;
     BDIGIT hibitsy;
 
     hibitsy = 0 <= y ? 0 : BDIGMAX;
     xds = BDIGITS(x);
     zn = BIGNUM_LEN(x);
-#if SIZEOF_BDIGIT < SIZEOF_LONG
-    if (zn < bdigit_roomof(SIZEOF_LONG))
-        zn = bdigit_roomof(SIZEOF_LONG);
+#if SIZEOF_BDIGIT < SIZEOF_RB_LEN_T
+    if (zn < bdigit_roomof(SIZEOF_RB_LEN_T))
+        zn = bdigit_roomof(SIZEOF_RB_LEN_T);
 #endif
     z = bignew(zn, 0);
     zds = BDIGITS(z);
 
-#if SIZEOF_BDIGIT >= SIZEOF_LONG
+#if SIZEOF_BDIGIT >= SIZEOF_RB_LEN_T
     i = 1;
     zds[0] = xds[0] ^ BIGLO(y);
 #else
@@ -6709,12 +6700,12 @@ rb_big_xor(VALUE x, VALUE y)
 {
     VALUE z;
     BDIGIT *ds1, *ds2, *zds;
-    long i, xn, yn, n1, n2;
+    rb_len_t i, xn, yn, n1, n2;
     BDIGIT hibitsx, hibitsy;
     BDIGIT hibits1, hibits2;
     VALUE tmpv;
     BDIGIT tmph;
-    long tmpn;
+    rb_len_t tmpn;
 
     if (!RB_INTEGER_TYPE_P(y)) {
         return rb_num_coerce_bit(x, y, '^');
@@ -6722,7 +6713,7 @@ rb_big_xor(VALUE x, VALUE y)
 
     hibitsx = abs2twocomp(&x, &xn);
     if (FIXNUM_P(y)) {
-        return bigxor_int(x, xn, hibitsx, FIX2LONG(y));
+        return bigxor_int(x, xn, hibitsx, FIX2LEN(y));
     }
     hibitsy = abs2twocomp(&y, &yn);
     if (xn > yn) {
@@ -6761,15 +6752,15 @@ rb_big_lshift(VALUE x, VALUE y)
 
     for (;;) {
         if (FIXNUM_P(y)) {
-            long l = FIX2LONG(y);
-            unsigned long shift;
+            rb_len_t l = FIX2LEN(y);
+            rb_ulen_t shift;
             if (0 <= l) {
                 lshift_p = 1;
                 shift = l;
             }
             else {
                 lshift_p = 0;
-                shift = 1+(unsigned long)(-(l+1));
+                shift = 1+(rb_ulen_t)(-(l+1));
             }
             shift_numbits = (int)(shift & (BITSPERDIG-1));
             shift_numdigits = shift >> bit_length(BITSPERDIG-1);
@@ -6791,15 +6782,15 @@ rb_big_rshift(VALUE x, VALUE y)
 
     for (;;) {
         if (FIXNUM_P(y)) {
-            long l = FIX2LONG(y);
-            unsigned long shift;
+            rb_len_t l = FIX2LEN(y);
+            rb_ulen_t shift;
             if (0 <= l) {
                 lshift_p = 0;
                 shift = l;
             }
             else {
                 lshift_p = 1;
-                shift = 1+(unsigned long)(-(l+1));
+                shift = 1+(rb_ulen_t)(-(l+1));
             }
             shift_numbits = (int)(shift & (BITSPERDIG-1));
             shift_numdigits = shift >> bit_length(BITSPERDIG-1);
@@ -6818,7 +6809,7 @@ rb_big_aref(VALUE x, VALUE y)
     BDIGIT *xds;
     size_t shift;
     size_t i, s1, s2;
-    long l;
+    rb_len_t l;
     BDIGIT bit;
 
     if (RB_BIGNUM_TYPE_P(y)) {
@@ -6835,7 +6826,7 @@ rb_big_aref(VALUE x, VALUE y)
 #endif
     }
     else {
-        l = NUM2LONG(y);
+        l = NUM2LEN(y);
         if (l < 0) return INT2FIX(0);
         shift = (size_t)l;
     }
@@ -7003,7 +6994,7 @@ rb_big_bit_length(VALUE big)
     numbytes = rb_absint_size(big, &nlz_bits);
 
     if (numbytes == 0)
-        return LONG2FIX(0);
+        return INT2FIX(0);
 
     if (BIGNUM_NEGATIVE_P(big) && rb_absint_singlebit_p(big)) {
         if (nlz_bits != CHAR_BIT-1) {
@@ -7062,17 +7053,10 @@ rb_big_even_p(VALUE num)
     return Qtrue;
 }
 
-unsigned long rb_ulong_isqrt(unsigned long);
-#if SIZEOF_BDIGIT*2 > SIZEOF_LONG
+#if SIZEOF_BDIGIT*2 > SIZEOF_RB_LEN_T
 BDIGIT rb_bdigit_dbl_isqrt(BDIGIT_DBL);
-# ifdef ULL_TO_DOUBLE
-#   define BDIGIT_DBL_TO_DOUBLE(n) ULL_TO_DOUBLE(n)
-# endif
 #else
-# define rb_bdigit_dbl_isqrt(x) (BDIGIT)rb_ulong_isqrt(x)
-#endif
-#ifndef BDIGIT_DBL_TO_DOUBLE
-# define BDIGIT_DBL_TO_DOUBLE(n) (double)(n)
+# define rb_bdigit_dbl_isqrt(x) (BDIGIT)rb_ulen_isqrt(x)
 #endif
 
 VALUE
@@ -7083,16 +7067,16 @@ rb_big_isqrt(VALUE n)
 
     if (len <= 2) {
         BDIGIT sq = rb_bdigit_dbl_isqrt(bary2bdigitdbl(nds, len));
-#if SIZEOF_BDIGIT > SIZEOF_LONG
+#if SIZEOF_BDIGIT > SIZEOF_RB_LEN_T
         return ULL2NUM(sq);
 #else
-        return ULONG2NUM(sq);
+        return ULEN2NUM(sq);
 #endif
     }
     else {
-        size_t shift = FIX2LONG(rb_big_bit_length(n)) / 4;
+        size_t shift = FIX2LEN(rb_big_bit_length(n)) / 4;
         VALUE n2 = rb_int_rshift(n, SIZET2NUM(2 * shift));
-        VALUE x = FIXNUM_P(n2) ? LONG2FIX(rb_ulong_isqrt(FIX2ULONG(n2))) : rb_big_isqrt(n2);
+        VALUE x = FIXNUM_P(n2) ? ULEN2NUM(rb_ulen_isqrt(FIX2ULEN(n2))) : rb_big_isqrt(n2);
         /* x = (x+n/x)/2 */
         x = rb_int_plus(rb_int_lshift(x, SIZET2NUM(shift - 1)), rb_int_idiv(rb_int_rshift(n, SIZET2NUM(shift + 1)), x));
         VALUE xx = rb_int_mul(x, x);
@@ -7135,10 +7119,10 @@ int_pow_tmp3(VALUE x, VALUE y, VALUE m, int nega_flg)
     size_t xn, yn, mn, zn;
 
     if (FIXNUM_P(x)) {
-       x = rb_int2big(FIX2LONG(x));
+       x = rb_int2big(FIX2LEN(x));
     }
     if (FIXNUM_P(y)) {
-       y = rb_int2big(FIX2LONG(y));
+       y = rb_int2big(FIX2LEN(y));
     }
     RUBY_ASSERT(RB_BIGNUM_TYPE_P(m));
     xn = BIGNUM_LEN(x);
@@ -7155,10 +7139,10 @@ int_pow_tmp3(VALUE x, VALUE y, VALUE m, int nega_flg)
     RB_GC_GUARD(m);
     return rb_big_norm(z);
 #else
-    VALUE tmp = LONG2FIX(1L);
+    VALUE tmp = INT2FIX(1);
     long yy;
 
-    for (/*NOP*/; ! FIXNUM_P(y); y = rb_big_rshift(y, LONG2FIX(1L))) {
+    for (/*NOP*/; ! FIXNUM_P(y); y = rb_big_rshift(y, INT2FIX(1))) {
         if (RTEST(rb_int_odd_p(y))) {
             tmp = rb_int_mul(tmp, x);
             tmp = rb_int_modulo(tmp, m);
@@ -7166,7 +7150,7 @@ int_pow_tmp3(VALUE x, VALUE y, VALUE m, int nega_flg)
         x = rb_int_mul(x, x);
         x = rb_int_modulo(x, m);
     }
-    for (yy = FIX2LONG(y); yy; yy >>= 1L) {
+    for (yy = FIX2LEN(y); yy; yy >>= 1) {
         if (yy & 1L) {
             tmp = rb_int_mul(tmp, x);
             tmp = rb_int_modulo(tmp, m);
@@ -7187,19 +7171,19 @@ int_pow_tmp3(VALUE x, VALUE y, VALUE m, int nega_flg)
  */
 
 static VALUE
-int_pow_tmp1(VALUE x, VALUE y, long mm, int nega_flg)
+int_pow_tmp1(VALUE x, VALUE y, rb_len_t mm, int nega_flg)
 {
-    long xx = FIX2LONG(x);
-    long tmp = 1L;
-    long yy;
+    rb_len_t xx = FIX2LEN(x);
+    rb_len_t tmp = 1;
+    rb_len_t yy;
 
-    for (/*NOP*/; ! FIXNUM_P(y); y = rb_big_rshift(y, LONG2FIX(1L))) {
+    for (/*NOP*/; ! FIXNUM_P(y); y = rb_big_rshift(y, INT2FIX(1))) {
         if (RTEST(rb_int_odd_p(y))) {
             tmp = (tmp * xx) % mm;
         }
         xx = (xx * xx) % mm;
     }
-    for (yy = FIX2LONG(y); yy; yy >>= 1L) {
+    for (yy = FIX2LEN(y); yy; yy >>= 1) {
         if (yy & 1L) {
             tmp = (tmp * xx) % mm;
         }
@@ -7209,48 +7193,34 @@ int_pow_tmp1(VALUE x, VALUE y, long mm, int nega_flg)
     if (nega_flg && tmp) {
         tmp -= mm;
     }
-    return LONG2FIX(tmp);
+    return LEN2FIX(tmp);
 }
 
 static VALUE
-int_pow_tmp2(VALUE x, VALUE y, long mm, int nega_flg)
+int_pow_tmp2(VALUE x, VALUE y, rb_len_t mm, int nega_flg)
 {
-    long tmp = 1L;
-    long yy;
-#ifdef DLONG
-    const DLONG m = mm;
-    long tmp2 = tmp;
-    long xx = FIX2LONG(x);
-# define MUL_MODULO(a, b, c) (long)(((DLONG)(a) * (DLONG)(b)) % (c))
-#else
-    const VALUE m = LONG2FIX(mm);
-    VALUE tmp2 = LONG2FIX(tmp);
+    VALUE mod = LEN2FIX(mm);
+    VALUE tmp = INT2FIX(1);
     VALUE xx = x;
-# define MUL_MODULO(a, b, c) rb_int_modulo(rb_fix_mul_fix((a), (b)), (c))
-#endif
+    rb_len_t yy;
 
-    for (/*NOP*/; ! FIXNUM_P(y); y = rb_big_rshift(y, LONG2FIX(1L))) {
+    for (; !FIXNUM_P(y); y = rb_big_rshift(y, INT2FIX(1))) {
         if (RTEST(rb_int_odd_p(y))) {
-            tmp2 = MUL_MODULO(tmp2, xx, m);
+            tmp = rb_int_modulo(rb_fix_mul_fix(tmp, xx), mod);
         }
-        xx = MUL_MODULO(xx, xx, m);
+        xx = rb_int_modulo(rb_fix_mul_fix(xx, xx), mod);
     }
-    for (yy = FIX2LONG(y); yy; yy >>= 1L) {
-        if (yy & 1L) {
-            tmp2 = MUL_MODULO(tmp2, xx, m);
+    for (yy = FIX2LEN(y); yy; yy >>= 1) {
+        if (yy & 1) {
+            tmp = rb_int_modulo(rb_fix_mul_fix(tmp, xx), mod);
         }
-        xx = MUL_MODULO(xx, xx, m);
+        xx = rb_int_modulo(rb_fix_mul_fix(xx, xx), mod);
     }
 
-#ifdef DLONG
-    tmp = tmp2;
-#else
-    tmp = FIX2LONG(tmp2);
-#endif
-    if (nega_flg && tmp) {
-        tmp -= mm;
+    if (nega_flg && rb_int_positive_p(tmp) && !rb_int_zero_p(tmp)) {
+        tmp = rb_int_minus(tmp, mod);
     }
-    return LONG2FIX(tmp);
+    return tmp;
 }
 
 /*
@@ -7298,8 +7268,8 @@ rb_int_powm(int const argc, VALUE * const argv, VALUE const num)
         }
 
         if (FIXNUM_P(m)) {
-            long const half_val = (long)HALF_LONG_MSB;
-            long const mm = FIX2LONG(m);
+            rb_len_t const half_val = SQRT_LEN_MAX;
+            rb_len_t const mm = FIX2LEN(m);
             if (!mm) rb_num_zerodiv();
             if (mm == 1) return INT2FIX(0);
             if (mm <= half_val) {

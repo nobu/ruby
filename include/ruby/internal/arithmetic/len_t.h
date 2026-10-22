@@ -56,6 +56,7 @@
 # define RB_NUM2ULEN RB_NUM2ULONG
 #endif
 
+#define RB_LEN2FIX rb_len2fix
 #define RB_FIX2LEN rb_fix2len
 #define RB_FIX2ULEN rb_fix2ulen
 
@@ -272,6 +273,16 @@ static inline unsigned long
 rb_fix2ulong(VALUE x)
 {
     return RBIMPL_CAST((unsigned long)rb_fix2ulen(x));
+}
+
+static inline bool
+rb_size_too_big_len_p(size_t size)
+{
+#if RB_LEN_MAX >= SIZE_MAX
+    return false;
+#else
+    return RB_UNLIKELY(RB_LEN_MAX < size);
+#endif
 }
 
 #endif /* RBIMPL_ARITHMETIC_LEN_T_H */
