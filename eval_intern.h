@@ -128,19 +128,6 @@ extern int select_large_fdset(int, fd_set *, fd_set *, fd_set *, struct timeval 
 
 #define EC_REPUSH_TAG() (void)(_ec->tag = &_tag)
 
-#if defined __clang__
-/* This macro prevents Clang from dumping core in EC_EXEC_TAG().
- * (I confirmed Clang 4.0.1 and 5.0.0.)
- */
-# define VAR_FROM_MEMORY(var) __extension__(*(__typeof__(var) volatile *)&(var))
-# define VAR_INITIALIZED(var) ((var) = VAR_FROM_MEMORY(var))
-# define VAR_NOCLOBBERED(var) volatile var
-#else
-# define VAR_FROM_MEMORY(var) (var)
-# define VAR_INITIALIZED(var) ((void)&(var))
-# define VAR_NOCLOBBERED(var) var
-#endif
-
 static inline void
 rb_ec_vm_lock_rec_check(const rb_execution_context_t *ec, unsigned int recorded_lock_rec)
 {
@@ -180,7 +167,7 @@ rb_ec_tag_jump(const rb_execution_context_t *ec, enum ruby_tag_type st)
   [ISO/IEC 9899:1999] 7.13.1.1
 */
 #define EC_EXEC_TAG() \
-    (UNLIKELY(ruby_setjmp(RB_VM_TAG_JMPBUF_GET(_tag.buf))) ? rb_ec_tag_state(VAR_FROM_MEMORY(_ec)) : (EC_REPUSH_TAG(), 0))
+    (UNLIKELY(ruby_setjmp(RB_VM_TAG_JMPBUF_GET(_tag.buf))) ? rb_ec_tag_state(_ec) : (EC_REPUSH_TAG(), 0))
 
 #define EC_JUMP_TAG(ec, st) rb_ec_tag_jump(ec, st)
 

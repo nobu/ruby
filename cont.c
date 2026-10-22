@@ -1776,7 +1776,6 @@ cont_capture(volatile int *volatile stat)
     if (ruby_setjmp(cont->jmpbuf)) {
         VALUE value;
 
-        VAR_INITIALIZED(cont);
         value = cont->value;
         if (cont->argc == -1) rb_exc_raise(value);
         cont->value = Qnil;
