@@ -52,9 +52,12 @@
 #define RB_FIXABLE(_)    (RB_POSFIXABLE(_) && RB_NEGFIXABLE(_))
 
 /** Maximum possible value that a fixnum can represent. */
-#define RUBY_FIXNUM_MAX  (LONG_MAX / 2)
-
-/** Minimum possible value that a fixnum can represent. */
-#define RUBY_FIXNUM_MIN  (LONG_MIN / 2)
+#if defined(SIZEOF_RB_LEN_T) && SIZEOF_RB_LEN_T > SIZEOF_LONG
+# define RUBY_FIXNUM_MAX  (LLONG_MAX / 2)
+# define RUBY_FIXNUM_MIN  (LLONG_MIN / 2)
+#else
+# define RUBY_FIXNUM_MAX  (LONG_MAX / 2)
+# define RUBY_FIXNUM_MIN  (LONG_MIN / 2)
+#endif
 
 #endif /* RBIMPL_ARITHMETIC_FIXNUM_H */
