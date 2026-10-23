@@ -23,6 +23,7 @@
 #include "ruby/internal/config.h"
 #include "ruby/internal/arithmetic/fixnum.h"
 #include "ruby/internal/arithmetic/intptr_t.h"
+#include "ruby/internal/arithmetic/len_t.h"
 #include "ruby/internal/arithmetic/long.h"
 #include "ruby/internal/attr/artificial.h"
 #include "ruby/internal/attr/const.h"
@@ -253,10 +254,16 @@ rb_int2num_inline(int v)
 static inline VALUE
 rb_uint2num_inline(unsigned int v)
 {
-    if (RB_POSFIXABLE(v))
+    if (RB_POSFIXABLE(v)) {
+#if defined(SIZEOF_RB_LEN_T) && SIZEOF_RB_LEN_T > SIZEOF_LONG
+        return RB_LEN2FIX(RBIMPL_CAST((rb_len_t)v));
+#else
         return RB_LONG2FIX(RBIMPL_CAST((long)v));
-    else
+#endif
+    }
+    else {
         return rb_uint2big(v);
+    }
 }
 
 RBIMPL_WARNING_POP()
