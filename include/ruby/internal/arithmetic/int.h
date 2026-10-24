@@ -254,16 +254,10 @@ rb_int2num_inline(int v)
 static inline VALUE
 rb_uint2num_inline(unsigned int v)
 {
-    if (RB_POSFIXABLE(v)) {
-#if defined(SIZEOF_RB_LEN_T) && SIZEOF_RB_LEN_T > SIZEOF_LONG
+    if (RB_POSFIXABLE(v))
         return RB_LEN2FIX(RBIMPL_CAST((rb_len_t)v));
-#else
-        return RB_LONG2FIX(RBIMPL_CAST((long)v));
-#endif
-    }
-    else {
+    else
         return rb_uint2big(v);
-    }
 }
 
 RBIMPL_WARNING_POP()
