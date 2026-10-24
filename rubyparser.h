@@ -19,6 +19,7 @@
 #else
 
 #include "ruby/encoding.h"
+#include "ruby/internal/value.h"
 
 #endif
 
@@ -1349,7 +1350,7 @@ typedef struct rb_parser_config_struct {
     /* Util */
     unsigned long (*scan_hex)(const char *start, size_t len, size_t *retlen);
     unsigned long (*scan_oct)(const char *start, size_t len, size_t *retlen);
-    unsigned long (*scan_digits)(const char *str, ssize_t len, int base, size_t *retlen, int *overflow);
+    rb_ulen_t (*scan_digits)(const char *str, ssize_t len, int base, size_t *retlen, int *overflow);
     double (*strtod)(const char *s00, char **se);
 
     /* Misc */

@@ -4133,7 +4133,7 @@ rb_int_parse_cstr(const char *str, ssize_t len, char **endp, size_t *ndigits,
     int c;
     VALUE z = Qnil;
 
-    unsigned long val;
+    rb_ulen_t val;
     int ov;
 
     const char *digits_start, *digits_end;
@@ -4268,7 +4268,7 @@ rb_int_parse_cstr(const char *str, ssize_t len, char **endp, size_t *ndigits,
         }
 
         if (POSFIXABLE(val)) {
-            if (sign) return LEN2FIX(val);
+            if (sign) return LEN2FIX((rb_len_t)val);
             else {
                 rb_len_t result = -(rb_len_t)val;
                 return LEN2FIX(result);

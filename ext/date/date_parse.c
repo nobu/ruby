@@ -8,8 +8,10 @@
 
 #ifndef HAVE_RB_LEN_T
 typedef long rb_len_t;
+typedef unsigned long rb_ulen_t;
 # define LEN2NUM LONG2NUM
 # define NUM2LEN NUM2LONG
+# define NUM2ULEN NUM2ULONG
 #endif
 
 #include <ctype.h>
@@ -17,8 +19,8 @@ typedef long rb_len_t;
 #undef strncasecmp
 #define strncasecmp STRNCASECMP
 
-RUBY_EXTERN VALUE rb_int_positive_pow(long x, unsigned long y);
-RUBY_EXTERN unsigned long ruby_scan_digits(const char *str, ssize_t len, int base, size_t *retlen, int *overflow);
+RUBY_EXTERN VALUE rb_int_positive_pow(rb_len_t x, rb_ulen_t y);
+RUBY_EXTERN rb_ulen_t ruby_scan_digits(const char *str, ssize_t len, int base, size_t *retlen, int *overflow);
 
 /* #define TIGHT_PARSER */
 
