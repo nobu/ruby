@@ -7789,6 +7789,9 @@ tokadd(struct parser_params *p, int c)
     }
 }
 
+#define ruby_scan_hex(start, len, retlen) ruby_scan_digits(start, len, 16, retlen, (int[1]){})
+#define ruby_scan_oct(start, len, retlen) ruby_scan_digits(start, len, 8, retlen, (int[1]){})
+
 static int
 tok_hex(struct parser_params *p, size_t *numlen)
 {
