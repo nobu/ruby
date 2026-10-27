@@ -14319,6 +14319,24 @@ rb_str_ord(VALUE s)
     c = rb_enc_codepoint(RSTRING_PTR(s), RSTRING_END(s), STR_ENC_GET(s));
     return UINT2NUM(c);
 }
+
+static inline VALUE
+int_add_mask(VALUE x, VALUE y, VALUE *mask, unsigned int bits)
+{
+    VALUE v = ULEN2NUM(y);
+
+    if (!x) return v;
+
+    x = rb_int_plus(x, v);
+    if (!bits) return x;
+
+    if (!*mask) {
+        const VALUE one = INT2FIX(1);
+        *mask = rb_int_minus(rb_int_lshift(one, INT2FIX(bits)), one);
+    }
+    return rb_int_and(x, *mask);
+}
+
 /*
  *  call-seq:
  *    sum(n = 16) -> integer
@@ -14342,53 +14360,30 @@ static VALUE
 rb_str_sum(int argc, VALUE *argv, VALUE str)
 {
     int bits = 16;
-    char *ptr, *p, *pend;
-    rb_len_t len;
-    VALUE sum = INT2FIX(0);
-    unsigned long sum0 = 0;
+    VALUE sum = Qfalse, mod = Qfalse;
+    rb_ulen_t sum0 = 0;
+    rb_ulen_t mask = ~(rb_ulen_t)0;
 
     if (rb_check_arity(argc, 0, 1) && (bits = NUM2INT(argv[0])) < 0) {
         bits = 0;
     }
-    ptr = p = RSTRING_PTR(str);
-    len = RSTRING_LEN(str);
-    pend = p + len;
+    else if (bits > 0 && bits < (int)sizeof(rb_ulen_t)*CHAR_BIT) {
+        mask = ~(mask<<bits);
+        bits = 0;
+    }
 
+    const char *p = RSTRING_PTR(str), *pend = RSTRING_END(str);
     while (p < pend) {
-        if (FIXNUM_MAX - UCHAR_MAX < sum0) {
-            sum = rb_funcall(sum, '+', 1, LONG2FIX(sum0));
-            str_mod_check(str, ptr, len);
+        unsigned char c = *p++;
+        if (FIXNUM_MAX - c < sum0 && FIXNUM_MAX - c < (sum0 &= mask)) {
+            sum = int_add_mask(sum, sum0, &mod, bits);
             sum0 = 0;
         }
-        sum0 += (unsigned char)*p;
-        p++;
+        sum0 += c;
     }
 
-    if (bits == 0) {
-        if (sum0) {
-            sum = rb_funcall(sum, '+', 1, LONG2FIX(sum0));
-        }
-    }
-    else {
-        if (sum == INT2FIX(0)) {
-            if (bits < (int)sizeof(long)*CHAR_BIT) {
-                sum0 &= (((unsigned long)1)<<bits)-1;
-            }
-            sum = LONG2FIX(sum0);
-        }
-        else {
-            VALUE mod;
-
-            if (sum0) {
-                sum = rb_funcall(sum, '+', 1, LONG2FIX(sum0));
-            }
-
-            mod = rb_funcall(INT2FIX(1), idLTLT, 1, INT2FIX(bits));
-            mod = rb_funcall(mod, '-', 1, INT2FIX(1));
-            sum = rb_funcall(sum, '&', 1, mod);
-        }
-    }
-    return sum;
+    sum0 &= mask;
+    return int_add_mask(sum, sum0, &mod, bits);
 }
 
 static VALUE
