@@ -21,6 +21,7 @@ class Test_Integer < Test::Unit::TestCase
       assert_equal(3, Bug::Integer.positive_pow(3, 1))
       assert_equal(-3, Bug::Integer.positive_pow(-3, 1))
       assert_equal(9, Bug::Integer.positive_pow(-3, 2))
+      assert_equal(2147483648, Bug::Integer.positive_pow(2147483648, 1))
     end;
   end
 end
