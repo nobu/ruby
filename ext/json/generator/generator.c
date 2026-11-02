@@ -1161,7 +1161,7 @@ static void generate_json_fixnum(FBuffer *buffer, struct generate_json_data *dat
         generate_json_rfc8785_number(buffer, obj);
         return;
     }
-    fbuffer_append_long(buffer, FIX2LONG(obj));
+    fbuffer_append_len(buffer, FIX2LEN(obj));
 }
 
 static void generate_json_bignum(FBuffer *buffer, struct generate_json_data *data, VALUE obj)
