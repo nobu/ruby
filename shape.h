@@ -578,8 +578,9 @@ rb_obj_shape_transition_object_id(VALUE obj)
     return rb_shape_transition_object_id(RBASIC_SHAPE_ID(obj));
 }
 
-shape_id_t rb_obj_shape_transition_remove_ivar(VALUE obj, ID id, shape_id_t *removed_shape_id);
-shape_id_t rb_obj_shape_transition_add_ivar(VALUE obj, ID id);
+shape_id_t rb_obj_shape_transition_remove_ivar(VALUE obj, ID id, shape_id_t *removed_shape_id, VALUE *warnings);
+shape_id_t rb_obj_shape_transition_add_ivar(VALUE obj, ID id, VALUE *warnings);
+void rb_shape_emit_warnings(VALUE warnings);
 
 // For ext/objspace
 RUBY_SYMBOL_EXPORT_BEGIN

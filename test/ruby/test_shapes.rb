@@ -1338,4 +1338,39 @@ class TestShapes < Test::Unit::TestCase
     assert_predicate RubyVM::Shape.of(klass.new(true)), :complex?
     assert_predicate RubyVM::Shape.of(klass.new(true).dup), :complex?
   end
+
+  def test_max_variations_warning_ivar
+    assert_separately([], "#{<<~"{#"}\n#{<<~'};'}")
+    {#
+      Warning[:performance] = true
+      class ShapeProbe; end
+      7.times { |i| ShapeProbe.new.instance_variable_set("@v#{i}", i) }
+      obj = ShapeProbe.new
+      payload = Object.new
+      Warning.define_singleton_method(:warn) do |msg, **opts|
+        obj.instance_variable_set(:@inner, payload)
+        GC.start
+      end
+      obj.instance_variable_set(:@v7, :outer)
+      assert_equal(:outer, obj.instance_variable_get(:@v7))
+      assert_same(payload, obj.instance_variable_get(:@inner))
+    };
+  end
+
+  def test_max_variations_warning_frozen
+    assert_separately([], "#{<<~"{#"}\n#{<<~'};'}")
+    {#
+      Warning[:performance] = true
+      class ShapeProbe; end
+      7.times { |i| ShapeProbe.new.instance_variable_set("@v#{i}", i) }
+      obj = ShapeProbe.new
+      Warning.define_singleton_method(:warn) do |msg, **opts|
+        obj.freeze
+        GC.start
+      end
+      obj.instance_variable_set(:@v7, :outer)
+      assert_equal(:outer, obj.instance_variable_get(:@v7))
+      assert_predicate(obj, :frozen?)
+    };
+  end
 end if defined?(RubyVM::Shape)

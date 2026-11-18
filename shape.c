@@ -754,7 +754,7 @@ shape_get_iv_index(rb_shape_t *shape, ID id, attr_index_t *value)
 #endif
 
 static inline rb_shape_t *
-shape_get_next(rb_shape_t *shape, enum shape_type shape_type, VALUE klass, ID id, bool emit_warnings)
+shape_get_next(rb_shape_t *shape, enum shape_type shape_type, VALUE klass, ID id, VALUE *warnings)
 {
     RUBY_ASSERT(!is_instance_id(id) || RTEST(rb_sym2str(ID2SYM(id))));
 
@@ -788,20 +788,46 @@ shape_get_next(rb_shape_t *shape, enum shape_type shape_type, VALUE klass, ID id
     if (variation_created) {
         RCLASS_VARIATION_COUNT(klass)++;
 
-        if (emit_warnings && rb_warning_category_enabled_p(RB_WARN_CATEGORY_PERFORMANCE)) {
+        if (warnings) {
             if (RCLASS_VARIATION_COUNT(klass) >= SHAPE_MAX_VARIATIONS) {
-                rb_category_warn(
-                    RB_WARN_CATEGORY_PERFORMANCE,
-                    "The class %"PRIsVALUE" reached %d shape variations, instance variables accesses will be slower and memory usage increased.\n"
-                    "It is recommended to define instance variables in a consistent order, for instance by eagerly defining them all in the #initialize method.",
-                    rb_class_path(klass),
-                    SHAPE_MAX_VARIATIONS
-                );
+                VALUE path = rb_class_path(klass);
+                if (!NIL_P(path)) {
+                    if (!*warnings) *warnings = rb_ary_hidden_new(1);
+                    rb_ary_push(*warnings, path);
+                }
             }
         }
     }
 
     return new_shape;
+}
+
+void
+rb_shape_emit_warnings(VALUE warnings)
+{
+    if (!warnings) return;
+    Check_Type(warnings, T_ARRAY);
+    for (rb_len_t i = 0; i < RARRAY_LEN(warnings); ++i) {
+        VALUE path = RARRAY_AREF(warnings, i);
+        Check_Type(path, T_STRING);
+        rb_category_warn(
+            RB_WARN_CATEGORY_PERFORMANCE,
+            "The class %"PRIsVALUE" reached %d shape variations, instance variables accesses will be slower and memory usage increased.\n"
+            "It is recommended to define instance variables in a consistent order, for instance by eagerly defining them all in the #initialize method.",
+            path, SHAPE_MAX_VARIATIONS);
+    }
+    rb_ary_clear(warnings);
+    RB_GC_GUARD(warnings);
+}
+
+static VALUE *
+warning_list_ptr(VALUE *warn_ptr)
+{
+    if (!warn_ptr) return NULL;
+    *warn_ptr = 0;
+    if (NIL_P(ruby_verbose)) return NULL;
+    if (!rb_warning_category_enabled_p(RB_WARN_CATEGORY_PERFORMANCE)) return NULL;
+    return warn_ptr;
 }
 
 static VALUE
@@ -827,7 +853,7 @@ obj_get_owner_class(VALUE obj)
 }
 
 static rb_shape_t *
-remove_shape_recursive(VALUE obj, rb_shape_t *shape, ID id, rb_shape_t **removed_shape)
+remove_shape_recursive(VALUE obj, rb_shape_t *shape, ID id, rb_shape_t **removed_shape, VALUE *warnings)
 {
     if (shape->parent_offset == INVALID_SHAPE_ID) {
         // We've hit the top of the shape tree and couldn't find the
@@ -843,13 +869,13 @@ remove_shape_recursive(VALUE obj, rb_shape_t *shape, ID id, rb_shape_t **removed
         }
         else {
             // This isn't the IV we want to remove, keep walking up.
-            rb_shape_t *new_parent = remove_shape_recursive(obj, RSHAPE(shape->parent_offset), id, removed_shape);
+            rb_shape_t *new_parent = remove_shape_recursive(obj, RSHAPE(shape->parent_offset), id, removed_shape, warnings);
 
             // We found a new parent.  Create a child of the new parent that
             // has the same attributes as this shape.
             if (new_parent) {
                 VALUE klass = obj_get_owner_class(obj);
-                rb_shape_t *new_child = shape_get_next(new_parent, shape->type, klass, shape->edge_name, true);
+                rb_shape_t *new_child = shape_get_next(new_parent, shape->type, klass, shape->edge_name, warnings);
                 RUBY_ASSERT(!new_child || new_child->capacity <= shape->capacity);
                 return new_child;
             }
@@ -863,17 +889,19 @@ remove_shape_recursive(VALUE obj, rb_shape_t *shape, ID id, rb_shape_t **removed
 }
 
 shape_id_t
-rb_obj_shape_transition_remove_ivar(VALUE obj, ID id, shape_id_t *removed_shape_id)
+rb_obj_shape_transition_remove_ivar(VALUE obj, ID id, shape_id_t *removed_shape_id, VALUE *warnings)
 {
     shape_id_t original_shape_id = RBASIC_SHAPE_ID(obj);
     RUBY_ASSERT(!rb_shape_frozen_p(original_shape_id));
 
+    warnings = warning_list_ptr(warnings);
     if (rb_shape_complex_p(original_shape_id)) {
         return original_shape_id;
     }
 
     rb_shape_t *removed_shape = NULL;
-    rb_shape_t *new_shape = remove_shape_recursive(obj, RSHAPE(original_shape_id), id, &removed_shape);
+    rb_shape_t *new_shape = remove_shape_recursive(obj, RSHAPE(original_shape_id), id,
+                                                   &removed_shape, warnings);
 
     if (removed_shape) {
         *removed_shape_id = SHAPE_OFFSET(removed_shape);
@@ -893,13 +921,15 @@ rb_obj_shape_transition_remove_ivar(VALUE obj, ID id, shape_id_t *removed_shape_
 }
 
 shape_id_t
-rb_obj_shape_transition_add_ivar(VALUE obj, ID id)
+rb_obj_shape_transition_add_ivar(VALUE obj, ID id, VALUE *warnings)
 {
     shape_id_t original_shape_id = RBASIC_SHAPE_ID(obj);
     RUBY_ASSERT(!rb_shape_frozen_p(original_shape_id));
 
+    warnings = warning_list_ptr(warnings);
     VALUE klass = obj_get_owner_class(obj);
-    rb_shape_t *next_shape = shape_get_next(RSHAPE(original_shape_id), SHAPE_IVAR, klass, id, true);
+    rb_shape_t *next_shape = shape_get_next(RSHAPE(original_shape_id), SHAPE_IVAR, klass, id,
+                                            warnings);
     if (next_shape) {
         return SHAPE_ID(next_shape, original_shape_id);
     }
@@ -913,7 +943,7 @@ rb_shape_transition_add_ivar_no_warnings(shape_id_t original_shape_id, ID id, VA
 {
     RUBY_ASSERT(!rb_shape_frozen_p(original_shape_id));
 
-    rb_shape_t *next_shape = shape_get_next(RSHAPE(original_shape_id), SHAPE_IVAR, klass, id, false);
+    rb_shape_t *next_shape = shape_get_next(RSHAPE(original_shape_id), SHAPE_IVAR, klass, id, NULL);
     if (next_shape) {
         return SHAPE_ID(next_shape, original_shape_id);
     }

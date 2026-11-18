@@ -1747,9 +1747,10 @@ rb_ivar_delete(VALUE obj, ID id, VALUE undef)
         fields_obj = rb_imemo_fields_clone(fields_obj);
     }
 
+    VALUE warnings;
     shape_id_t old_shape_id = RBASIC_SHAPE_ID(fields_obj);
     shape_id_t removed_shape_id;
-    shape_id_t next_shape_id = rb_obj_shape_transition_remove_ivar(fields_obj, id, &removed_shape_id);
+    shape_id_t next_shape_id = rb_obj_shape_transition_remove_ivar(fields_obj, id, &removed_shape_id, &warnings);
 
     if (UNLIKELY(rb_shape_complex_p(next_shape_id))) {
         if (UNLIKELY(!rb_shape_complex_p(old_shape_id))) {
@@ -1762,6 +1763,7 @@ rb_ivar_delete(VALUE obj, ID id, VALUE undef)
     }
     else {
         if (next_shape_id == old_shape_id) {
+            rb_shape_emit_warnings(warnings);
             return undef;
         }
 
@@ -1826,6 +1828,8 @@ rb_ivar_delete(VALUE obj, ID id, VALUE undef)
     else {
         RBASIC_SET_SHAPE_ID(obj, next_shape_id);
     }
+
+    rb_shape_emit_warnings(warnings);
 
     return val;
 }
@@ -1979,7 +1983,7 @@ generic_field_set(VALUE obj, shape_id_t target_shape_id, ID field_name, VALUE va
 }
 
 static shape_id_t
-generic_shape_ivar(VALUE obj, ID id, bool *new_ivar_out)
+generic_shape_ivar(VALUE obj, ID id, bool *new_ivar_out, VALUE *warnings)
 {
     bool new_ivar = false;
     shape_id_t current_shape_id = RBASIC_SHAPE_ID(obj);
@@ -1988,7 +1992,7 @@ generic_shape_ivar(VALUE obj, ID id, bool *new_ivar_out)
     if (!rb_shape_complex_p(current_shape_id)) {
         if (!rb_shape_find_ivar(current_shape_id, id, &target_shape_id)) {
             new_ivar = true;
-            target_shape_id = rb_obj_shape_transition_add_ivar(obj, id);
+            target_shape_id = rb_obj_shape_transition_add_ivar(obj, id, warnings);
         }
     }
 
@@ -2000,8 +2004,11 @@ static attr_index_t
 generic_ivar_set(VALUE obj, ID id, VALUE val)
 {
     bool dontcare;
-    shape_id_t target_shape_id = generic_shape_ivar(obj, id, &dontcare);
-    return generic_field_set(obj, target_shape_id, id, val);
+    VALUE warnings = 0;
+    shape_id_t target_shape_id = generic_shape_ivar(obj, id, &dontcare, &warnings);
+    attr_index_t index = generic_field_set(obj, target_shape_id, id, val);
+    rb_shape_emit_warnings(warnings);
+    return index;
 }
 
 static attr_index_t
@@ -2068,8 +2075,11 @@ static attr_index_t
 obj_ivar_set(VALUE obj, ID id, VALUE val)
 {
     bool dontcare;
-    shape_id_t target_shape_id = generic_shape_ivar(obj, id, &dontcare);
-    return obj_field_set(obj, target_shape_id, id, val);
+    VALUE warn = 0;
+    shape_id_t target_shape_id = generic_shape_ivar(obj, id, &dontcare, &warn);
+    attr_index_t index = obj_field_set(obj, target_shape_id, id, val);
+    rb_shape_emit_warnings(warn);
+    return index;
 }
 
 void
@@ -4618,6 +4628,7 @@ class_fields_ivar_set(VALUE klass, VALUE fields_obj, ID id, VALUE val, bool conc
     const VALUE original_fields_obj = fields_obj;
     fields_obj = original_fields_obj ? original_fields_obj : rb_imemo_fields_new(klass, ROOT_SHAPE_ID, true);
 
+    VALUE warnings = 0;
     shape_id_t current_shape_id = RBASIC_SHAPE_ID(fields_obj);
     shape_id_t next_shape_id = current_shape_id; // for complex
     if (UNLIKELY(rb_shape_complex_p(current_shape_id))) {
@@ -4625,7 +4636,7 @@ class_fields_ivar_set(VALUE klass, VALUE fields_obj, ID id, VALUE val, bool conc
     }
 
     bool new_ivar;
-    next_shape_id = generic_shape_ivar(fields_obj, id, &new_ivar);
+    next_shape_id = generic_shape_ivar(fields_obj, id, &new_ivar, &warnings);
 
     if (UNLIKELY(rb_shape_complex_p(next_shape_id))) {
         fields_obj = imemo_fields_evacutate_to_complex(klass, fields_obj, next_shape_id, 1);
@@ -4661,6 +4672,7 @@ class_fields_ivar_set(VALUE klass, VALUE fields_obj, ID id, VALUE val, bool conc
 
     *new_fields_obj = fields_obj;
     *new_ivar_out = new_ivar;
+    rb_shape_emit_warnings(warnings);
     return index;
 
 complex:
@@ -4684,6 +4696,7 @@ complex:
 
     *new_fields_obj = fields_obj;
     *new_ivar_out = new_ivar;
+    rb_shape_emit_warnings(warnings);
     return ATTR_INDEX_NOT_SET;
 }
 
