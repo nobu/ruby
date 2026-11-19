@@ -1726,9 +1726,11 @@ str_new_frozen_buffer(VALUE klass, VALUE orig, int copy_encoding)
             VALUE shared = RSTRING(orig)->as.heap.aux.shared;
             rb_len_t ofs = RSTRING(orig)->as.heap.ptr - RSTRING_PTR(shared);
             rb_len_t rest = RSTRING_LEN(shared) - ofs - RSTRING_LEN(orig);
-            RUBY_ASSERT(ofs >= 0);
-            RUBY_ASSERT(rest >= 0);
-            RUBY_ASSERT(ofs + rest <= RSTRING_LEN(shared));
+            RUBY_ASSERT(ofs >= 0, "offset=%" PRIdLEN, ofs);
+            RUBY_ASSERT(rest >= 0, "rest=%" PRIdLEN, rest);
+            RUBY_ASSERT(ofs + rest <= RSTRING_LEN(shared),
+                        "offset+rest=%" PRIdLEN " len=%" PRIdLEN,
+                        ofs + rest, RSTRING_LEN(shared));
             RUBY_ASSERT(OBJ_FROZEN(shared));
 
             if ((ofs > 0) || (rest > 0) ||
@@ -3244,9 +3246,11 @@ str_subseq(VALUE str, rb_len_t beg, rb_len_t len)
 {
     VALUE str2;
 
-    RUBY_ASSERT(beg >= 0);
-    RUBY_ASSERT(len >= 0);
-    RUBY_ASSERT(beg+len <= RSTRING_LEN(str));
+    RUBY_ASSERT(beg >= 0, "begin=%" PRIdLEN, beg);
+    RUBY_ASSERT(len >= 0, "length=%" PRIdLEN, len);
+    RUBY_ASSERT(beg+len <= RSTRING_LEN(str),
+                "begin+length=%" PRIdLEN " string length=%" PRIdLEN,
+                beg + len, RSTRING_LEN(str));
 
     const int termlen = TERM_LEN(str);
     if (!SHARABLE_SUBSTRING_P(str, beg, len)) {

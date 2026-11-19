@@ -82,13 +82,6 @@ VALUE rb_cArray_empty_frozen;
 #define ARY_MAX_SIZE (RB_LEN_MAX / (int)sizeof(VALUE))
 #define SMALL_ARRAY_LEN 16
 
-RBIMPL_ATTR_MAYBE_UNUSED()
-static int
-should_be_T_ARRAY(VALUE ary)
-{
-    return RB_TYPE_P(ary, T_ARRAY);
-}
-
 #define ARY_HEAP_PTR(a) (RUBY_ASSERT(!ARY_EMBED_P(a)), RARRAY(a)->as.heap.ptr)
 #define ARY_HEAP_LEN(a) (RUBY_ASSERT(!ARY_EMBED_P(a)), RARRAY(a)->as.heap.len)
 #define ARY_HEAP_CAPA(a) (RUBY_ASSERT(!ARY_EMBED_P(a)), RUBY_ASSERT(!ARY_SHARED_ROOT_P(a)), \
@@ -101,7 +94,7 @@ should_be_T_ARRAY(VALUE ary)
          (RARRAY_EMBED_LEN_MASK >> RARRAY_EMBED_LEN_SHIFT)))
 #define ARY_HEAP_SIZE(a) (RUBY_ASSERT(!ARY_EMBED_P(a)), RUBY_ASSERT(ARY_OWNS_HEAP_P(a)), ARY_CAPA(a) * sizeof(VALUE))
 
-#define ARY_OWNS_HEAP_P(a) (RUBY_ASSERT(should_be_T_ARRAY((VALUE)(a))), \
+#define ARY_OWNS_HEAP_P(a) (RUBY_ASSERT_BUILTIN_TYPE((a), T_ARRAY), \
                             !FL_TEST_RAW((a), RARRAY_SHARED_FLAG|RARRAY_EMBED_FLAG))
 
 #define FL_SET_EMBED(a) do { \
@@ -141,7 +134,8 @@ should_be_T_ARRAY(VALUE ary)
     else { \
         ARY_SET_HEAP_LEN((ary), (n)); \
     } \
-    RUBY_ASSERT(RARRAY_LEN(ary) == (n)); \
+    RUBY_ASSERT(RARRAY_LEN(ary) == (n), "%" PRIdLEN " : %" PRIdLEN, \
+                RARRAY_LEN(ary), ((rb_len_t)0 + (n))); \
 } while (0)
 #define ARY_INCREASE_PTR(ary, n) do  { \
     RUBY_ASSERT(!ARY_EMBED_P(ary)); \
@@ -196,7 +190,7 @@ static rb_len_t
 ary_embed_capa(VALUE ary)
 {
     size_t size = rb_obj_shape_slot_size(ary) - offsetof(struct RArray, as.ary);
-    RUBY_ASSERT(size % sizeof(VALUE) == 0);
+    RUBY_ASSERT(size % sizeof(VALUE) == 0, "%zd", size);
     return size / sizeof(VALUE);
 }
 
@@ -275,12 +269,13 @@ ary_verify_(VALUE ary, const char *file, int line)
         const VALUE *root_ptr = RARRAY_CONST_PTR(root);
         rb_len_t len = ARY_HEAP_LEN(ary), root_len = RARRAY_LEN(root);
         RUBY_ASSERT(ARY_SHARED_ROOT_P(root) || OBJ_FROZEN(root));
-        RUBY_ASSERT(root_ptr <= ptr && ptr + len <= root_ptr + root_len);
+        RUBY_ASSERT(root_ptr <= ptr, "%p > %p", root_ptr, ptr);
+        RUBY_ASSERT(ptr + len <= root_ptr + root_len, "%p > %p", ptr+ len, root_ptr + root_len);
         ary_verify(root);
     }
     else if (ARY_EMBED_P(ary)) {
         RUBY_ASSERT(!ARY_SHARED_P(ary));
-        RUBY_ASSERT(RARRAY_LEN(ary) <= ary_embed_capa(ary));
+        RUBY_ASSERT(RARRAY_LEN(ary) <= ary_embed_capa(ary), "%" PRIdLEN " > %" PRIdLEN, RARRAY_LEN(ary), ary_embed_capa(ary));
     }
     else {
         const VALUE *ptr = RARRAY_CONST_PTR(ary);
@@ -425,7 +420,7 @@ rb_ary_make_embedded(VALUE ary)
 static void
 ary_resize_capa(VALUE ary, rb_len_t capacity)
 {
-    RUBY_ASSERT(RARRAY_LEN(ary) <= capacity);
+    RUBY_ASSERT(RARRAY_LEN(ary) <= capacity, "%" PRIdLEN " > %" PRIdLEN, RARRAY_LEN(ary), capacity);
     RUBY_ASSERT(!OBJ_FROZEN(ary));
     RUBY_ASSERT(!ARY_SHARED_P(ary));
 
@@ -1158,7 +1153,7 @@ rb_ary_initialize(int argc, VALUE *argv, VALUE ary)
     if (argc == 0) {
         rb_ary_reset(ary);
         RUBY_ASSERT(ARY_EMBED_P(ary));
-        RUBY_ASSERT(ARY_EMBED_LEN(ary) == 0);
+        RUBY_ASSERT(ARY_EMBED_LEN(ary) == 0, "%" PRIdLEN, ARY_EMBED_LEN(ary));
         if (rb_block_given_p()) {
             rb_warning("given block not used");
         }
@@ -1255,12 +1250,16 @@ rb_ary_store(VALUE ary, rb_len_t idx, VALUE val)
     ARY_SET(ary, idx, val);
 }
 
+#define ARY_ASSERT_IN_ARRAY(offset, len, ary) ( \
+        RUBY_ASSERT((offset) >= 0), \
+        RUBY_ASSERT((len) >= 0), \
+        RUBY_ASSERT((offset)+(len) <= RARRAY_LEN(ary), "%" PRIdLEN " > %" PRIdLEN, \
+                    (offset)+(len), RARRAY_LEN(ary)))
+
 static VALUE
 ary_make_partial(VALUE ary, VALUE klass, rb_len_t offset, rb_len_t len)
 {
-    RUBY_ASSERT(offset >= 0);
-    RUBY_ASSERT(len >= 0);
-    RUBY_ASSERT(offset+len <= RARRAY_LEN(ary));
+    ARY_ASSERT_IN_ARRAY(offset, len, ary);
 
     VALUE result = ary_alloc_heap(klass);
     size_t embed_capa = ary_embed_capa(result);
@@ -1294,9 +1293,7 @@ ary_make_partial(VALUE ary, VALUE klass, rb_len_t offset, rb_len_t len)
 static VALUE
 ary_make_partial_step(VALUE ary, VALUE klass, rb_len_t offset, rb_len_t len, rb_len_t step)
 {
-    RUBY_ASSERT(offset >= 0);
-    RUBY_ASSERT(len >= 0);
-    RUBY_ASSERT(offset+len <= RARRAY_LEN(ary));
+    ARY_ASSERT_IN_ARRAY(offset, len, ary);
     RUBY_ASSERT(step != 0);
 
     const rb_len_t orig_len = len;
@@ -5026,7 +5023,7 @@ rb_ary_replace(VALUE copy, VALUE orig)
         ARY_SET_LEN(copy, ARY_HEAP_LEN(orig));
         rb_ary_set_shared(copy, shared_root);
 
-        RUBY_ASSERT(RB_OBJ_SHAREABLE_P(copy) ? RB_OBJ_SHAREABLE_P(shared_root) : 1);
+        RUBY_ASSERT(!RB_OBJ_SHAREABLE_P(copy) || RB_OBJ_SHAREABLE_P(shared_root));
     }
     ary_verify(copy);
     return copy;
@@ -6152,10 +6149,14 @@ rb_ary_intersect_p(VALUE ary1, VALUE ary2)
     return result;
 }
 
+#define ARY_ASSERT_BEGIN_POS(i, n) ( \
+        RUBY_ASSERT((i) > 0, "%" PRIdLEN, (i)), \
+        RUBY_ASSERT((i) < (n), "%" PRIdLEN " >= %" PRIdLEN, (i), (n)))
+
 static VALUE
 ary_max_generic(VALUE ary, rb_len_t i, VALUE vmax)
 {
-    RUBY_ASSERT(i > 0 && i < RARRAY_LEN(ary));
+    ARY_ASSERT_BEGIN_POS(i, RARRAY_LEN(ary));
 
     VALUE v;
     for (; i < RARRAY_LEN(ary); ++i) {
@@ -6173,8 +6174,8 @@ static VALUE
 ary_max_opt_fixnum(VALUE ary, rb_len_t i, VALUE vmax)
 {
     const rb_len_t n = RARRAY_LEN(ary);
-    RUBY_ASSERT(i > 0 && i < n);
-    RUBY_ASSERT(FIXNUM_P(vmax));
+    ARY_ASSERT_BEGIN_POS(i, n);
+    RUBY_ASSERT_BUILTIN_TYPE(vmax, T_FIXNUM);
 
     VALUE v;
     for (; i < n; ++i) {
@@ -6197,8 +6198,8 @@ static VALUE
 ary_max_opt_float(VALUE ary, rb_len_t i, VALUE vmax)
 {
     const rb_len_t n = RARRAY_LEN(ary);
-    RUBY_ASSERT(i > 0 && i < n);
-    RUBY_ASSERT(RB_FLOAT_TYPE_P(vmax));
+    ARY_ASSERT_BEGIN_POS(i, n);
+    RUBY_ASSERT_BUILTIN_TYPE(vmax, T_FLOAT);
 
     VALUE v;
     for (; i < n; ++i) {
@@ -6221,8 +6222,8 @@ static VALUE
 ary_max_opt_string(VALUE ary, rb_len_t i, VALUE vmax)
 {
     const rb_len_t n = RARRAY_LEN(ary);
-    RUBY_ASSERT(i > 0 && i < n);
-    RUBY_ASSERT(STRING_P(vmax));
+    ARY_ASSERT_BEGIN_POS(i, n);
+    RUBY_ASSERT_BUILTIN_TYPE(vmax, T_STRING);
 
     VALUE v;
     for (; i < n; ++i) {
@@ -6332,7 +6333,7 @@ rb_ary_max(int argc, VALUE *argv, VALUE ary)
 static VALUE
 ary_min_generic(VALUE ary, rb_len_t i, VALUE vmin)
 {
-    RUBY_ASSERT(i > 0 && i < RARRAY_LEN(ary));
+    ARY_ASSERT_BEGIN_POS(i, RARRAY_LEN(ary));
 
     VALUE v;
     for (; i < RARRAY_LEN(ary); ++i) {
@@ -6350,8 +6351,8 @@ static VALUE
 ary_min_opt_fixnum(VALUE ary, rb_len_t i, VALUE vmin)
 {
     const rb_len_t n = RARRAY_LEN(ary);
-    RUBY_ASSERT(i > 0 && i < n);
-    RUBY_ASSERT(FIXNUM_P(vmin));
+    ARY_ASSERT_BEGIN_POS(i, n);
+    RUBY_ASSERT_BUILTIN_TYPE(vmin, T_FIXNUM);
 
     VALUE a;
     for (; i < n; ++i) {
@@ -6374,8 +6375,8 @@ static VALUE
 ary_min_opt_float(VALUE ary, rb_len_t i, VALUE vmin)
 {
     const rb_len_t n = RARRAY_LEN(ary);
-    RUBY_ASSERT(i > 0 && i < n);
-    RUBY_ASSERT(RB_FLOAT_TYPE_P(vmin));
+    ARY_ASSERT_BEGIN_POS(i, n);
+    RUBY_ASSERT_BUILTIN_TYPE(vmin, T_FLOAT);
 
     VALUE a;
     for (; i < n; ++i) {
@@ -6398,8 +6399,8 @@ static VALUE
 ary_min_opt_string(VALUE ary, rb_len_t i, VALUE vmin)
 {
     const rb_len_t n = RARRAY_LEN(ary);
-    RUBY_ASSERT(i > 0 && i < n);
-    RUBY_ASSERT(STRING_P(vmin));
+    ARY_ASSERT_BEGIN_POS(i, n);
+    RUBY_ASSERT_BUILTIN_TYPE(vmin, T_STRING);
 
     VALUE a;
     for (; i < n; ++i) {

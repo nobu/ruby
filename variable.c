@@ -1780,7 +1780,8 @@ rb_ivar_delete(VALUE obj, ID id, VALUE undef)
         }
 
         RUBY_ASSERT(removed_shape_id != INVALID_SHAPE_ID);
-        RUBY_ASSERT(RSHAPE_LEN(next_shape_id) == RSHAPE_LEN(old_shape_id) - 1);
+        RUBY_ASSERT(RSHAPE_LEN(next_shape_id) == RSHAPE_LEN(old_shape_id) - 1,
+                    "next=%u old=%u", RSHAPE_LEN(next_shape_id), RSHAPE_LEN(old_shape_id));
 
         VALUE *fields = rb_imemo_fields_ptr(fields_obj);
         attr_index_t removed_index = RSHAPE_INDEX(removed_shape_id);
