@@ -287,7 +287,7 @@ rb_yjit_splat_varg_cfunc(VALUE *stack_splat_array)
     int len;
 
     // We already checked that length fits in `int`
-    RUBY_ASSERT(RB_TYPE_P(splat_array, T_ARRAY));
+    RUBY_ASSERT_BUILTIN_TYPE(splat_array, T_ARRAY);
     len = (int)RARRAY_LEN(splat_array);
 
     // Push the contents of the array onto the stack

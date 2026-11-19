@@ -267,7 +267,7 @@ rb_ary_size_as_embedded(VALUE ary)
 static VALUE
 ary_verify_(VALUE ary, const char *file, int line)
 {
-    RUBY_ASSERT(RB_TYPE_P(ary, T_ARRAY));
+    RUBY_ASSERT_BUILTIN_TYPE(ary, T_ARRAY);
 
     if (ARY_SHARED_P(ary)) {
         VALUE root = ARY_SHARED_ROOT(ary);
@@ -667,7 +667,7 @@ ary_ensure_room_for_push(VALUE ary, rb_len_t add_len)
 VALUE
 rb_ary_freeze(VALUE ary)
 {
-    RUBY_ASSERT(RB_TYPE_P(ary, T_ARRAY));
+    RUBY_ASSERT_BUILTIN_TYPE(ary, T_ARRAY);
 
     if (OBJ_FROZEN(ary)) return ary;
 

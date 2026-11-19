@@ -495,7 +495,7 @@ RCLASSEXT_SET_ORIGIN(rb_classext_t *ext, VALUE klass, VALUE origin)
 static inline void
 RCLASSEXT_SET_INCLUDER(rb_classext_t *ext, VALUE klass, VALUE includer)
 {
-    RUBY_ASSERT(RB_TYPE_P(klass, T_ICLASS));
+    RUBY_ASSERT_BUILTIN_TYPE(klass, T_ICLASS);
     RB_OBJ_WRITE(klass, &(RCLASSEXT_INCLUDER(ext)), includer);
 }
 
@@ -672,7 +672,7 @@ RCLASS_ALLOCATOR(VALUE klass)
 static inline void
 RCLASS_SET_ALLOCATOR(VALUE klass, rb_alloc_func_t allocator)
 {
-    RUBY_ASSERT(RB_TYPE_P(klass, T_CLASS));
+    RUBY_ASSERT_BUILTIN_TYPE(klass, T_CLASS);
     RUBY_ASSERT(!RCLASS_SINGLETON_P(klass));
     RCLASS_EXT_PRIME(klass)->as.class.allocator = allocator; // Allocator is set only on the initial definition
 }
@@ -723,14 +723,14 @@ RICLASS_FOR_REFINEMENT_P(VALUE iclass)
 static inline void
 RCLASS_SET_INCLUDER(VALUE iclass, VALUE klass)
 {
-    RUBY_ASSERT(RB_TYPE_P(iclass, T_ICLASS));
+    RUBY_ASSERT_BUILTIN_TYPE(iclass, T_ICLASS);
     RB_OBJ_WRITE(iclass, &RCLASS_INCLUDER(iclass), klass);
 }
 
 static inline void
 RCLASS_SET_MODULE_REFINEMENT_ICLASSES(VALUE iclass, VALUE table)
 {
-    RUBY_ASSERT(RB_TYPE_P(iclass, T_ICLASS));
+    RUBY_ASSERT_BUILTIN_TYPE(iclass, T_ICLASS);
     RB_OBJ_WRITE(iclass, &RCLASS_MODULE_REFINEMENT_ICLASSES(iclass), table);
 }
 

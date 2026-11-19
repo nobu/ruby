@@ -398,7 +398,7 @@ bool rb_vm_once_done_value(ISE is, VALUE *result);
 bool
 rb_zjit_array_aref_with_adjusted_index(VALUE ary, rb_len_t index, VALUE *out)
 {
-    RUBY_ASSERT(RB_TYPE_P(ary, T_ARRAY));
+    RUBY_ASSERT_BUILTIN_TYPE(ary, T_ARRAY);
     if (index >= 0 && index < RARRAY_LEN(ary)) {
         *out = RARRAY_AREF(ary, index);
         return true;

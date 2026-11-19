@@ -323,8 +323,8 @@ rb_obj_singleton_class(VALUE obj)
 void
 rb_obj_copy_ivar(VALUE dest, VALUE obj)
 {
-    RUBY_ASSERT(RB_TYPE_P(obj, T_OBJECT));
-    RUBY_ASSERT(RB_TYPE_P(dest, T_OBJECT));
+    RUBY_ASSERT_BUILTIN_TYPE(obj, T_OBJECT);
+    RUBY_ASSERT_BUILTIN_TYPE(dest, T_OBJECT);
 
     unsigned long src_num_ivs = rb_ivar_count(obj);
     if (!src_num_ivs) {
@@ -917,8 +917,8 @@ rb_obj_is_instance_of(VALUE obj, VALUE c)
 static VALUE
 class_search_class_ancestor(VALUE cl, VALUE c)
 {
-    RUBY_ASSERT(RB_TYPE_P(c, T_CLASS));
-    RUBY_ASSERT(RB_TYPE_P(cl, T_CLASS));
+    RUBY_ASSERT_BUILTIN_TYPE(c, T_CLASS);
+    RUBY_ASSERT_BUILTIN_TYPE(cl, T_CLASS);
 
     size_t c_depth = RCLASS_SUPERCLASS_DEPTH(c);
     size_t cl_depth = RCLASS_SUPERCLASS_DEPTH(cl);
@@ -966,7 +966,7 @@ rb_obj_is_kind_of(VALUE obj, VALUE c)
 {
     VALUE cl = CLASS_OF(obj);
 
-    RUBY_ASSERT(RB_TYPE_P(cl, T_CLASS));
+    RUBY_ASSERT_BUILTIN_TYPE(cl, T_CLASS);
 
     // Fastest path: If the object's class is an exact match we know `c` is a
     // class without checking type and can return immediately.
@@ -2400,7 +2400,7 @@ rb_class_new_instance(int argc, const VALUE *argv, VALUE klass)
 VALUE
 rb_class_superclass(VALUE klass)
 {
-    RUBY_ASSERT(RB_TYPE_P(klass, T_CLASS));
+    RUBY_ASSERT_BUILTIN_TYPE(klass, T_CLASS);
 
     VALUE *superclasses = RCLASS_SUPERCLASSES(klass);
     size_t superclasses_depth = RCLASS_SUPERCLASS_DEPTH(klass);
@@ -2414,7 +2414,7 @@ rb_class_superclass(VALUE klass)
     }
     else {
         VALUE super = superclasses[superclasses_depth - 1];
-        RUBY_ASSERT(RB_TYPE_P(super, T_CLASS));
+        RUBY_ASSERT_BUILTIN_TYPE(super, T_CLASS);
         return super;
     }
 }

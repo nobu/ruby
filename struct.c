@@ -944,7 +944,7 @@ ID
 rb_zjit_struct_member_id(VALUE klass, rb_len_t index)
 {
     VALUE members = struct_s_members(klass);
-    RUBY_ASSERT(RB_TYPE_P(members, T_ARRAY));
+    RUBY_ASSERT_BUILTIN_TYPE(members, T_ARRAY);
     RUBY_ASSERT(index >= 0 && index < RARRAY_LEN(members));
     return SYM2ID(RARRAY_AREF(members, index));
 }

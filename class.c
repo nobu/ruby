@@ -277,7 +277,7 @@ duplicate_classext_const_tbl(struct rb_id_table *src, VALUE klass)
 static void
 class_duplicate_iclass_classext(VALUE iclass, rb_classext_t *mod_ext, const rb_box_t *box)
 {
-    RUBY_ASSERT(RB_TYPE_P(iclass, T_ICLASS));
+    RUBY_ASSERT_BUILTIN_TYPE(iclass, T_ICLASS);
 
     rb_classext_t *src = RCLASS_EXT_PRIME(iclass);
     rb_classext_t *ext = RCLASS_EXT_TABLE_LOOKUP_INTERNAL(iclass, box);
@@ -535,8 +535,8 @@ static void
 rb_module_add_to_subclasses_list(VALUE module, VALUE iclass)
 {
     if (module && !UNDEF_P(module)) {
-        RUBY_ASSERT(RB_TYPE_P(module, T_MODULE));
-        RUBY_ASSERT(RB_TYPE_P(iclass, T_ICLASS));
+        RUBY_ASSERT_BUILTIN_TYPE(module, T_MODULE);
+        RUBY_ASSERT_BUILTIN_TYPE(iclass, T_ICLASS);
         push_subclass_entry_to_list(module, iclass);
     }
 }
@@ -1229,7 +1229,7 @@ rb_singleton_class_clone_and_attach(VALUE obj, VALUE attach)
     else {
         /* copy singleton(unnamed) class */
         bool klass_of_clone_is_new;
-        RUBY_ASSERT(RB_TYPE_P(klass, T_CLASS));
+        RUBY_ASSERT_BUILTIN_TYPE(klass, T_CLASS);
         VALUE clone = class_alloc(T_CLASS, 0);
 
         if (BUILTIN_TYPE(obj) == T_CLASS) {

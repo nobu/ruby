@@ -2319,7 +2319,7 @@ rb_hash_default_unredefined(VALUE hash)
 VALUE
 rb_hash_default_value(VALUE hash, VALUE key)
 {
-    RUBY_ASSERT(RB_TYPE_P(hash, T_HASH));
+    RUBY_ASSERT_BUILTIN_TYPE(hash, T_HASH);
 
     if (LIKELY(rb_hash_default_unredefined(hash))) {
         VALUE ifnone = RHASH_IFNONE(hash);

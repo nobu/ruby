@@ -2667,7 +2667,7 @@ add_adjust_info(struct iseq_insn_info_entry *insns_info, unsigned int *positions
 static ID *
 array_to_idlist(VALUE arr)
 {
-    RUBY_ASSERT(RB_TYPE_P(arr, T_ARRAY));
+    RUBY_ASSERT_BUILTIN_TYPE(arr, T_ARRAY);
     rb_len_t size = RARRAY_LEN(arr);
     ID *ids = (ID *)ALLOC_N(ID, size + 1);
     for (rb_len_t i = 0; i < size; i++) {

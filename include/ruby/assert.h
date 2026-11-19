@@ -291,6 +291,7 @@ RBIMPL_WARNING_IGNORED(-Wgnu-zero-variadic-macro-arguments)
 #define RUBY_ASSERT_BUILTIN_TYPE(obj, type) \
     RUBY_ASSERT(RB_TYPE_P(obj, type), \
                 "Actual type is %s", rb_builtin_type_name(BUILTIN_TYPE(obj)))
+const char *rb_builtin_type_name(int t);
 
 /**
  * This is either #RUBY_ASSERT or #RBIMPL_ASSUME, depending on #RUBY_DEBUG.

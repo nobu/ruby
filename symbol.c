@@ -131,11 +131,11 @@ sym_set_sym_get_str(VALUE sym)
         str = sym_set_static_sym_untag(sym)->str;
     }
     else {
-        RUBY_ASSERT(RB_TYPE_P(sym, T_SYMBOL));
+        RUBY_ASSERT_BUILTIN_TYPE(sym, T_SYMBOL);
         str = RSYMBOL(sym)->fstr;
     }
 
-    RUBY_ASSERT(RB_TYPE_P(str, T_STRING));
+    RUBY_ASSERT_BUILTIN_TYPE(str, T_STRING);
 
     return str;
 }

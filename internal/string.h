@@ -58,7 +58,7 @@ rb_str_enc_fastpath(VALUE str)
 static inline rb_encoding *
 rb_str_enc_get(VALUE str)
 {
-    RUBY_ASSERT(RB_TYPE_P(str, T_STRING));
+    RUBY_ASSERT_BUILTIN_TYPE(str, T_STRING);
     return rb_enc_from_index(ENCODING_GET(str));
 }
 

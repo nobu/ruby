@@ -406,7 +406,7 @@ const rb_data_type_t rb_managed_id_table_type = {
 static inline struct rb_id_table *
 managed_id_table_ptr(VALUE obj)
 {
-    RUBY_ASSERT(RB_TYPE_P(obj, T_DATA));
+    RUBY_ASSERT_BUILTIN_TYPE(obj, T_DATA);
     RUBY_ASSERT(rb_typeddata_inherited_p(RTYPEDDATA_TYPE(obj), &rb_managed_id_table_type));
 
     return RTYPEDDATA_GET_DATA(obj);

@@ -1724,7 +1724,7 @@ static VALUE imemo_fields_evacutate_to_complex(VALUE owner, VALUE source_fields_
 static shape_id_t
 rb_obj_convert_too_complex(VALUE obj, VALUE fields_obj, shape_id_t shape_id)
 {
-    RUBY_ASSERT(RB_TYPE_P(obj, T_OBJECT));
+    RUBY_ASSERT_BUILTIN_TYPE(obj, T_OBJECT);
     RUBY_ASSERT(!rb_obj_shape_complex_p(obj));
 
     shape_id = rb_shape_transition_complex(shape_id);

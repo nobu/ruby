@@ -219,7 +219,7 @@ static void
 imemo_count_up(struct MEMO *memo)
 {
     if (memo->flags & MEMO_U3_IS_VALUE) {
-        RUBY_ASSERT(RB_TYPE_P(memo->u3.value, T_BIGNUM));
+        RUBY_ASSERT_BUILTIN_TYPE(memo->u3.value, T_BIGNUM);
         MEMO_V3_SET(memo, rb_int_succ(memo->u3.value));
     }
     else if (++memo->u3.ucnt == 0) {
@@ -232,7 +232,7 @@ static VALUE
 imemo_count_value(struct MEMO *memo)
 {
     if (memo->flags & MEMO_U3_IS_VALUE) {
-        RUBY_ASSERT(RB_TYPE_P(memo->u3.value, T_BIGNUM));
+        RUBY_ASSERT_BUILTIN_TYPE(memo->u3.value, T_BIGNUM);
         return memo->u3.value;
     }
     else {
@@ -4777,7 +4777,7 @@ hash_sum_i(VALUE key, VALUE value, VALUE arg)
 static void
 hash_sum(VALUE hash, struct enum_sum_memo *memo)
 {
-    RUBY_ASSERT(RB_TYPE_P(hash, T_HASH));
+    RUBY_ASSERT_BUILTIN_TYPE(hash, T_HASH);
     RUBY_ASSERT(memo != NULL);
 
     rb_hash_foreach(hash, hash_sum_i, (VALUE)memo);

@@ -493,8 +493,8 @@ fstring_concurrent_set_cmp(VALUE a, VALUE b)
     rb_len_t alen, blen;
     const char *aptr, *bptr;
 
-    RUBY_ASSERT(RB_TYPE_P(a, T_STRING));
-    RUBY_ASSERT(RB_TYPE_P(b, T_STRING));
+    RUBY_ASSERT_BUILTIN_TYPE(a, T_STRING);
+    RUBY_ASSERT_BUILTIN_TYPE(b, T_STRING);
 
     RSTRING_GETMEM(a, aptr, alen);
     RSTRING_GETMEM(b, bptr, blen);
@@ -569,7 +569,7 @@ fstring_concurrent_set_create(VALUE str, void *data)
         RB_OBJ_SET_SHAREABLE(str);
     }
     RUBY_ASSERT((rb_gc_verify_shareable(str), 1));
-    RUBY_ASSERT(RB_TYPE_P(str, T_STRING));
+    RUBY_ASSERT_BUILTIN_TYPE(str, T_STRING);
     RUBY_ASSERT(OBJ_FROZEN(str));
     RUBY_ASSERT(!FL_TEST_RAW(str, STR_FAKESTR));
     RUBY_ASSERT(!rb_obj_shape_has_ivars(str));
@@ -612,7 +612,7 @@ register_fstring(VALUE str, bool copy, bool force_precompute_hash)
     VALUE result = rb_concurrent_set_find_or_insert(&fstring_table_obj, str, &args);
 
     RUBY_ASSERT(!rb_objspace_garbage_object_p(result));
-    RUBY_ASSERT(RB_TYPE_P(result, T_STRING));
+    RUBY_ASSERT_BUILTIN_TYPE(result, T_STRING);
     RUBY_ASSERT(OBJ_FROZEN(result));
     RUBY_ASSERT(RB_OBJ_SHAREABLE_P(result));
     RUBY_ASSERT((rb_gc_verify_shareable(result), 1));
@@ -3016,7 +3016,7 @@ static char *str_to_cstr(VALUE str);
 const char *
 rb_str_null_check(VALUE str)
 {
-    RUBY_ASSERT(RB_TYPE_P(str, T_STRING));
+    RUBY_ASSERT_BUILTIN_TYPE(str, T_STRING);
 
     const char *s;
     rb_len_t len;
@@ -7522,7 +7522,7 @@ str_bit_offset_from_index(VALUE index)
         return offset;
     }
 
-    RUBY_ASSERT(RB_TYPE_P(integer, T_BIGNUM));
+    RUBY_ASSERT_BUILTIN_TYPE(integer, T_BIGNUM);
     if (rb_int_negative_p(integer)) {
         rb_raise(rb_eIndexError, "bit index out of range");
     }
@@ -7559,7 +7559,7 @@ str_bit_length_from_index(VALUE index)
         return (uint64_t)value;
     }
 
-    RUBY_ASSERT(RB_TYPE_P(integer, T_BIGNUM));
+    RUBY_ASSERT_BUILTIN_TYPE(integer, T_BIGNUM);
     if (rb_int_negative_p(integer)) {
         rb_raise(rb_eArgError, "negative bit length");
     }
@@ -11200,7 +11200,7 @@ tr_trans_pairs(VALUE str, VALUE pairs_val)
                     continue;
                 }
             }
-            RUBY_ASSERT(RB_TYPE_P(repl, T_STRING));
+            RUBY_ASSERT_BUILTIN_TYPE(repl, T_STRING);
 
             modify = true;
 

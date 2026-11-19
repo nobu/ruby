@@ -76,8 +76,8 @@ RBASIC_SET_CLASS(VALUE obj, VALUE klass)
 static inline void
 ROBJECT_SET_EXTENDED(VALUE obj, VALUE fields_obj)
 {
-    RUBY_ASSERT(RB_TYPE_P(obj, T_OBJECT));
-    RUBY_ASSERT(RB_TYPE_P(fields_obj, T_IMEMO));
+    RUBY_ASSERT_BUILTIN_TYPE(obj, T_OBJECT);
+    RUBY_ASSERT_BUILTIN_TYPE(fields_obj, T_IMEMO);
     RB_OBJ_WRITE(obj, &ROBJECT(obj)->as.extended, fields_obj);
 }
 

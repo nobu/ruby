@@ -396,9 +396,12 @@ f_lcm(VALUE x, VALUE y)
 }
 
 #define get_dat1(x) \
+    RUBY_ASSERT_BUILTIN_TYPE(x, T_RATIONAL); \
     struct RRational *dat = RRATIONAL(x)
 
 #define get_dat2(x,y) \
+    RUBY_ASSERT_BUILTIN_TYPE(x, T_RATIONAL); \
+    RUBY_ASSERT_BUILTIN_TYPE(y, T_RATIONAL); \
     struct RRational *adat = RRATIONAL(x), *bdat = RRATIONAL(y)
 
 inline static VALUE
@@ -604,9 +607,7 @@ nurat_denominator(VALUE self)
 VALUE
 rb_rational_uminus(VALUE self)
 {
-    const int unused = (RUBY_ASSERT(RB_TYPE_P(self, T_RATIONAL)), 0);
     get_dat1(self);
-    (void)unused;
     return f_rational_new2(CLASS_OF(self), rb_int_uminus(dat->num), dat->den);
 }
 
@@ -800,7 +801,7 @@ f_muldiv(VALUE self, VALUE anum, VALUE aden, VALUE bnum, VALUE bden, int k)
 {
     VALUE num, den;
 
-    RUBY_ASSERT(RB_TYPE_P(self, T_RATIONAL));
+    RUBY_ASSERT_BUILTIN_TYPE(self, T_RATIONAL);
 
     /* Integer#** can return Rational with Float right now */
     if (RB_FLOAT_TYPE_P(anum) || RB_FLOAT_TYPE_P(aden) ||

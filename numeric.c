@@ -4349,7 +4349,7 @@ int_accurate_in_double(VALUE n)
     if (FIXNUM_P(n)) {
         return accurate_in_double(FIX2LONG(n));
     }
-    RUBY_ASSERT(RB_TYPE_P(n, T_BIGNUM));
+    RUBY_ASSERT_BUILTIN_TYPE(n, T_BIGNUM);
 #if SIZEOF_LONG * CHAR_BIT <= DBL_MANT_DIG
     int nlz;
     size_t size = rb_absint_size(n, &nlz);
