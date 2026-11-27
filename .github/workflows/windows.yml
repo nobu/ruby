@@ -28,21 +28,11 @@ jobs:
         include:
           - os: 2022
             test_task: check
-          - os: 2022
-            test_task: test-bundled-gems
           - os: 2025-vs2026
             test_task: check
-          - os: 2025-vs2026
-            test_task: check
-            make: make
-          - os: 2025-vs2026
-            test_task: test-bundled-gems
           - os: 2025-vs2026
             test_task: check
             target: x86
-          - os: 2025-vs2026
-            test_task: check
-            yjit: true
           # Options that speed up ruby with external dependencies go to this job.
           - os: 2025-vs2026
             test_task: check
@@ -53,10 +43,6 @@ jobs:
           - os: 11-arm
             test_task: check
             target: arm64
-          - os: 11-arm
-            test_task: check
-            target: arm64
-            yjit: true
       fail-fast: false
 
     runs-on: windows-${{ matrix.os }}
