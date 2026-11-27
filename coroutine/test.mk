@@ -27,6 +27,7 @@ test-coroutine-$(GITHUB_ACTIONS:true=prereq): build-ext
 test-coroutine-prereq:
 yes-test-coroutine: test-coroutine-prereq PHONY
 	$(ACTIONS_GROUP)
+$(COROUTINE_TEST_OBJS): yes-test-coroutine
 do-test-coroutine: yes-test-coroutine $(DOT_WAIT) $(COROUTINE_TEST) PHONY
 	$(Q)$(COROUTINE_TEST_RUN)
 	$(ACTIONS_ENDGROUP)
